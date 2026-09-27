@@ -191,7 +191,7 @@ function absBranchless(x) {
 console.log(absBranchless(-5), absBranchless(5)); // 5 5
 ```
 
-Детально про побітові операції (`>>`, `^`) — нотатка `common/bitwise-operations.js`.
+Детально про побітові операції (`>>`, `^`) — нотатка [common/bitwise-operations.md](../common/bitwise-operations.md).
 
 ### Правило 4: групуй схожі об'єкти разом
 
