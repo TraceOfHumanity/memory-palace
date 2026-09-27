@@ -55,15 +55,52 @@ const { Buffer } = require("buffer");
   };
 
   const deleteFile = async (path) => {
-    console.log(`Deleting file ${path}`);
+    try {
+      await fs.unlink(path);
+      console.log(`File ${path} deleted`);
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        console.log(`File ${path} does not exist`);
+      } else {
+        console.log(`Error deleting file ${path}: ${error.message}`);
+      }
+    }
   };
 
   const renameFile = async (oldPath, newPath) => {
-    console.log(`Renaming file ${oldPath} to ${newPath}`);
+    try {
+      await fs.rename(oldPath, newPath);
+      console.log(`File ${oldPath} renamed to ${newPath}`);
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        console.log(`File ${oldPath} does not exist`);
+      } else {
+        console.log(
+          `Error renaming file ${oldPath} to ${newPath}: ${error.message}`,
+        );
+      }
+    }
   };
 
+  let addedContent = "";
   const addToFile = async (path, content) => {
-    console.log(`Adding content to file ${path}: ${content}`);
+    const fileHandler = await fs.open(path, "a");
+    if (addedContent === `${content}\n`) {
+      return console.log(`Content already added to file ${path}`);
+    }
+    try {
+      await fileHandler.write(`${content}\n`);
+      console.log(`Content added to file ${path}`);
+      addedContent = `${content}\n`;
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        console.log(`File ${path} does not exist`);
+      } else {
+        console.log(`Error adding content to file ${path}: ${error.message}`);
+      }
+    } finally {
+      await fileHandler.close();
+    }
   };
 
   commandFileHandler.on("change", async () => {
