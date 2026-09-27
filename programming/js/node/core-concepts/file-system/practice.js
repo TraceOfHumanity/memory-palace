@@ -36,10 +36,10 @@ const { Buffer } = require("buffer");
   const commandFileHandler = await fs.open("./commands.txt", "r");
 
   const commands = {
-    create: "create a file",
-    delete: "delete a file",
+    create: "create the file",
+    delete: "delete the file",
     rename: "rename the file",
-    add: "add to a file",
+    addToFile: "add to the file",
   };
 
   const createFile = async (path) => {
@@ -52,13 +52,19 @@ const { Buffer } = require("buffer");
       console.log(`File ${path} created`);
       newFile.close();
     }
-  }
+  };
 
-  const deleteFile = async (path) => {}
-  
-  const renameFile = async (oldPath, newPath) => {}
+  const deleteFile = async (path) => {
+    console.log(`Deleting file ${path}`);
+  };
 
-  const addToFile = async (path, content) => {}
+  const renameFile = async (oldPath, newPath) => {
+    console.log(`Renaming file ${oldPath} to ${newPath}`);
+  };
+
+  const addToFile = async (path, content) => {
+    console.log(`Adding content to file ${path}: ${content}`);
+  };
 
   commandFileHandler.on("change", async () => {
     const bufferSize = (await commandFileHandler.stat()).size;
@@ -80,14 +86,18 @@ const { Buffer } = require("buffer");
       deleteFile(path);
     }
     if (command.includes(commands.rename)) {
-      const [oldPath, newPath] = command.substring(commands.rename.length + 1).split(" to ");
+      const [oldPath, newPath] = command
+        .substring(commands.rename.length + 1)
+        .split(" to ");
       console.log(oldPath, newPath);
       renameFile(oldPath.trim(), newPath.trim());
     }
-    // if (command.includes(commands.add)) {
-    //   const path = command.substring(commands.add.length + 1);
-    //   addToFile(path);
-    // }
+    if (command.includes(commands.addToFile)) {
+      const [path, content] = command
+        .substring(commands.addToFile.length + 1)
+        .split(" content: ");
+      addToFile(path.trim(), content.trim());
+    }
   });
 
   const watcher = await fs.watch("./commands.txt");
