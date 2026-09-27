@@ -91,11 +91,7 @@ miniEffect(() => {
 miniState.count++;
 miniState.other++; // цього ефект не читав
 miniState.count++;
-console.log(miniRuns);
-```
-
-```text
-3
+console.log(miniRuns); // 3
 ```
 
 Ефект виконався тричі: перший запуск і дві зміни `count`. Зміна `other` його не зачепила — це і є дрібнозерниста залежність.
@@ -116,11 +112,7 @@ effect(() => {
 state.a = 2;
 state.a = 3;
 state.b = 9; // ефект b не читав
-console.log(stateRuns);
-```
-
-```text
-3
+console.log(stateRuns); // 3
 ```
 
 Зверніть увагу: `effect` запускається **синхронно** після кожної окремої зміни. Дві зміни `a` — два запуски. У застосунку Vue оновлення інтерфейсу групуються планувальником (розділ 9), а «голий» `effect` цього не робить.
@@ -139,11 +131,7 @@ effect(() => {
 
 counter.value++;
 counter.value = counter.value; // те саме значення
-console.log(counterRuns);
-```
-
-```text
-2
+console.log(counterRuns); // 2
 ```
 
 Запис того самого значення запуску не спричиняє: система порівнює нове значення зі старим.
@@ -171,11 +159,7 @@ effect(() => {
 });
 shallow.o.v = 2;
 
-console.log("deep:", deepRuns, "shallow:", shallowRuns);
-```
-
-```text
-deep: 2 shallow: 1
+console.log("deep:", deepRuns, "shallow:", shallowRuns); // deep: 2 shallow: 1
 ```
 
 ### 4.2. Додавання та видалення властивостей
@@ -190,11 +174,7 @@ effect(() => {
 });
 keyed.y = 2; // додали ключ
 delete keyed.x; // видалили ключ
-console.log(keysSeen);
-```
-
-```text
-[ 'x', 'x,y', 'y' ]
+console.log(keysSeen); // [ 'x', 'x,y', 'y' ]
 ```
 
 ### 4.3. Масиви, `Map` та `Set`
@@ -218,11 +198,7 @@ effect(() => {
 });
 reactiveArray.push(4);
 
-console.log("map:", mapRuns, "array:", arrayRuns);
-```
-
-```text
-map: 2 array: 2
+console.log("map:", mapRuns, "array:", arrayRuns); // map: 2 array: 2
 ```
 
 ### 4.4. `shallowRef` і `triggerRef`
@@ -238,14 +214,9 @@ effect(() => {
 });
 
 big.value.n = 2; // внутрішня зміна: ефект не запускається
-console.log(bigRuns);
+console.log(bigRuns); // 1
 triggerRef(big); // ручний запуск
-console.log(bigRuns);
-```
-
-```text
-1
-2
+console.log(bigRuns); // 2
 ```
 
 ## 5. Пастки
@@ -272,11 +243,7 @@ effect(() => {
 });
 
 person.count++;
-console.log(destructuredRuns, toRefsRuns);
-```
-
-```text
-1 2
+console.log(destructuredRuns, toRefsRuns); // 1 2
 ```
 
 ### 5.2. Ідентичність: проксі не дорівнює оригіналу
@@ -287,10 +254,7 @@ console.log(destructuredRuns, toRefsRuns);
 const raw = { z: 1 };
 const proxy = reactive(raw);
 console.log(proxy === raw, toRaw(proxy) === raw, reactive(raw) === proxy, reactive(proxy) === proxy);
-```
-
-```text
-false true true true
+// false true true true
 ```
 
 Практичний наслідок: якщо оригінальний об'єкт мутувати напряму, у обхід проксі, реактивність про це не дізнається.
@@ -312,16 +276,11 @@ const stopWatch = watch(
 );
 
 watched.q = 2;
-console.log(watchLog);
+console.log(watchLog); // [ '1->2' ]
 
 stopWatch(); // припинити спостереження
 watched.q = 3;
-console.log(watchLog);
-```
-
-```text
-[ '1->2' ]
-[ '1->2' ]
+console.log(watchLog); // [ '1->2' ] — те саме: після stopWatch() зміни q більше не відстежуються
 ```
 
 Зауваження: у цьому «голому» пакеті колбек викликається синхронно. У застосунку Vue за замовчуванням оновлення групуються планувальником компонентів, тож колбек виконується перед наступним оновленням інтерфейсу.
@@ -355,14 +314,9 @@ const runner = effect(
 batch.n = 1;
 batch.n = 2;
 batch.n = 3;
-console.log(batchRuns); // синхронно: ефект ще не запускався повторно
+console.log(batchRuns); // 1 — синхронно: ефект ще не запускався повторно
 
-Promise.resolve().then(() => console.log(batchRuns)); // після мікрозавдання
-```
-
-```text
-1
-2
+Promise.resolve().then(() => console.log(batchRuns)); // 2 — після мікрозавдання
 ```
 
 Три зміни привели до одного повторного запуску. Друге число з'являється після завершення синхронної частини скрипта. Наслідок для компонентів Vue: після зміни стану DOM оновлюється **не одразу**, а в наступному мікрозавданні; щоб прочитати оновлений DOM, використовують `await nextTick()`.

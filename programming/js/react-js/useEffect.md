@@ -60,25 +60,21 @@ function BadClock() {
 
 ```js
 function Greeting({ name }) {
-  console.log(`  рендер: Greeting(${name})`);
+  console.log(`  render: Greeting(${name})`);
   React.useEffect(() => {
-    console.log(`  ефект: привітали ${name}`);
+    console.log(`  effect: greeted ${name}`);
   });
-  return React.createElement("div", null, `Привіт, ${name}`);
+  return React.createElement("div", null, `Hello, ${name}`);
 }
 
 let renderer;
 act(() => {
-  renderer = TestRenderer.create(React.createElement(Greeting, { name: "Оля" }));
+  renderer = TestRenderer.create(React.createElement(Greeting, { name: "Alice" }));
 });
+// render: Greeting(Alice)
+// effect: greeted Alice
 
-console.log(renderer.toJSON().children); // DOM уже оновлено до запуску ефекту
-```
-
-```text
-  рендер: Greeting(Оля)
-  ефект: привітали Оля
-[ 'Привіт, Оля' ]
+console.log(renderer.toJSON().children); // [ 'Hello, Alice' ] — DOM уже оновлено до запуску ефекту
 ```
 
 Порядок незмінний: спочатку рендер (обчислення JSX), потім ефект.
@@ -94,18 +90,13 @@ console.log(renderer.toJSON().children); // DOM уже оновлено до з�
 ```js
 function EveryRender({ value }) {
   React.useEffect(() => {
-    console.log(`  [без deps] ефект, value=${value}`);
+    console.log(`  [no deps] effect, value=${value}`);
   });
   return React.createElement("div", null, value);
 }
 let r1;
-act(() => { r1 = TestRenderer.create(React.createElement(EveryRender, { value: 1 })); });
-act(() => { r1.update(React.createElement(EveryRender, { value: 1 })); }); // те саме значення
-```
-
-```text
-  [без deps] ефект, value=1
-  [без deps] ефект, value=1
+act(() => { r1 = TestRenderer.create(React.createElement(EveryRender, { value: 1 })); }); // [no deps] effect, value=1
+act(() => { r1.update(React.createElement(EveryRender, { value: 1 })); }); // те саме значення — [no deps] effect, value=1
 ```
 
 Ефект повторився попри те, що значення не змінилося.
@@ -117,19 +108,14 @@ act(() => { r1.update(React.createElement(EveryRender, { value: 1 })); }); // т
 ```js
 function OnMountOnly() {
   React.useEffect(() => {
-    console.log("  [deps: []] лише при монтуванні");
+    console.log("  [deps: []] mount only");
   }, []);
   return React.createElement("div", null, "mounted");
 }
 let r2;
-act(() => { r2 = TestRenderer.create(React.createElement(OnMountOnly)); });
+act(() => { r2 = TestRenderer.create(React.createElement(OnMountOnly)); }); // [deps: []] mount only
 act(() => { r2.update(React.createElement(OnMountOnly)); }); // перерендер...
-console.log("  (перерендер OnMountOnly без нового логу)"); // ...а логу немає
-```
-
-```text
-  [deps: []] лише при монтуванні
-  (перерендер OnMountOnly без нового логу)
+console.log("  (OnMountOnly re-rendered, no new log)"); // ...а логу немає
 ```
 
 ### 3.3. Масив зі значеннями
@@ -139,21 +125,15 @@ console.log("  (перерендер OnMountOnly без нового логу)")
 ```js
 function DependsOnCount({ count, label }) {
   React.useEffect(() => {
-    console.log(`  [deps: count] ефект для count=${count}`);
+    console.log(`  [deps: count] effect for count=${count}`);
   }, [count]); // label не у списку: його зміна ефект не перезапустить
   return React.createElement("div", null, `${label}: ${count}`);
 }
 let r3;
-act(() => { r3 = TestRenderer.create(React.createElement(DependsOnCount, { count: 0, label: "Рахунок" })); });
-act(() => { r3.update(React.createElement(DependsOnCount, { count: 0, label: "Інший підпис" })); });
-console.log("  (label змінився, count — ні: ефект НЕ повторився)");
-act(() => { r3.update(React.createElement(DependsOnCount, { count: 1, label: "Інший підпис" })); });
-```
-
-```text
-  [deps: count] ефект для count=0
-  (label змінився, count — ні: ефект НЕ повторився)
-  [deps: count] ефект для count=1
+act(() => { r3 = TestRenderer.create(React.createElement(DependsOnCount, { count: 0, label: "Counter" })); }); // [deps: count] effect for count=0
+act(() => { r3.update(React.createElement(DependsOnCount, { count: 0, label: "Other label" })); });
+console.log("  (label changed, count did not: effect did NOT rerun)");
+act(() => { r3.update(React.createElement(DependsOnCount, { count: 1, label: "Other label" })); }); // [deps: count] effect for count=1
 ```
 
 ## 4. Функція очищення (cleanup)
@@ -168,23 +148,18 @@ act(() => { r3.update(React.createElement(DependsOnCount, { count: 1, label: "І
 ```js
 function TimerLabel({ seconds }) {
   React.useEffect(() => {
-    console.log(`  ефект: підписались на seconds=${seconds}`);
-    return () => console.log(`  cleanup: відписались від seconds=${seconds}`);
+    console.log(`  effect: subscribed to seconds=${seconds}`);
+    return () => console.log(`  cleanup: unsubscribed from seconds=${seconds}`);
   }, [seconds]);
-  return React.createElement("div", null, `${seconds}с`);
+  return React.createElement("div", null, `${seconds}s`);
 }
 
 let r4;
-act(() => { r4 = TestRenderer.create(React.createElement(TimerLabel, { seconds: 0 })); });
+act(() => { r4 = TestRenderer.create(React.createElement(TimerLabel, { seconds: 0 })); }); // effect: subscribed to seconds=0
 act(() => { r4.update(React.createElement(TimerLabel, { seconds: 1 })); });
-act(() => { r4.unmount(); });
-```
-
-```text
-  ефект: підписались на seconds=0
-  cleanup: відписались від seconds=0
-  ефект: підписались на seconds=1
-  cleanup: відписались від seconds=1
+// cleanup: unsubscribed from seconds=0
+// effect: subscribed to seconds=1
+act(() => { r4.unmount(); }); // cleanup: unsubscribed from seconds=1
 ```
 
 При оновленні спочатку виконується очищення **старого** ефекту, потім запускається новий; при розмонтуванні очищується останній.
@@ -198,10 +173,10 @@ function useWindowResizeCount() {
   React.useEffect(() => {
     const handleResize = (w) => setSize(w);
     bus.on("resize", handleResize);
-    console.log("  useWindowResizeCount: підписались на 'resize'");
+    console.log("  useWindowResizeCount: subscribed to 'resize'");
     return () => {
       bus.off("resize", handleResize);
-      console.log("  useWindowResizeCount: відписались від 'resize'");
+      console.log("  useWindowResizeCount: unsubscribed from 'resize'");
     };
   }, [bus]);
   return { size, bus };
@@ -238,11 +213,7 @@ act(() => {
     React.createElement(React.StrictMode, null, React.createElement(StrictChild)),
   );
 });
-console.log(strictCalls);
-```
-
-```text
-2
+console.log(strictCalls); // 2
 ```
 
 У Strict Mode ефект монтування спрацював двічі (setup → cleanup → setup). Без `StrictMode`, як у прикладах вище, було б `1`.
@@ -254,19 +225,14 @@ console.log(strictCalls);
 ```js
 function StaleLogger({ value }) {
   React.useEffect(() => {
-    console.log(`  [stale-приклад] бачу value=${value}`); // value відсутній у deps
+    console.log(`  [stale example] sees value=${value}`); // value відсутній у deps
   }, []); // ефект створюється один раз і «застигає» на першому value
   return null;
 }
 let r5;
-act(() => { r5 = TestRenderer.create(React.createElement(StaleLogger, { value: "перше" })); });
-act(() => { r5.update(React.createElement(StaleLogger, { value: "друге" })); });
-console.log("  (жодного нового логу — ефект не перезапустився і не бачить 'друге')");
-```
-
-```text
-  [stale-приклад] бачу value=перше
-  (жодного нового логу — ефект не перезапустився і не бачить 'друге')
+act(() => { r5 = TestRenderer.create(React.createElement(StaleLogger, { value: "first" })); }); // [stale example] sees value=first
+act(() => { r5.update(React.createElement(StaleLogger, { value: "second" })); });
+console.log("  (no new log — effect did not rerun and does not see 'second')");
 ```
 
 Виправлення — чесно вказати залежність:
@@ -274,18 +240,13 @@ console.log("  (жодного нового логу — ефект не пер�
 ```js
 function FreshLogger({ value }) {
   React.useEffect(() => {
-    console.log(`  [fresh-приклад] бачу value=${value}`);
+    console.log(`  [fresh example] sees value=${value}`);
   }, [value]); // тепер ефект перезапускається й бачить актуальне value
   return null;
 }
 let r6;
-act(() => { r6 = TestRenderer.create(React.createElement(FreshLogger, { value: "перше" })); });
-act(() => { r6.update(React.createElement(FreshLogger, { value: "друге" })); });
-```
-
-```text
-  [fresh-приклад] бачу value=перше
-  [fresh-приклад] бачу value=друге
+act(() => { r6 = TestRenderer.create(React.createElement(FreshLogger, { value: "first" })); }); // [fresh example] sees value=first
+act(() => { r6.update(React.createElement(FreshLogger, { value: "second" })); }); // [fresh example] sees value=second
 ```
 
 Лінтер `eslint-plugin-react-hooks` (правило `exhaustive-deps`) саме для цього й існує: він попереджає про значення, які використано всередині ефекту, але не вказано в масиві залежностей. Ігнорувати це попередження, щоб «не перезапускалося», — типова причина багів через stale closure.
@@ -298,18 +259,13 @@ act(() => { r6.update(React.createElement(FreshLogger, { value: "друге" }))
 function UnstableDeps({ id }) {
   const options = { id }; // нове посилання при кожному рендері
   React.useEffect(() => {
-    console.log(`  [нестабільний obj] ефект для id=${options.id}`);
+    console.log(`  [unstable obj] effect for id=${options.id}`);
   }, [options]); // options завжди «змінився» — ефект спрацює щоразу
   return null;
 }
 let r7;
-act(() => { r7 = TestRenderer.create(React.createElement(UnstableDeps, { id: 1 })); });
-act(() => { r7.update(React.createElement(UnstableDeps, { id: 1 })); }); // те саме id
-```
-
-```text
-  [нестабільний obj] ефект для id=1
-  [нестабільний obj] ефект для id=1
+act(() => { r7 = TestRenderer.create(React.createElement(UnstableDeps, { id: 1 })); }); // [unstable obj] effect for id=1
+act(() => { r7.update(React.createElement(UnstableDeps, { id: 1 })); }); // те саме id — [unstable obj] effect for id=1
 ```
 
 Ефект повторився попри однакове `id`. Виправлення — залежати від **примітивного значення**, а не від обгортки:
@@ -317,19 +273,14 @@ act(() => { r7.update(React.createElement(UnstableDeps, { id: 1 })); }); // те
 ```js
 function StableDeps({ id }) {
   React.useEffect(() => {
-    console.log(`  [стабільний примітив] ефект для id=${id}`);
+    console.log(`  [stable primitive] effect for id=${id}`);
   }, [id]); // число id порівнюється за значенням
   return null;
 }
 let r8;
-act(() => { r8 = TestRenderer.create(React.createElement(StableDeps, { id: 1 })); });
+act(() => { r8 = TestRenderer.create(React.createElement(StableDeps, { id: 1 })); }); // [stable primitive] effect for id=1
 act(() => { r8.update(React.createElement(StableDeps, { id: 1 })); });
-console.log("  (id не змінився — ефект коректно НЕ повторився)");
-```
-
-```text
-  [стабільний примітив] ефект для id=1
-  (id не змінився — ефект коректно НЕ повторився)
+console.log("  (id unchanged — effect correctly did NOT rerun)");
 ```
 
 Функції-колбеки й об'єкти, які справді потрібно стабілізувати (наприклад, як пропс для дочірнього компонента), стабілізують хуками `useCallback` та `useMemo` — це окрема тема.
@@ -348,11 +299,7 @@ function InfiniteLoopRisk() {
 }
 let r9;
 act(() => { r9 = TestRenderer.create(React.createElement(InfiniteLoopRisk)); });
-console.log(r9.toJSON().children);
-```
-
-```text
-[ '3' ]
+console.log(r9.toJSON().children); // [ '3' ]
 ```
 
 Якщо стан потрібно оновити один раз при монтуванні, використовують `[]`. Якщо значення залежить від пропса, його обчислюють прямо під час рендеру (розділ 9), а не через ефект.
@@ -362,25 +309,21 @@ console.log(r9.toJSON().children);
 Найчастіша помилка початківців — синхронізувати один стан з іншим через ефект. Це створює зайвий рендер і затримку на кадр:
 
 ```jsx
-const [firstName, setFirstName] = useState("Оля");
+const [firstName, setFirstName] = useState("Jane");
 const [fullName, setFullName] = useState("");
-useEffect(() => { setFullName(firstName + " Коваль"); }, [firstName]);
+useEffect(() => { setFullName(firstName + " Doe"); }, [firstName]);
 ```
 
 Якщо значення можна обчислити прямо під час рендеру, його обчислюють там — без `useEffect` і без окремого стану:
 
 ```js
 function DerivedName({ firstName }) {
-  const fullName = `${firstName} Коваль`; // звичайна змінна, не useState
+  const fullName = `${firstName} Doe`; // звичайна змінна, не useState
   return React.createElement("div", null, fullName);
 }
 let r10;
-act(() => { r10 = TestRenderer.create(React.createElement(DerivedName, { firstName: "Марія" })); });
-console.log(r10.toJSON().children);
-```
-
-```text
-[ 'Марія Коваль' ]
+act(() => { r10 = TestRenderer.create(React.createElement(DerivedName, { firstName: "Alice" })); });
+console.log(r10.toJSON().children); // [ 'Alice Doe' ]
 ```
 
 `useEffect` потрібен для **синхронізації із зовнішніми системами**: DOM API, мережеві запити, таймери, підписки, сторонні бібліотеки — усе, чого React сам не контролює. Дані, похідні від пропсів і стану, обчислюють у тілі функції або через `useMemo`, якщо обчислення дороге.

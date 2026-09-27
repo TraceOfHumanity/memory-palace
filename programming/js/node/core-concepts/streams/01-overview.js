@@ -4,7 +4,7 @@
 
 // 1. ПРОБЛЕМА, ЯКУ ВИРІШУЮТЬ STREAMS
 // -----------------------------------------------------
-// fs.readFile() (детально node/core-concepts/file-system/02-reading-and-writing-files.js,
+// fs.readFile() (детально node/core-concepts/file-system/02-reading-and-writing-files.md,
 // розділ 5) ЗАВАНТАЖУЄ ВЕСЬ ФАЙЛ ЦІЛИКОМ У ПАМ'ЯТЬ, ПЕРЕД ТИМ, ЯК
 // ПОВЕРНУТИ РЕЗУЛЬТАТ. ДЛЯ ФАЙЛУ НА 10 МЕГАБАЙТ — ЦЕ НОРМАЛЬНО. ДЛЯ
 // ФАЙЛУ НА 10 ГІГАБАЙТ — ЦЕ МОЖЕ ВИЧЕРПАТИ ВСЮ ДОСТУПНУ ПАМ'ЯТЬ
@@ -26,7 +26,7 @@
 // КОЖЕН Stream у Node.js — ЦЕ ЕКЗЕМПЛЯР (чи НАЩАДОК) КЛАСУ
 // EventEmitter — ТОЙ САМИЙ ПАТЕРН "ПІДПИСКА НА ПОДІЇ", ЩО
 // ВИКОРИСТОВУЄТЬСЯ, НАПРИКЛАД, ДЛЯ HTTP-запитів/відповідей чи
-// fs.watch() (детально node/core-concepts/file-system/05-watching-files.js).
+// fs.watch() (детально node/core-concepts/file-system/05-watching-files.md).
 // САМЕ ТОМУ РОБОТА ЗІ STREAM ВІДБУВАЄТЬСЯ ЧЕРЕЗ .on("подія", callback),
 // А НЕ ЧЕРЕЗ ЗВИЧАЙНИЙ return-значення:
 

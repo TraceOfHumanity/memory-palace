@@ -49,27 +49,24 @@ function Counter() {
   return h("div", null, count);
 }
 act(() => { TestRenderer.create(h(Counter)); });
-console.log("початок:", counterApi.count, "рендерів:", counterRenders);
+console.log("initial:", counterApi.count, "renders:", counterRenders);
 
 act(() => {
   counterApi.setCount(counterApi.count + 1);
   counterApi.setCount(counterApi.count + 1);
   counterApi.setCount(counterApi.count + 1);
 });
-console.log("три «+1» від знімка:", counterApi.count, "рендерів:", counterRenders);
+console.log("three snapshot '+1's:", counterApi.count, "renders:", counterRenders);
 
 act(() => {
   counterApi.setCount((c) => c + 1);
   counterApi.setCount((c) => c + 1);
   counterApi.setCount((c) => c + 1);
 });
-console.log("три функціональні:", counterApi.count, "рендерів:", counterRenders);
-```
-
-```text
-початок: 0 рендерів: 1
-три «+1» від знімка: 1 рендерів: 2
-три функціональні: 4 рендерів: 3
+console.log("three functional:", counterApi.count, "renders:", counterRenders);
+// initial: 0 renders: 1
+// three snapshot '+1's: 1 renders: 2
+// three functional: 4 renders: 3
 ```
 
 Обидві серії з трьох викликів дали **по одному** рендеру (лічильник зріс на 1), проте перша додала 1, а друга — 3. У React 18 групування працює й поза обробниками подій (у проміс-колбеках, таймерах), якщо застосунок створено через `createRoot`. У цій нотатці це окремо не перевірялося.
@@ -94,15 +91,12 @@ act(() => {
   listApi.items.push("b"); // мутація існуючого масиву
   listApi.setItems(listApi.items); // те саме посилання
 });
-console.log("мутація + те саме посилання:", listRenders, listTree.toJSON().children);
+console.log("mutation + same reference:", listRenders, listTree.toJSON().children);
 
 act(() => { listApi.setItems([...listApi.items]); }); // нова копія
-console.log("нова копія:", listRenders, listTree.toJSON().children);
-```
-
-```text
-мутація + те саме посилання: 1 [ 'a' ]
-нова копія: 2 [ 'a,b' ]
+console.log("new copy:", listRenders, listTree.toJSON().children);
+// mutation + same reference: 1 [ 'a' ]
+// new copy: 2 [ 'a,b' ]
 ```
 
 Масив уже містив `"b"`, але екран показував `"a"`, поки не передали **нове посилання**. Тому в React стан оновлюють, створюючи копії: `[...items, x]`, `{ ...obj, field: v }`, `items.map(...)`, `items.filter(...)`. Це відрізняє React від Vue, де мутація стану — нормальний спосіб його змінювати.
@@ -122,16 +116,13 @@ function Prim() {
 }
 act(() => { TestRenderer.create(h(Prim)); });
 act(() => { primApi.setV(5); });
-console.log("те саме значення:", primRenders);
+console.log("same value:", primRenders);
 
 act(() => { primApi.setV(6); });
 act(() => { primApi.setV(6); });
-console.log("6, потім знову 6:", primRenders);
-```
-
-```text
-те саме значення: 1
-6, потім знову 6: 3
+console.log("6, then 6 again:", primRenders);
+// same value: 1
+// 6, then 6 again: 3
 ```
 
 Другий результат може здивувати: після зміни на `6` (2 рендери) повторне `setV(6)` збільшило лічильник до 3. Це задокументована особливість: React може **викликати функцію компонента ще раз**, перш ніж переконається, що стан не змінився, і лише тоді відмовляється оновлювати дочірні компоненти й DOM. Спиратися на кількість викликів функції компонента не можна: вона не є гарантією, а сам компонент має бути чистою функцією.
@@ -155,11 +146,8 @@ function Parent() {
 act(() => { TestRenderer.create(h(Parent)); });
 act(() => { parentApi.setN(1); });
 act(() => { parentApi.setN(2); });
-console.log("звичайний Child:", childRenders, "React.memo Child:", memoChildRenders);
-```
-
-```text
-звичайний Child: 3 React.memo Child: 1
+console.log("plain Child:", childRenders, "React.memo Child:", memoChildRenders);
+// plain Child: 3 React.memo Child: 1
 ```
 
 Батьківський стан змінився двічі; звичайний дочірній компонент відрендерився тричі (початок і два оновлення), тоді як мемоїзований — один раз. Це головна відмінність від Vue: там кожна залежність відстежується окремо, тому зайвих перерендерів не виникає автоматично, а в React їх усувають вручну (`memo`, `useMemo`, `useCallback`).
@@ -180,11 +168,8 @@ function RefView() {
 let refTree;
 act(() => { refTree = TestRenderer.create(h(RefView)); });
 act(() => { refHandle.current = 42; });
-console.log("рендерів:", refRenders, "у DOM:", refTree.toJSON().children, "у ref:", refHandle.current);
-```
-
-```text
-рендерів: 1 у DOM: [ '0' ] у ref: 42
+console.log("renders:", refRenders, "in DOM:", refTree.toJSON().children, "in ref:", refHandle.current);
+// renders: 1 in DOM: [ '0' ] in ref: 42
 ```
 
 Значення в `ref` стало `42`, але екран показує `0`, бо рендеру не було. Якщо зміна має бути видимою, потрібен стан (`useState`).
@@ -203,11 +188,8 @@ function Snap() {
 act(() => { TestRenderer.create(h(Snap)); });
 const oldRead = snapApi.read;
 act(() => { snapApi.setC(10); });
-console.log("старий обробник бачить:", oldRead(), "новий бачить:", snapApi.read());
-```
-
-```text
-старий обробник бачить: 0 новий бачить: 10
+console.log("old handler sees:", oldRead(), "new handler sees:", snapApi.read());
+// old handler sees: 0 new handler sees: 10
 ```
 
 Звідси випливає проблема застарілих значень (stale closure) в асинхронному коді й ефектах, розглянута в нотатці `useEffect.md`. У Vue цієї проблеми немає, бо реактивний об'єкт один і той самий, а читання відбувається в момент виконання.
@@ -233,15 +215,12 @@ let totalTree;
 act(() => { totalTree = TestRenderer.create(h(Total, { items: stableItems })); });
 
 act(() => { memoApi.setTick(1); }); // перерендер, масив items той самий
-console.log("обчислень після перерендеру:", memoCalcs);
+console.log("calcs after rerender:", memoCalcs);
 
 act(() => { totalTree.update(h(Total, { items: [1, 2, 3] })); }); // нове посилання
-console.log("обчислень з новим масивом:", memoCalcs, totalTree.toJSON().children);
-```
-
-```text
-обчислень після перерендеру: 1
-обчислень з новим масивом: 2 [ '6/1' ]
+console.log("calcs with new array:", memoCalcs, totalTree.toJSON().children);
+// calcs after rerender: 1
+// calcs with new array: 2 [ '6/1' ]
 ```
 
 Перерахунок пропущено, коли посилання на масив не змінилося, і виконано, коли з'явилося нове посилання з тим самим вмістом. Так само працює й `useEffect`: залежності порівнюються за посиланням. Не варто використовувати `useEffect` + `useState` для похідних даних: значення обчислюють прямо під час рендеру (розділ 9 нотатки `useEffect.md`).

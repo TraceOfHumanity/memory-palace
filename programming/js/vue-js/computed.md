@@ -104,24 +104,24 @@ state.price = 100; // повертаємо для наступних прикл�
 Vue будує граф залежностей під час **першого виконання** getter'а: реагувати на зміни буде лише ті властивості, які він справді прочитав.
 
 ```js
-const cart = reactive({ price: 100, qty: 2, note: "терміново" });
+const cart = reactive({ price: 100, qty: 2, note: "urgent" });
 
 let priceOnlyCalls = 0;
 // getter звертається лише до price — note не є його залежністю
 const priceLabel = computed(() => {
   priceOnlyCalls++;
-  return `${cart.price} грн`;
+  return `$${cart.price}`;
 });
 
-console.log(priceLabel.value); // 100 грн
+console.log(priceLabel.value); // $100
 console.log(priceOnlyCalls); // 1
 
-cart.note = "не терміново"; // змінили властивість, яку computed не читає
-console.log(priceLabel.value); // 100 грн — той самий кеш
+cart.note = "not urgent"; // змінили властивість, яку computed не читає
+console.log(priceLabel.value); // $100 — той самий кеш
 console.log(priceOnlyCalls); // 1 — не перераховано
 
 cart.price = 150; // а тепер змінили те, що computed справді використовує
-console.log(priceLabel.value); // 150 грн
+console.log(priceLabel.value); // $150
 console.log(priceOnlyCalls); // 2
 ```
 
@@ -163,7 +163,7 @@ console.log(condCalls); // 2 — не перераховано: ця гілка 
 `computed(fn)` доступний лише для читання. Щоб дозволити запис, передають об'єкт `{ get, set }`. Типовий приклад — розкласти одне значення на кілька реактивних джерел, наприклад повне ім'я на ім'я та прізвище:
 
 ```js
-const person = reactive({ firstName: "Оля", lastName: "Коваль" });
+const person = reactive({ firstName: "Jane", lastName: "Doe" });
 
 const fullName = computed({
   get() {
@@ -174,10 +174,10 @@ const fullName = computed({
   },
 });
 
-console.log(fullName.value); // Оля Коваль
-fullName.value = "Марія Петренко"; // виклик set()
-console.log(person.firstName, person.lastName); // Марія Петренко
-console.log(fullName.value); // Марія Петренко — get() перерахував з нових даних
+console.log(fullName.value); // Jane Doe
+fullName.value = "John Smith"; // виклик set()
+console.log(person.firstName, person.lastName); // John Smith
+console.log(fullName.value); // John Smith — get() перерахував з нових даних
 
 total.value = 500; // спроба запису в computed без set (розділ 2)
 // [Vue warn] Write operation failed: computed value is readonly
@@ -243,11 +243,11 @@ console.log(computedRenders, methodRenders); // 2 2 — перезапустив
 ```js
 const dirty = reactive({ value: 1, log: [] });
 const dirtyComputed = computed(() => {
-  dirty.log.push("обчислено"); // побічний ефект: мутація іншої властивості
+  dirty.log.push("computed"); // побічний ефект: мутація іншої властивості
   return dirty.value * 2;
 });
 console.log(dirtyComputed.value); // 2
-console.log(dirty.log); // [ 'обчислено' ] — непередбачувана мутація стану
+console.log(dirty.log); // [ 'computed' ] — непередбачувана мутація стану
 ```
 
 ### 9.2. `computed` не може бути асинхронним
@@ -305,13 +305,13 @@ class PlainCart {
   price = 100;
   qty = 2;
   get total() {
-    console.log("  [плейн-геттер] обчислення");
+    console.log("  [plain getter] computing");
     return this.price * this.qty;
   }
 }
 const plain = new PlainCart();
-plain.total; //   [плейн-геттер] обчислення
-plain.total; //   [плейн-геттер] обчислення — щоразу заново, кешу немає
+plain.total; //   [plain getter] computing
+plain.total; //   [plain getter] computing — щоразу заново, кешу немає
 ```
 
 `computed()` у Vue — це getter **плюс** автоматичне кешування та реактивне відстеження залежностей. Звичайний getter — лише синтаксис виклику без дужок.
