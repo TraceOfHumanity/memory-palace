@@ -10,7 +10,7 @@ Constructor — найбазовіший спосіб створення об'є
 
 ```js
 function Person(name, age) {
-  // `this` — щойно створений порожній об'єкт (детально — common/this.js)
+  // `this` — щойно створений порожній об'єкт (детально — common/this.md)
   this.name = name;
   this.age = age;
 }
@@ -28,7 +28,7 @@ console.log(olya.greet === ivan.greet); // true — один метод у па�
 console.log(olya instanceof Person); // true
 console.log(olya.constructor === Person); // true
 console.log(Object.getPrototypeOf(olya) === Person.prototype); // true
-// (прототипний ланцюжок — common/prototypal-inheritance.js)
+// (прототипний ланцюжок — common/prototypal-inheritance.md)
 ```
 
 Конвенція: конструктори називають з великої літери — це сигнал «викликай з `new`».
@@ -156,7 +156,7 @@ console.log(w1.hello === w2.hello); // false — дублювання в пам'
 console.log(w1.hi === w2.hi); // true
 ```
 
-Виняток: arrow-функція як поле зберігає `this` (колбеки), ціною пам'яті. Детально про `this`-пастки — `common/this.js`.
+Виняток: arrow-функція як поле зберігає `this` (колбеки), ціною пам'яті. Детально про `this`-пастки — `common/this.md`.
 
 ## 8. Наслідування: extends і super()
 
@@ -322,7 +322,7 @@ console.log(Reflect.construct(Person, ["Olya", 20]).greet()); // Hello, I'm Olya
 // вбудовані конструктори працюють за тим самим принципом:
 //   new Map(), new Set(), new Date(), new Error(), new Array(3)
 // але обгортки примітивів new String("a"), new Number(1), new Boolean(false)
-// створюють об'єкти і майже завжди є помилкою (common/type-coercion.js):
+// створюють об'єкти і майже завжди є помилкою (common/type-coercion.md):
 console.log(typeof new String("a")); // object
 console.log(typeof String(1)); // string — без new це просто перетворення
 console.log(new Boolean(false) ? "truthy" : "falsy"); // truthy — об'єкт завжди truthy

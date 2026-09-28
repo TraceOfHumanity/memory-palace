@@ -114,7 +114,7 @@ const person: Person = { name: "Iryna", age: 30 }; // обидва поля об
 
 ## 6. Найчастіше застосування intersection: «додавання» полів
 
-Intersection зручний для комбінування «базових» типів у більш специфічні без повторного опису спільних полів (аналог міксинів з `common/prototypal-inheritance.js`, але на рівні системи типів):
+Intersection зручний для комбінування «базових» типів у більш специфічні без повторного опису спільних полів (аналог міксинів з `common/prototypal-inheritance.md`, але на рівні системи типів):
 
 ```ts
 type Timestamped = { createdAt: Date };

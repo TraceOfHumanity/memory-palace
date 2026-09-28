@@ -131,7 +131,7 @@ function formatUser(user, formatter) {
 console.log(formatUser({ name: "Olya" }, (u) => u.name.toUpperCase())); // OLYA
 ```
 
-Функціональний DI: замикання (фабрика приймає залежності). У JS часто не потрібні класи — достатньо функції вищого порядку (closures — `common/closures.js`; фабрики — [factory.md](factory.md)):
+Функціональний DI: замикання (фабрика приймає залежності). У JS часто не потрібні класи — достатньо функції вищого порядку (closures — `common/closures.md`; фабрики — [factory.md](factory.md)):
 
 ```js
 const makeGetUserName = (db) => (id) => db.find(id).name;

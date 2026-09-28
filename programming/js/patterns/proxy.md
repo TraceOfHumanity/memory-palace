@@ -154,7 +154,7 @@ calc.add(2, 3); //   → calc.add(2, 3)   ← 5
 calc.mul(4, 5); //   → calc.mul(4, 5)   ← 20
 ```
 
-`value.apply(obj, args)` — важливо: інакше `this` усередині методів вказував би на проксі, а не на цільовий об'єкт (пастки `this` — `common/this.js`). Для приватних полів (`#`) це критично (розділ 8).
+`value.apply(obj, args)` — важливо: інакше `this` усередині методів вказував би на проксі, а не на цільовий об'єкт (пастки `this` — `common/this.md`). Для приватних полів (`#`) це критично (розділ 8).
 
 ## 5. Універсальний Caching Proxy для функцій (пастка apply)
 
@@ -183,7 +183,7 @@ console.log(fastSquare(9), fastSquare(9), fastSquare(9)); // 81 81 81
 console.log("real calls:", calls); // 1
 ```
 
-Ключ `JSON.stringify(args)` — спрощення: не працює для функцій, циклічних об'єктів; `Map`/`Set` і символи губляться (`common/type-coercion.js`).
+Ключ `JSON.stringify(args)` — спрощення: не працює для функцій, циклічних об'єктів; `Map`/`Set` і символи губляться (`common/type-coercion.md`).
 
 ## 6. Validation Proxy: контроль запису
 

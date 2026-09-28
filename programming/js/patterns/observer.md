@@ -177,7 +177,7 @@ try {
 
 Рішення: `try`/`catch` навколо кожного виклику всередині `notify`.
 
-Порядок і синхронність: `notify` синхронний: підписники виконуються один за одним і блокують видавця. Важкі реакції варто виносити в чергу/асинхронність (`common/asynchronous/asynchronous.js`). Не покладайтесь на порядок підписників.
+Порядок і синхронність: `notify` синхронний: підписники виконуються один за одним і блокують видавця. Важкі реакції варто виносити в чергу/асинхронність (`common/asynchronous/asynchronous.md`). Не покладайтесь на порядок підписників.
 
 Приховані зв'язки: надмірні події роблять потік виконання нечитабельним («хто саме відреагує на це?»). Для простої залежності прямий виклик кращий.
 
@@ -211,7 +211,7 @@ bus.emit("order.paid", 1); // тема без підписників — ніч�
 
 ## 8. Async-варіанти та зв'язок з іншими темами
 
-- `EventTarget`/`addEventListener` у браузері (і в Node) — стандартний Observer; `AbortController` зупиняє підписку (`common/asynchronous/asynchronous.js`).
+- `EventTarget`/`addEventListener` у браузері (і в Node) — стандартний Observer; `AbortController` зупиняє підписку (`common/asynchronous/asynchronous.md`).
 - RxJS `Observable` — Observer + потоки даних: `map`/`filter`/`debounce` над подіями, ліниві, з відписками.
 - Async iterators: `events.on(emitter, "x")` дозволяє `for await (const [v] of on(emitter, "x"))`.
 - Proxy (`common/data-structures/Proxy/Proxy.md`) дозволяє «спостерігати» за змінами властивостей — реактивність Vue 3 побудована саме так:

@@ -30,7 +30,7 @@ console.log(typeof (() => 1), typeof [], typeof null, typeof new Date()); // fun
 
 ## 2. Truthiness narrowing — звуження через if (value)
 
-Перевірка «значення truthy» (детально truthy/falsy — `common/type-coercion.js`) відкидає `null`/`undefined`/`""`/`0`/`NaN`/`false` з можливих варіантів усередині гілки:
+Перевірка «значення truthy» (детально truthy/falsy — `common/type-coercion.md`) відкидає `null`/`undefined`/`""`/`0`/`NaN`/`false` з можливих варіантів усередині гілки:
 
 ```ts
 function printName(name: string | null | undefined) {
@@ -81,7 +81,7 @@ function compareValues(a: string | number, b: string | boolean) {
 compareValues("text", "text"); // TEXT TEXT
 ```
 
-`== null` / `!= null` — ідіоматичний спосіб одразу відкинути і `null`, і `undefined` (чому саме `==` тут доречний — `common/type-coercion.js`):
+`== null` / `!= null` — ідіоматичний спосіб одразу відкинути і `null`, і `undefined` (чому саме `==` тут доречний — `common/type-coercion.md`):
 
 ```ts
 function greetUser(name: string | null | undefined) {

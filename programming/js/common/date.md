@@ -238,7 +238,7 @@ const dates = [new Date("2024-03-01Z"), new Date("2023-01-01Z"), new Date("2024-
 dates.sort((x, y) => x - y);
 console.log(dates.map((x) => x.toISOString().slice(0, 10))); // ['2023-01-01', '2024-01-01', '2024-03-01']
 
-// 7.5. Приведення типів (common/type-coercion.js):
+// 7.5. Приведення типів (common/type-coercion.md):
 //   hint "number" (арифметика, порівняння) → число (мс);
 //   hint "string" / "default" (+ з рядком, шаблонні рядки) → рядок.
 // Date — один з двох типів, де hint "default" трактується як "string":

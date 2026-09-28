@@ -101,7 +101,7 @@ findAll(@Query() query: { page?: string; limit?: string }) {
   const page = Number(query.page ?? 1);   // явна конвертація в число —
   const limit = Number(query.limit ?? 20); // query завжди приходить як рядки
                                                // (детально проблема типів з
-                                               // зовнішніх джерел — common/type-coercion.js)
+                                               // зовнішніх джерел — common/type-coercion.md)
   return { page, limit };
 }
 ```

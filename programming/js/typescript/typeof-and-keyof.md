@@ -15,7 +15,7 @@ function assertType<_ extends true>() {}
 
 ## 1. typeof у JavaScript (простір значень) — що він робить у рантаймі
 
-Це той самий `typeof`, що є в чистому JS (детально — `common/type-coercion.js`) — рантайм-оператор, що повертає рядок із назвою типу значення:
+Це той самий `typeof`, що є в чистому JS (детально — `common/type-coercion.md`) — рантайм-оператор, що повертає рядок із назвою типу значення:
 
 ```ts
 const runtimeValue = 42;

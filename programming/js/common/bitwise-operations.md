@@ -42,7 +42,7 @@ console.log("7" | 0); // 7 — рядок спершу приводиться д
 console.log(NaN | 0); // 0
 console.log(undefined | 0); // 0
 console.log(Infinity | 0); // 0
-// (правила приведення — common/type-coercion.js)
+// (правила приведення — common/type-coercion.md)
 ```
 
 ## 3. Запис чисел у двійковій системі

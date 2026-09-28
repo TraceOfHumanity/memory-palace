@@ -145,7 +145,7 @@ console.log(new WindowsDialog().render());
 console.log(new WebDialog().render());
 // Dialog.render() не залежить від конкретної кнопки — його не треба
 // змінювати, коли з'являється новий вид діалогу (детально
-// прототипне наслідування й extends — common/prototypal-inheritance.js)
+// прототипне наслідування й extends — common/prototypal-inheritance.md)
 ```
 
 Різниця з Simple Factory: там вибір робить функція за параметром, тут вибір робить підклас через перевизначення методу.
@@ -199,7 +199,7 @@ console.log(renderForm(darkThemeFactory)); // dark button + dark checkbox
 
 ## 7. Фабрична функція як заміна класу: приватний стан через замикання
 
-У JS «фабрика» часто — просто функція, що повертає об'єкт. Вона не потребує `new`, не має проблем із втратою `this` (`common/this.js`) і може ховати стан у замиканні (`common/closures.js`):
+У JS «фабрика» часто — просто функція, що повертає об'єкт. Вона не потребує `new`, не має проблем із втратою `this` (`common/this.md`) і може ховати стан у замиканні (`common/closures.md`):
 
 ```js
 function createCounter(start = 0) {
@@ -219,7 +219,7 @@ console.log(c1.current(), c2.current()); // 2 10 — незалежні екзе
 console.log(c1.count); // undefined — стан справді прихований
 ```
 
-Компроміс проти `class`: кожен об'єкт має власні копії методів (у `class` вони спільні на прототипі — економія пам'яті, детально `common/prototypal-inheritance.js`, розділ 10), і немає `instanceof`.
+Компроміс проти `class`: кожен об'єкт має власні копії методів (у `class` вони спільні на прототипі — економія пам'яті, детально `common/prototypal-inheritance.md`, розділ 10), і немає `instanceof`.
 
 ## 8. Фабрика повертає щось, чого конструктор не може
 

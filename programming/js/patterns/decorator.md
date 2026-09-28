@@ -152,7 +152,7 @@ console.log(storage.read("token")); //   [log] read token → abc123
 
 ## 6. Функції-декоратори (higher-order functions)
 
-У JS функції — значення, тому найприродніший декоратор — функція, яка приймає функцію й повертає нову з додатковою поведінкою (замикання — `common/closures.js`).
+У JS функції — значення, тому найприродніший декоратор — функція, яка приймає функцію й повертає нову з додатковою поведінкою (замикання — `common/closures.md`).
 
 ```js
 const withLogging = (fn) => (...args) => {
@@ -224,7 +224,7 @@ console.log(withLogging(add).name); // "" — втрачено (анонімна
 console.log(preserve(withLogging(add), add).name); // add
 ```
 
-Пастка: `this`. Стрілка-обгортка не зберігає `this` виклику. Для методів використовуйте `function` + `fn.apply(this, args)` (`common/this.js`):
+Пастка: `this`. Стрілка-обгортка не зберігає `this` виклику. Для методів використовуйте `function` + `fn.apply(this, args)` (`common/this.md`):
 
 ```js
 function withLoggingMethod(fn) {
@@ -252,7 +252,7 @@ const withAsyncTiming = (fn) => async (...args) => {
   return result;
 };
 withAsyncTiming(async (x) => x * 2)(21).then((v) => console.log(v)); // async completed → 42
-// (детально async — common/asynchronous/asynchronous.js)
+// (детально async — common/asynchronous/asynchronous.md)
 ```
 
 ## 7. Синтаксис @decorator (TC39 / TypeScript)
