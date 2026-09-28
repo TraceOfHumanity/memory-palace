@@ -132,7 +132,7 @@ create(@Body() dto: CreateUserDto) {
   // без ValidationPipe сюди може прийти { name: 123, email: null } —
   // TypeScript тут безсилий, бо перевірка типів давно "зникла"
   // на етапі компіляції (детально різниця compile-time/runtime —
-  // typescript/basic-types.ts, вступ)
+  // typescript/basic-types.md, вступ)
 }
 ```
 
