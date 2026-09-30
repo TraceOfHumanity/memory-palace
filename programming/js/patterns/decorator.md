@@ -148,7 +148,7 @@ storage.write("token", "abc123"); //   [log] write token
 console.log(storage.read("token")); //   [log] read token → abc123
 ```
 
-Дані у `PlainStorage` зберігаються зашифрованими; лог і шифрування незалежні й складаються довільно (як `node:zlib` + crypto streams: `node/core-concepts/streams/05-duplex-and-transform.js`).
+Дані у `PlainStorage` зберігаються зашифрованими; лог і шифрування незалежні й складаються довільно (як `node:zlib` + crypto streams: `node/core-concepts/streams/05-duplex-and-transform.md`).
 
 ## 6. Функції-декоратори (higher-order functions)
 
