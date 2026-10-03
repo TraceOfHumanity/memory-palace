@@ -16,8 +16,21 @@ He has a car.
 4. **Розклади та події за розкладом**
 The train leaves at 8 tomorrow.
 
-### Структура стверджувальних речень
+### Структура речень
 
+| Тип                   | Структура                    | Приклад            |
+| --------------------- | ---------------------------- | ------------------ |
+| Ствердження           | Subject + V1                 | I work.            |
+| Ствердження he/she/it | Subject + V-s                | She works.         |
+| Заперечення           | Subject + don't/doesn't + V1 | I don't work.      |
+| Питання               | Do/Does + Subject + V1?      | Do you work?       |
+| Wh-питання            | Wh + do/does + Subject + V1? | Where do you work? |
+| Питання до підмета    | Who + V-s?                   | Who works here?    |
+
+### Положення прислівників частоти 
+
+Зі звичайним дієсловом: Subject + frequency adverb + main verb. I usually work from home.
+Але з to be: Subject + to be + frequency adverb. I am usually happy.
 
 ### Форми дієслова 
 Для I, you, we, they використовується базова форма дієслова (V1), тобто форма не змінюється:
@@ -35,7 +48,7 @@ work → works
 run → runs
 play → plays
 
-2. Закінчення -s, -x, -z, -ch, -sh, -o → +es
+2. Після -s, -x, -z, -ch, -sh, -o додається -es
 
 pass → passes
 fix → fixes
@@ -73,3 +86,15 @@ do → does
 `pass → passes`, `wash → washes`, `watch → watches`, `change → changes`
 
 **Правило визначається останнім звуком дієслова, а не останньою буквою.**
+
+### Who/What як підмет
+
+Who works here? Who — підмет. Тому do/does немає.
+Who does she work with? Тут she — підмет, а who — об'єкт. Тому з'являється does.
+>**Якщо who/what є підметом → do/does не потрібен.**
+
+### Never і подвійне заперечення
+
+I never smoke. ✅
+❌ I don't never smoke.
+never вже має негативне значення.
