@@ -35,20 +35,59 @@
 
 // ---
 
-const fs = require("node:fs/promises");
+// const fs = require("node:fs/promises");
 
-// memory: 200mb
-// cpu: 100% (100% of 1 core)
-// time: 180ms
+// // memory: 200mb
+// // cpu: 100% (100% of 1 core)
+// // time: 180ms
+// (async () => {
+//   console.time("write");
+//   const fileHandle = await fs.open("test.txt", "w");
+//   const writeStream = fileHandle.createWriteStream();
+
+//   for (let i = 0; i < 1000000; i++) {
+//     const buffer = Buffer.from(` ${i} `, "utf-8");
+//     writeStream.write(buffer);
+//   }
+
+//   console.timeEnd("write");
+// })();
+
+// ---
+
+const fs = require("node:fs/promises");
+const { Buffer } = require("buffer");
+
 (async () => {
   console.time("write");
   const fileHandle = await fs.open("test.txt", "w");
   const writeStream = fileHandle.createWriteStream();
 
-  for (let i = 0; i < 1000000; i++) {
-    const buffer = Buffer.from(` ${i} `, "utf-8");
-    writeStream.write(buffer);
-  }
+  console.log(writeStream.writableHighWaterMark);
+  console.log(writeStream.writableLength);
 
-  console.timeEnd("write");
+  //   const buff = Buffer.alloc(writeStream.writableHighWaterMark, 10);
+  //   console.log(buff.length);
+  //   console.log(process.memoryUsage());
+
+  let i = 0;
+
+  const writeMany = () => {
+    while (i < 1000000) {
+      const buffer = Buffer.from(` ${i} `, "utf-8");
+      i++;
+      if (i === 1000000) {
+        return writeStream.end();
+      }
+      if (!writeStream.write(buffer)) break;
+    }
+  };
+
+  writeMany();
+
+  writeStream.on("drain", () => {writeMany()});
+  writeStream.on("finish", async () => {
+    console.timeEnd("write");
+    await fileHandle.close();
+  });
 })();
