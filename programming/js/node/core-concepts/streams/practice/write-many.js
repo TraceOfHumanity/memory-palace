@@ -77,7 +77,7 @@ const { Buffer } = require("buffer");
       const buffer = Buffer.from(` ${i} `, "utf-8");
       i++;
       if (i === 1000000) {
-        return writeStream.end();
+        return writeStream.end(buffer);
       }
       if (!writeStream.write(buffer)) break;
     }
