@@ -27,10 +27,42 @@ The train leaves at 8 tomorrow.
 | Wh-питання            | Wh + do/does + Subject + V1? | Where do you work? |
 | Питання до підмета    | Who + V-s?                   | Who works here?    |
 
+> **Після do/does/don't/doesn't основне дієслово завжди у базовій формі (V1), без -s.** Закінчення -s «переїжджає» на допоміжне does.
+
+She works. → She doesn't work. ✅
+❌ She doesn't works.
+❌ Does she works?
+
+**Короткі відповіді** — повторюємо do/does, основне дієслово не повторюємо:
+
+Do you work? — Yes, I do. / No, I don't.
+Does she work? — Yes, she does. / No, she doesn't.
+
+### Прислівники частоти
+
+| Прислівник | Приблизно |
+| ---------- | --------- |
+| always     | 100%      |
+| usually    | 90%       |
+| often      | 70%       |
+| sometimes  | 50%       |
+| rarely     | 10%       |
+| never      | 0%        |
+
 ### Положення прислівників частоти 
 
 Зі звичайним дієсловом: Subject + frequency adverb + main verb. I usually work from home.
 Але з to be: Subject + to be + frequency adverb. I am usually happy.
+
+`sometimes`, `usually`, `often` можуть стояти також на початку або в кінці речення: Sometimes I work from home. / I work from home sometimes.
+`always` і `never` — тільки перед дієсловом (після to be).
+
+### Слова-маркери часу
+
+**every** day / week / summer
+**on** Mondays, **at** weekends, **in** the morning
+**once** a week, **twice** a month, **three times** a year
++ прислівники частоти (always, usually, often…)
 
 ### Форми дієслова 
 Для I, you, we, they використовується базова форма дієслова (V1), тобто форма не змінюється:
@@ -98,3 +130,43 @@ Who does she work with? Тут she — підмет, а who — об'єкт. Т�
 I never smoke. ✅
 ❌ I don't never smoke.
 never вже має негативне значення.
+
+### Дієслово to be
+
+З to be **не використовуємо do/does** — воно саме працює як допоміжне.
+
+| Тип         | I              | he / she / it    | you / we / they    |
+| ----------- | -------------- | ---------------- | ------------------ |
+| Ствердження | I am tired.    | She is tired.    | They are tired.    |
+| Заперечення | I am not tired. | She isn't tired. | They aren't tired. |
+| Питання     | Am I tired?    | Is she tired?    | Are they tired?    |
+
+Скорочення: I'm, she's, they're. Для I у запереченні тільки I'm not (форми «amn't» немає).
+
+❌ Do you are tired? → ✅ Are you tired?
+❌ She doesn't be tired. → ✅ She isn't tired.
+
+### Дієслово have
+
+На відміну від to be, have — звичайне дієслово:
+
+I have a car. / She **has** a car.
+I don't have a car. / She **doesn't have** a car.
+Do you have a car? / Does she have a car?
+
+`has` є лише у ствердженні з he/she/it. Після doesn't / does знову `have`.
+
+### Типові помилки
+
+| ❌ Неправильно        | ✅ Правильно         | Чому                              |
+| -------------------- | ------------------- | --------------------------------- |
+| She work every day.  | She works every day. | he/she/it → +s                    |
+| Does she works here? | Does she work here?  | після does — V1 без -s            |
+| He don't like coffee.| He doesn't like coffee. | he/she/it → doesn't            |
+| I don't never smoke. | I never smoke.       | never вже заперечення            |
+| Do you are tired?    | Are you tired?       | to be — без do/does               |
+
+### Present Simple vs Present Continuous
+
+**Present Simple** — що відбувається **зазвичай**, регулярно, взагалі: I work. She plays tennis on Sundays.
+**Present Continuous** — що відбувається **прямо зараз**: I am working. She is playing tennis now.
