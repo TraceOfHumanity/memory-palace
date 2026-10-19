@@ -263,6 +263,149 @@ const Direction = Object.freeze({
 | Придатність для «службових» полів | ризик колізії з даними | безпечно, не конфліктує |
 | Кастомізація поведінки двигуна | неможлива | так (well-known symbols) |
 
+## 11. Symbol і серіалізація: JSON, structuredClone, сортування
+
+Символи **не серіалізуються** і «випадають» у багатьох місцях (перевірено запуском):
+
+```js
+JSON.stringify({ a: Symbol("x"), [Symbol("k")]: 1, b: 2 });  // '{"b":2}'  — і значення, і ключі-символи пропущено
+JSON.stringify([Symbol("x")]);                               // '[null]'   — у масиві стає null
+JSON.stringify(Symbol("x"));                                 // undefined
+
+structuredClone({ a: Symbol("x") });                         // DataCloneError
+[Symbol("a"), Symbol("b")].sort();                           // TypeError (сортування приводить до рядка)
+```
+
+Наслідок: **не клади символи в дані, які мають їхати по мережі/в сховище/в `postMessage`**. Для enum-подібних значень, які треба серіалізувати, використовуй рядки чи числа; символи — для внутрішньої логіки.
+
+## 12. Обгортка `Object(symbol)` і типи
+
+```js
+const s = Symbol("d");
+typeof s;            // "symbol"
+typeof Object(s);    // "object" — об'єкт-обгортка
+Object(s) == s;      // true
+Object(s) === s;     // false
+```
+
+Як і в `String`/`Number`, обгортки створювати вручну не треба; але рушій тимчасово обгортає символ, коли ти читаєш `sym.description` чи викликаєш `sym.toString()`.
+
+Символи **можна використовувати як ключі `Map`** (і незареєстровані — як ключі `WeakMap`/елементи `WeakSet`, ES2023), порівнюються за ідентичністю.
+
+## 13. Між «світами» (iframe, vm, worker)
+
+- **`Symbol()`** — унікальний у межах свого realm; у іншому iframe — інший.
+- **`Symbol.for("key")`** — реєстр **спільний між realm'ами**: `Symbol.for("shared")` в iframe і в основному вікні — **той самий** символ (перевірено через `vm`). Саме тому реєстровані символи використовують для **протоколів між бібліотеками**, що можуть завантажуватись у різних контекстах (наприклад, `Symbol.for("nodejs.util.inspect.custom")`).
+- **Well-known символи** (`Symbol.iterator` тощо) — **однакові в усіх** realm'ах (перевірено), інакше `for…of` не працював би між iframe.
+
+## 14. Well-known symbols: повний огляд із прикладами
+
+Усі нижче перевірені запуском.
+
+**`Symbol.asyncIterator`** — об'єкт працює з `for await…of`:
+
+```js
+const stream = {
+  async *[Symbol.asyncIterator]() { yield 1; yield 2; },
+};
+for await (const x of stream) console.log(x);   // 1, 2
+```
+
+**`Symbol.isConcatSpreadable`** — чи розгортати об'єкт у `concat`:
+
+```js
+const like = { length: 2, 0: "a", 1: "b", [Symbol.isConcatSpreadable]: true };
+[1].concat(like);        // [1, "a", "b"] — array-like розгорнуто
+
+const arr = [9, 8];
+arr[Symbol.isConcatSpreadable] = false;
+[1].concat(arr).length;  // 2 — масив НЕ розгорнуто, лежить як один елемент
+```
+
+**`Symbol.species`** — який конструктор використовують похідні методи (`map`, `filter`, `slice`) підкласів вбудованих типів:
+
+```js
+class MyArr extends Array { static get [Symbol.species]() { return Array; } }
+const a = new MyArr(1, 2, 3);
+a.map((x) => x) instanceof MyArr;   // false — map повернув звичайний Array
+```
+
+**`Symbol.match` / `Symbol.replace` / `Symbol.split` / `Symbol.search`** — «протокол регулярного виразу»: рядкові методи викликають ці символи на аргументі, тому власний об'єкт може поводитися як regex:
+
+```js
+const matcher = { [Symbol.match](str) { return ["custom:" + str]; } };
+"abc".match(matcher);   // ["custom:abc"]
+
+const splitter = { [Symbol.split](str) { return str.toUpperCase().split(""); } };
+"ab".split(splitter);   // ["A", "B"]
+```
+
+**`Symbol.toPrimitive`** — рушій передає **hint**. Перевірено:
+
+| Операція | hint |
+|---|---|
+| `+obj`, `Number(obj)`, `obj * 2` | `"number"` |
+| `` `${obj}` ``, `String(obj)` | `"string"` |
+| `obj + ""`, `obj == 1` | `"default"` |
+
+**`Symbol.toStringTag`** впливає на `Object.prototype.toString`; саме тому `String(Promise.resolve())` дає `"[object Promise]"`.
+
+**`Symbol.hasInstance`** — кастомізація `instanceof` (див. 7.4). **`Symbol.unscopables`** — які імена пропускає `with`.
+
+**`Symbol.dispose` / `Symbol.asyncDispose`** — частина «явного керування ресурсами» (`using` / `await using`): об'єкт із методом `[Symbol.dispose]()` автоматично звільняє ресурс при виході зі scope. Доступні в сучасних рушіях (у Node 24 — `typeof Symbol.dispose === "symbol"`, перевірено); у старих середовищах їх немає.
+
+## 15. Символи як ключі в класах: напівприватність і `#private`
+
+```js
+const _id = Symbol("id");
+class User { [_id] = 5; }
+const u = new User();
+Object.keys(u);                  // [] — не видно в keys/JSON
+u[_id];                          // 5  — доступно, якщо маєш символ
+Object.getOwnPropertySymbols(u); // [Symbol(id)] — знайти можна!
+```
+
+Символи дають **приховування від випадкового доступу**, але **не безпеку**: `getOwnPropertySymbols` і `Reflect.ownKeys` їх знаходять. Для справжньої приватності — `#field` (недоступне навіть через рефлексію). Символи — для **«службових» полів, які не повинні колідувати** і не повинні потрапляти в `Object.keys`/JSON.
+
+## 16. Патерни
+
+**Протоколи між бібліотеками.** Бібліотека A визначає `const FORMAT = Symbol.for("my-lib.format")` — об'єкти будь-яких інших бібліотек можуть реалізувати `obj[FORMAT]()`, не домовляючись про імена методів і без ризику колізій.
+
+**Унікальні сентинели (маркери):** `const NOT_FOUND = Symbol("not found")` — значення, яке неможливо випадково отримати з даних (на відміну від `null`/`-1`).
+
+**Метадані без забруднення об'єкта:** `obj[META] = {…}` — не потрапляє в JSON/`keys`.
+
+**Enum:**
+
+```js
+const Dir = Object.freeze({ UP: Symbol("up"), DOWN: Symbol("down") });
+Dir.UP.description;  // "up"
+String(Dir.UP);      // "Symbol(up)"
+```
+
+Мінус символів-enum: їх не можна серіалізувати (розділ 11); для enum, що їде по мережі, — рядки.
+
+## 17. Типові помилки
+
+1. `new Symbol()` — `TypeError`.
+2. Покладатися на `description` як ідентифікатор (він не впливає на рівність).
+3. `${sym}` / `"" + sym` — `TypeError` (потрібне `String(sym)`).
+4. Очікувати, що символи потраплять у `JSON.stringify`/`structuredClone`/`Object.keys`.
+5. Вважати символи **приватними** (їх знаходить `getOwnPropertySymbols`).
+6. Використовувати `Symbol.for` для локальних ключів — можливі колізії з чужим кодом (реєстр глобальний).
+7. Сортувати масив символів без компаратора.
+8. Створювати новий `Symbol("x")` у кожному виклику й дивуватись, що ключ «не збігається».
+9. Плутати зареєстровані й незареєстровані символи (`Symbol.keyFor`, ключі `WeakMap`).
+
+## 18. Алгоритм: коли брати Symbol
+
+1. Потрібен **унікальний** ключ/мітка → `Symbol("опис")`, створений **один раз** і збережений у константі.
+2. Спільний між модулями/realm'ами символ → `Symbol.for("namespace.name")`.
+3. Налаштувати вбудовану поведінку → відповідний **well-known** символ (`iterator`, `toPrimitive`, `toStringTag`, `hasInstance`…).
+4. Дані мають їхати по мережі/в JSON → **не** символи.
+5. Справжня приватність → `#private`, а не символи.
+6. Пишеш бібліотеку з розширюваним протоколом → `Symbol.for` + документований ключ.
+
 ## Підсумок
 
 - `Symbol` — примітивний тип, кожне значення якого гарантовано унікальне, навіть при однаковому description.
@@ -273,3 +416,7 @@ const Direction = Object.freeze({
 - Well-known symbols (`Symbol.iterator`, `Symbol.toPrimitive`, `Symbol.toStringTag`, `Symbol.hasInstance`...) кастомізують вбудовану поведінку об'єкта — ітерованість, приведення типів, `instanceof`.
 - Не приводиться неявно до рядка (конкатенація кине `TypeError`) — потрібне явне `String(symbol)` чи `symbol.toString()`.
 - Типове застосування: унікальні «мітки»/enum'и, службові/приховані поля без ризику колізії, кастомізація поведінки об'єктів.
+- Символи випадають із `JSON.stringify` (значення й ключі), не клонуються `structuredClone`, не сортуються без компаратора.
+- `Symbol.for` — реєстр, спільний між realm'ами; `Symbol()` — унікальний у своєму realm; well-known — однакові скрізь.
+- Окрім `iterator`/`toPrimitive`/`toStringTag`/`hasInstance` існують `asyncIterator`, `isConcatSpreadable`, `species`, `match`/`replace`/`split`/`search`, `unscopables`, `dispose`/`asyncDispose`.
+- Символи — напівприватні (знаходяться через `getOwnPropertySymbols`); справжня приватність — `#field`.

@@ -386,6 +386,204 @@ const dynamicProxy = new Proxy(dynamicTarget, {
 dynamicProxy.brandNewProp = "I just appeared"; // Proxy це "бачить", defineProperty — ні
 ```
 
+## 17. Як це працює під капотом: внутрішні методи об'єкта
+
+Кожен об'єкт у JavaScript має набір **внутрішніх методів** (їх у специфікації позначають подвійними дужками): `[[Get]]`, `[[Set]]`, `[[Has]]`, `[[Delete]]`, `[[OwnPropertyKeys]]`, `[[DefineOwnProperty]]`, `[[GetPrototypeOf]]`, `[[Call]]`, `[[Construct]]` та інші. Коли ти пишеш `obj.x`, рушій викликає `obj.[[Get]]("x")`.
+
+`Proxy` — це об'єкт, у якого ці внутрішні методи **замінено**: замість стандартної поведінки він шукає в `handler` функцію з відповідним ім'ям (trap) і викликає її. Якщо пастки немає — делегує операцію прямо в `target`.
+
+| Що ти робиш | Внутрішній метод | Trap у handler |
+|---|---|---|
+| `p.x`, `p["x"]`, деструктуризація | `[[Get]]` | `get` |
+| `p.x = 1` | `[[Set]]` | `set` |
+| `"x" in p` | `[[HasProperty]]` | `has` |
+| `delete p.x` | `[[Delete]]` | `deleteProperty` |
+| `Object.keys(p)`, `for…in`, `JSON.stringify` | `[[OwnPropertyKeys]]` | `ownKeys` (+ `getOwnPropertyDescriptor`) |
+| `Object.defineProperty(p, …)` | `[[DefineOwnProperty]]` | `defineProperty` |
+| `Object.getOwnPropertyDescriptor(p, "x")` | `[[GetOwnProperty]]` | `getOwnPropertyDescriptor` |
+| `Object.getPrototypeOf(p)`, `instanceof` | `[[GetPrototypeOf]]` | `getPrototypeOf` |
+| `Object.setPrototypeOf(p, …)` | `[[SetPrototypeOf]]` | `setPrototypeOf` |
+| `Object.isExtensible(p)` | `[[IsExtensible]]` | `isExtensible` |
+| `Object.preventExtensions(p)` | `[[PreventExtensions]]` | `preventExtensions` |
+| `f(…)` (target — функція) | `[[Call]]` | `apply` |
+| `new F(…)` (target — конструктор) | `[[Construct]]` | `construct` |
+
+Це **всі 13 пасток**. Корисна модель: Proxy — це «диспетчер», який стоїть між кодом і об'єктом на кожній із 13 операцій.
+
+> Зверни увагу: `proxy.method()` — це **дві** операції: спершу `get` (дістати функцію `method`), потім `apply`/виклик із `this = proxy`. Саме тому `get`-пастка бачить звернення до методів, а `this` усередині методу — це проксі, а не `target`.
+
+## 18. `set` повинен повертати `true`
+
+Пастка `set` **обов'язково** повертає булеве значення. Якщо вона повертає `false` (або нічого, тобто `undefined`) — у **strict mode** (модулі, класи, `"use strict"`) запис кидає `TypeError`; у «sloppy» режимі помилка мовчки ігнорується. Типова помилка — забути `return true`:
+
+```js
+const p = new Proxy({}, {
+  set(target, prop, value) {
+    target[prop] = value;
+    // забули return true
+  },
+});
+"use strict";
+p.x = 1; // TypeError: 'set' on proxy: trap returned falsish for property 'x'
+```
+
+Правильно: `return Reflect.set(target, prop, value, receiver)` або явний `return true`. Для **відмови** у записі: `return false` (у strict mode це дасть `TypeError`) або кинути власну помилку.
+
+## 19. `Proxy.revocable` — проксі, який можна «вимкнути»
+
+```js
+const { proxy, revoke } = Proxy.revocable({ a: 1 }, {});
+console.log(proxy.a); // 1
+revoke();             // відкликали доступ
+proxy.a;              // TypeError: Cannot perform 'get' on a proxy that has been revoked
+```
+
+Після `revoke()` **будь-яка** операція над проксі кидає `TypeError`. Корисно, коли ти віддаєш стороннему коду тимчасовий доступ до об'єкта (сесія, токен, «одноразова» ручка) і хочеш гарантовано його закрити. Перевірено запуском.
+
+## 20. Підводні камені: приватні поля, вбудовані об'єкти і `this`
+
+Це **найчастіше джерело дивних багів** з Proxy.
+
+**а) Приватні поля `#x` і проксі несумісні.** Приватне поле існує лише в самого екземпляра, не в проксі. Метод, викликаний через проксі, отримує `this = proxy` і не знаходить `#n`:
+
+```js
+class Counter { #n = 0; inc() { return ++this.#n; } }
+const c = new Proxy(new Counter(), {});
+c.inc(); // TypeError: Cannot read private member #n from an object whose class did not declare it
+```
+
+Лікування — у `get` повертати метод, прив'язаний до `target`:
+
+```js
+const c2 = new Proxy(new Counter(), {
+  get(target, prop) {
+    const value = Reflect.get(target, prop, target); // receiver = target
+    return typeof value === "function" ? value.bind(target) : value;
+  },
+});
+c2.inc(); // 1
+```
+
+**б) Вбудовані об'єкти з внутрішніми слотами — `Map`, `Set`, `Date`, `Promise`, типізовані масиви.** Їхні методи вимагають, щоб `this` був справжнім екземпляром, а не проксі:
+
+```js
+const m = new Proxy(new Map(), {});
+m.set("a", 1); // TypeError: Method Map.prototype.set called on incompatible receiver
+```
+
+Те саме лікування: `bind(target)` у `get`.
+
+**в) Масиви.** Проксі над масивом працює, але `push` — це кілька операцій. Перевірено: `proxy.push(10)` викликає `set` двічі: `"0" = 10` і `"length" = 1`. Обробляй обидва випадки (і не вважай, що `set` викликається «один раз на користувацьку дію»).
+
+**г) Символи.** Рушій читає символьні властивості (`Symbol.iterator`, `Symbol.toPrimitive`, `util.inspect.custom` тощо). Якщо твоя `get`-пастка для будь-якого ключа повертає рядок/проксі, цикли, шаблонні рядки й `console.log(proxy)` можуть поводитися дивно. Для символів зазвичай делегуй `Reflect.get`.
+
+**д) `console.log(proxy)`** у Node.js показує вміст `target` без виклику пасток (за замовчуванням); у браузерних DevTools проксі позначається окремо.
+
+## 21. Глибока реактивність: як це влаштовано у Vue 3 (спрощено)
+
+Один `set`-trap — це поверхнева реактивність. Щоб працювала вкладеність (`state.user.name = "B"`), у `get` потрібно **повертати проксі й для вкладених об'єктів**, а щоб не створювати нові проксі при кожному зверненні й зберегти ідентичність — **кешувати** їх у `WeakMap`.
+
+Другий важливий елемент — **відстеження залежностей** (track/trigger): під час виконання «ефекту» кожне **читання** властивості записує «цей ефект залежить від цієї властивості», а кожен **запис** запускає лише ті ефекти, що залежать від зміненої властивості.
+
+```js
+const deps = new WeakMap();   // об'єкт → (ключ → набір ефектів)
+let active = null;            // ефект, що зараз виконується
+const cache = new WeakMap();  // сирий об'єкт → його проксі
+
+function track(target, key) {
+  if (!active) return;
+  let m = deps.get(target);
+  if (!m) deps.set(target, (m = new Map()));
+  let s = m.get(key);
+  if (!s) m.set(key, (s = new Set()));
+  s.add(active);
+}
+function trigger(target, key) {
+  deps.get(target)?.get(key)?.forEach((fn) => fn());
+}
+
+function reactive(obj) {
+  if (cache.has(obj)) return cache.get(obj); // той самий проксі для того самого об'єкта
+  const proxy = new Proxy(obj, {
+    get(target, key, receiver) {
+      track(target, key); // «хтось прочитав» → запам'ятати ефект
+      const value = Reflect.get(target, key, receiver);
+      return typeof value === "object" && value !== null ? reactive(value) : value;
+    },
+    set(target, key, value, receiver) {
+      const old = target[key];
+      const ok = Reflect.set(target, key, value, receiver);
+      if (old !== value) trigger(target, key); // «хтось змінив» → перезапустити ефекти
+      return ok;
+    },
+  });
+  cache.set(obj, proxy);
+  return proxy;
+}
+
+function effect(fn) { active = fn; fn(); active = null; }
+
+const raw = { user: { name: "A" }, count: 0 };
+const state = reactive(raw);
+effect(() => console.log(state.user.name, state.count)); // A 0
+state.count = 1;        // A 1
+state.user.name = "B";  // B 1
+state.count = 1;        // нічого: значення не змінилось
+```
+
+Перевірено запуском: ефект спрацював тричі ("A0", "A1", "B1"), а `reactive(raw) === state` (кеш зберігає ідентичність). Саме так, але з додатковими оптимізаціями, працює `reactive()`/`ref()` у Vue 3 та Proxy-сховища (MobX, Valtio, Immer).
+
+## 22. Ще застосування
+
+**Fluent / динамічний API** — будуємо шлях із ланцюжка звернень:
+
+```js
+const path = (parts = []) =>
+  new Proxy(() => {}, {
+    get: (_, key) => path([...parts, String(key)]), // кожне звернення додає сегмент
+    apply: () => parts.join("."),                   // виклик — повертає шлях
+  });
+path().users.list.all(); // "users.list.all"
+```
+
+Так роблять клієнти RPC/ORM (`db.users.find(…)`), мок-бібліотеки, `Proxy` над `window.location`.
+
+**Захист від друкарських помилок:** `get`-пастка кидає помилку при зверненні до неіснуючої властивості (корисно для конфігів/enum).
+
+**Кешування та ліниві обчислення:** `get` обчислює значення при першому зверненні й зберігає.
+
+**Нормалізація / транскодування:** перетворення snake_case ↔ camelCase «на льоту».
+
+**Відстеження змін для undo/redo** — запис кожної операції `set`/`deleteProperty` у журнал.
+
+## 23. Коли НЕ варто використовувати Proxy
+
+- у «гарячих» циклах з мільйонами звернень — кожна операція проходить через JS-функцію;
+- для об'єктів із приватними полями та вбудованих колекцій — вимагають `bind` і дають крихкий код;
+- коли вистачить звичайних getter/setter, класу чи `Object.freeze` — простіший код легше читати й налагоджувати;
+- коли потрібна підтримка дуже старих середовищ — Proxy **неможливо поліфілити**.
+
+## 24. Типові помилки
+
+1. Забути `return true` у `set` (TypeError у strict mode).
+2. Звертатись до `target[prop]` замість `Reflect.get(target, prop, receiver)` — ламається `receiver` і успадковані геттери.
+3. Викликати методи вбудованих колекцій чи приватні поля через проксі без `bind`.
+4. Рекурсія: у `get`-пастці звернутись до `proxy.prop` (замість `target.prop`) — нескінченна рекурсія й переповнення стека.
+5. Порушити **invariants** (див. розділ 15): наприклад, `ownKeys` повертає не всі ключі для заморожених об'єктів — `TypeError`.
+6. Порівнювати `proxy === target` і дивуватись, що це `false`.
+7. Не кешувати вкладені проксі: щоразу новий проксі → зламана ідентичність (`state.a === state.a` стає `false`).
+8. Забути, що `get` бачить і **символи** та службові ключі (`then`, `toJSON`, `Symbol.toPrimitive`) — наприклад, `await proxy` читає `proxy.then`.
+
+## 25. Алгоритм: як думати про Proxy
+
+1. Чи справді потрібне перехоплення? Може вистачити getter/setter, класу, `Object.freeze`.
+2. Яку саме **операцію** треба перехопити (читання, запис, `in`, `delete`, ключі, виклик, `new`)? Обери одну пастку з таблиці розділу 17.
+3. У тілі пастки: своя логіка, потім **делегуй** через `Reflect.*` з тим самим `receiver`.
+4. `set`, `deleteProperty`, `defineProperty` повертають булеве значення (`true` — успіх).
+5. Вкладені об'єкти? Повертай проксі й кешуй у `WeakMap`.
+6. Перевір приватні поля, `Map`/`Set`, символи, масиви.
+7. Потрібно тимчасовий доступ → `Proxy.revocable`.
+
 ## Підсумок
 
 - `Proxy(target, handler)` — обгортка над об'єктом, що перехоплює базові операції над ним через trap-функції в `handler`.
@@ -396,3 +594,8 @@ dynamicProxy.brandNewProp = "I just appeared"; // Proxy це "бачить", def
 - Потужніший за `Object.defineProperty()`, бо бачить властивості, додані/видалені після створення проксі.
 - Є правила узгодженості (invariants) — деякі пастки не можуть довільно «брехати» про non-configurable властивості.
 - Додає накладні витрати — уникай у критичних до швидкодії ділянках.
+- Усього 13 пасток; кожна відповідає внутрішньому методу об'єкта (`[[Get]]`, `[[Set]]`, `[[Call]]` …).
+- `set` має повертати `true`, інакше у strict mode — `TypeError`.
+- `Proxy.revocable` дає проксі, який можна вимкнути.
+- Приватні поля та `Map`/`Set`/`Date` не працюють через проксі без `bind(target)`.
+- Глибока реактивність = проксі для вкладених об'єктів + `WeakMap`-кеш + track/trigger.
