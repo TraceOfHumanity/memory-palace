@@ -453,6 +453,94 @@ console.log(2 ** 31 - 1); // 2147483647 — максимум int32 у секун
 console.log(new Date((2 ** 31 - 1) * 1000).toISOString()); // 2038-01-19T03:14:07.000Z
 ```
 
+## 13. Довідник методів: локальні рядки та сеттери з кількома аргументами
+
+Усі приклади виконано з `TZ=Europe/Kyiv` (зима UTC+2, літо UTC+3).
+
+```js
+const d = new Date(2024, 2, 15, 10, 30, 45, 123); // локальний час
+
+// 13.1. Рядкові представлення (залежать від поясу й локалі — лише для показу)
+console.log(d.toString()); // Fri Mar 15 2024 10:30:45 GMT+0200 (Eastern European Standard Time)
+console.log(d.toDateString()); // Fri Mar 15 2024
+console.log(d.toTimeString()); // 10:30:45 GMT+0200 (Eastern European Standard Time)
+console.log(d.toLocaleString("uk-UA")); // 15.03.2024, 10:30:45
+console.log(d.toLocaleDateString("en-US"), d.toLocaleTimeString("en-US")); // 3/15/2024 10:30:45 AM
+console.log(d.toUTCString()); // Fri, 15 Mar 2024 08:30:45 GMT — завжди GMT
+
+// 13.2. Сеттери приймають і кілька компонентів одразу
+const s = new Date(2024, 0, 1);
+s.setHours(13, 45, 30, 500); // години, хвилини, секунди, мс
+console.log(s.toString()); // Mon Jan 01 2024 13:45:30 GMT+0200 ...
+s.setFullYear(2025, 5, 10); // рік, місяць, день
+console.log(s.toISOString()); // 2025-06-10T10:45:30.500Z
+s.setMinutes(90); // 90 хвилин → +1 година 30 хвилин (перекочування)
+console.log(s.getHours(), s.getMinutes()); // 14 30
+console.log(s.setTime(0), s.toISOString()); // 0 1970-01-01T00:00:00.000Z — setTime задає мс
+
+// 13.3. День тижня, номер у «понеділок-перший» системі
+const fri = new Date(Date.UTC(2024, 2, 15));
+console.log(fri.getUTCDay()); // 5 (нд = 0)
+console.log((fri.getUTCDay() + 6) % 7); // 4 — понеділок = 0
+
+// 13.4. Вік людини (з урахуванням того, чи вже був день народження)
+const birth = new Date(Date.UTC(2000, 5, 20)), today = new Date(Date.UTC(2024, 5, 19));
+let age = today.getUTCFullYear() - birth.getUTCFullYear();
+const notYet = today.getUTCMonth() < birth.getUTCMonth() ||
+  (today.getUTCMonth() === birth.getUTCMonth() && today.getUTCDate() < birth.getUTCDate());
+if (notYet) age--;
+console.log(age); // 23 — день народження 20 червня ще не настав
+
+// 13.5. Значення «порожніх» аргументів
+console.log(new Date(null).getTime()); // 0 — null → 0
+console.log(new Date(undefined).getTime()); // NaN
+console.log(new Date("").getTime()); // NaN
+console.log(Date.UTC(2024)); // 1704067200000 — достатньо одного року
+console.log(new Date(NaN) < new Date(0)); // false — будь-яке порівняння з NaN хибне
+
+// 13.6. Symbol.toPrimitive: чому date + 1 — рядок
+console.log(d[Symbol.toPrimitive]("number")); // 1710491445123
+console.log(typeof d[Symbol.toPrimitive]("default")); // string
+```
+
+## 14. Літній час на практиці (повернення до розділу 9)
+
+Київ переходить на літній час 31 березня 2024 о 03:00 (стрілка стає 04:00) і назад 27 жовтня о 04:00 (стає 03:00).
+
+```js
+const before = new Date(2024, 2, 30, 12); // субота 12:00, ще зимовий час
+
+const byDate = new Date(before);
+byDate.setDate(byDate.getDate() + 1); // «той самий час наступного дня»
+const byMs = new Date(before.getTime() + 86_400_000); // рівно 24 години
+
+console.log(byDate.toString()); // Sun Mar 31 2024 12:00:00 GMT+0300 ...
+console.log(byMs.toString()); // Sun Mar 31 2024 13:00:00 GMT+0300 ...
+console.log((byDate - before) / 3_600_000); // 23 — доба тривала 23 години
+console.log((byMs - before) / 3_600_000); // 24
+
+// Неіснуючий локальний час: 03:30 31 березня не було — рушій зсуває вперед
+console.log(new Date(2024, 2, 31, 3, 30).toString()); // Sun Mar 31 2024 04:30:00 GMT+0300 ...
+
+// Подвійний локальний час: 03:30 27 жовтня було двічі — обирається перше (літнє)
+console.log(new Date(2024, 9, 27, 3, 30).toISOString()); // 2024-10-27T00:30:00.000Z
+console.log(new Date(2024, 9, 27, 4, 0).toISOString()); // 2024-10-27T02:00:00.000Z
+```
+
+Висновок: коли потрібен «той самий час наступного дня» — `setDate(getDate()+1)`; коли потрібні рівно 24 години (таймаут, TTL) — додавайте мілісекунди; для рахунку днів між датами без часу — UTC.
+
+## 15. Intl: ще кілька корисних форм
+
+```js
+const t = new Date(Date.UTC(2024, 2, 15, 10));
+console.log(new Intl.DateTimeFormat("uk", { dateStyle: "full", timeZone: "Europe/Kyiv" }).format(t));
+// пʼятниця, 15 березня 2024 р.
+console.log(new Intl.DateTimeFormat("uk", { month: "long", timeZone: "UTC" }).format(t)); // березень
+console.log(new Intl.DateTimeFormat("en-US", {
+  hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC",
+}).format(new Date(Date.UTC(2024, 2, 15, 9, 5)))); // 09:05
+```
+
 ## Підсумок
 
 - `Date` — це одне число: мс від `1970-01-01T00:00:00Z` (Unix epoch); він зберігає момент, а не пояс; діапазон ±8.64e15 мс; мутабельний.
