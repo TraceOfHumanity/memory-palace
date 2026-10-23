@@ -304,3 +304,178 @@ console.log(distance(0, 0, 3, 4)); // 5
 - `clz32`/`imul`/`fround` — низькорівневі бітові утиліти для точної 32-бітної арифметики (рідко потрібні поза спеціалізованим кодом).
 - `Math` працює з тим самим IEEE 754 double, що й усі числа в JS — звідси й класичні неточності (`0.1 + 0.2 !== 0.3`); для порівняння дробових чисел використовуй допуск через `Number.EPSILON`.
 - Навіть точні на вигляд твердження про накопичення похибки округлення варто перевіряти на конкретній версії рушія — вона не завжди відтворюється однаково (розділ 7).
+
+
+---
+
+## 13. Повний перелік Math (Node 24 / V8): 8 констант, 35 методів
+
+Усе, що повертає `Object.getOwnPropertyNames(Math)`: константи `E LN10 LN2 LOG10E LOG2E PI SQRT1_2 SQRT2` та методи
+`abs acos acosh asin asinh atan atan2 atanh cbrt ceil clz32 cos cosh exp expm1 f16round floor fround hypot imul log log10 log1p log2 max min pow random round sign sin sinh sqrt tan tanh trunc`.
+Плюс `Math[Symbol.toStringTag]`. `Math.f16round` (ES2025) у Node 24 є; `Math.sumPrecise` — ще ні (`typeof` → `undefined`).
+
+Кількість параметрів (`fn.length`): `atan2` = 2, `pow` = 2, `imul` = 2, `hypot` = 2, `max` = 2, `min` = 2, `random` = 0, решта = 1. (`hypot/max/min` приймають скільки завгодно аргументів — `length` лише орієнтир.)
+
+| Група | Методи | Вхід | Результат |
+|---|---|---|---|
+| Округлення | `round floor ceil trunc` | 1 число | ціле |
+| Знак/модуль | `sign abs` | 1 | `-1/0/-0/1` / `≥ 0` |
+| Порівняння | `max min` | 0…N | число (`-Infinity`/`Infinity` без аргументів) |
+| Степені | `pow sqrt cbrt hypot` | 1–N | число |
+| Експонента/логарифми | `exp expm1 log log1p log2 log10` | 1 | число |
+| Тригонометрія | `sin cos tan asin acos atan atan2` | радіани / відношення | радіани / відношення |
+| Гіперболічні | `sinh cosh tanh asinh acosh atanh` | 1 | число |
+| Низький рівень | `clz32 imul fround f16round` | 1–2 | 32-бітні значення |
+| Випадкове | `random` | — | `[0, 1)` |
+
+## 14. Властивості самого об'єкта Math (виміряно)
+
+```js
+Object.prototype.toString.call(Math);   // "[object Math]"
+typeof Math;                            // "object"
+new Math();   // TypeError: Math is not a constructor
+Math();       // TypeError: Math is not a function
+Object.keys(Math).length;               // 0   (усе non-enumerable)
+JSON.stringify(Math);                   // "{}"
+Object.getPrototypeOf(Math) === Object.prototype;   // true
+```
+- Константи: `writable: false, enumerable: false, configurable: false`. У строгому режимі `Math.PI = 3` → `TypeError: Cannot assign to read only property 'PI' of object '#<Object>'`.
+- **Методи** — `writable: true, enumerable: false, configurable: true`: `Math.abs = 1` спрацює (!) — так можна зламати (або «запатчити») `Math`. Не роби цього.
+- `Math[Symbol.toStringTag]` = `"Math"`, `writable: false, configurable: true`.
+- Можна додавати власні властивості (`Math.foo = 1`) — не варто.
+
+## 15. Приведення типів у аргументах (усі методи → `ToNumber`)
+
+| Вираз | Результат |
+|---|---|
+| `Math.round('3.7')` | `4` |
+| `Math.round(null)` | `0` |
+| `Math.round(undefined)` | `NaN` |
+| `Math.round('')` | `0` |
+| `Math.round([5.4])` | `5` (масив з одним числом) |
+| `Math.round({})` | `NaN` |
+| `Math.round(true)` | `1` |
+| `Math.round('abc')` | `NaN` |
+| `Math.abs([])` / `Math.abs([-2])` / `Math.abs([1,2])` | `0` / `2` / `NaN` |
+| `Math.abs()` | `NaN` (без аргументу = `undefined`) |
+| `Math.sign(null)` | `0` |
+| `Math.max(1, null)` | `1` (null → 0) |
+| `Math.max(1, undefined)` | `NaN` |
+| `Math.max('4', 2)` | `4` |
+| `Math.max([])` / `Math.max([7])` / `Math.max([1,2])` | `0` / `7` / `NaN` |
+| `Math.pow(2, '3')` | `8` |
+| `Math.sqrt('16')` | `4` |
+
+Результат методу завжди `number` (ніколи рядок/BigInt). `Math.abs(1n)` → `TypeError: Cannot convert a BigInt value to a number` — Math не працює з BigInt.
+
+## 16. Округлення — граничні випадки (виміряно)
+
+- `Math.round(2.5)` = `3`, `Math.round(-2.5)` = `-2`, `Math.round(0.5)` = `1`, `Math.round(-0.5)` = **`-0`**, `Math.round(-0.2)` = **`-0`**. `Math.round(x)` = `Math.floor(x + 0.5)` за змістом.
+- `Math.round(0.49999999999999994)` = `0` (правильно; наївне `floor(x+0.5)` дало б 1).
+- `Math.floor(-0)` = `-0`, `Math.ceil(-0.5)` = **`-0`**, `Math.trunc(-0.9)` = **`-0`**. `-0 === 0` → `true`, але `Object.is(-0, 0)` → `false`, а `console.log(-0)` → `-0`.
+- `Math.trunc('7.8')` = `7`, `Math.trunc(NaN)` = `NaN`, `Math.floor(-Infinity)` = `-Infinity`.
+- `Math.trunc(2**40 + 0.5)` = `1099511627776`, а `(2**40+0.5) | 0` та `~~(2**40+0.5)` = **`0`** (побітові оператори обрізають до 32 біт!).
+- `Math.round(1.005 * 100) / 100` = `1`, не `1.01`, бо `1.005 * 100` = `100.49999999999999`. `(1.005).toFixed(2)` = `"1.00"`. Обхід: `Math.round((1.005 + Number.EPSILON) * 100) / 100` = `1.01`.
+- `toFixed` — не те саме, що `Math.round`: `(2.5).toFixed(0)` = `"3"`, `(0.5).toFixed(0)` = `"1"`, `(2.345).toFixed(2)` = `"2.35"`, але повертає **рядок**.
+- Округлення «від нуля» (symmetric): `Math.sign(x) * Math.round(Math.abs(x))`: для `-2.5` → `-3` (а `Math.round(-2.5)` → `-2`).
+- Для чисел > 2⁵² дробової частини немає: `Math.round(2**52 + 0.5)` = `4503599627370496`.
+- `Math.round(Infinity)` = `Infinity`.
+
+## 17. abs / sign / max / min — граничні випадки
+
+- `Math.abs(-0)` = `0`, `Math.abs(-Infinity)` = `Infinity`, `Math.abs(-(2**31))` = `2147483648`. Зауваж: `-2**31` без дужок — **SyntaxError** (унарний мінус перед `**` заборонений).
+- `Math.sign(-Infinity)` = `-1`, `Math.sign('5')` = `1`, `Math.sign(NaN)` = `NaN`.
+- `Math.max(0, -0)` = `0`, `Math.min(0, -0)` = **`-0`** (метод враховує знак нуля).
+- `Math.max(1, NaN, 3)` = `NaN`.
+- **Ліміт аргументів:** `Math.max(...Array(200000).fill(1))` → `RangeError: Maximum call stack size exceeded`; те саме для `Math.max.apply(null, Array(1e6).fill(1))`. Для великих масивів — `reduce`: `arr.reduce((a, b) => Math.max(a, b), -Infinity)`.
+- `Math.max(...[])` = `-Infinity`, `Math.max(...[-1,-2])` = `-1`.
+- `clamp` з `NaN`: `Math.min(Math.max(NaN, 0), 100)` = `NaN`.
+
+## 18. Степені та корені — граничні випадки
+
+- `Math.pow(2, 10)` = `1024`; `Math.pow(2, -1)` = `0.5`; `Math.pow(2, 1024)` = `Infinity`.
+- `Math.pow(-8, 1/3)` = `NaN` (дробовий степінь від'ємного), `Math.cbrt(-8)` = `-2`.
+- `Math.pow(0, 0)` = `1`; `Math.pow(NaN, 0)` = `1`; `Math.pow(1, Infinity)` = `NaN` (у `Math.pow` і `**`).
+- `Math.pow(-0, -1)` = `-Infinity`.
+- `**` правоасоціативний: `2 ** 3 ** 2` = `512` (= `2 ** 9`).
+- `(-2) ** 2` = `4`; `-2 ** 2` — SyntaxError.
+- `Math.sqrt(-0)` = `-0`; `Math.sqrt(Infinity)` = `Infinity`; `Math.sqrt(2)` = `1.4142135623730951`.
+- `Math.cbrt(27)` = `3`, `Math.cbrt(2)` = `1.2599210498948732`, `Math.cbrt(1e-300)` = `1e-100`.
+- `Math.hypot()` = `0`; `Math.hypot(5)` = `5`; `Math.hypot(-5)` = `5`; `Math.hypot('3','4')` = `5`; `Math.hypot(NaN, Infinity)` = `Infinity`.
+- **Переповнення:** `Math.hypot(1e200, 1e200)` = `1.414213562373095e+200`, а `Math.sqrt(1e200**2 + 1e200**2)` = `Infinity`.
+- `Math.hypot(1, 2, 2)` = `3` (3D-відстань).
+
+## 19. Експонента й логарифми — граничні випадки
+
+- `Math.exp(0)` = `1`, `Math.exp(2)` = `7.38905609893065`, `Math.exp(-Infinity)` = `0`, `Math.exp(710)` = `Infinity` (поріг переповнення ≈ 709.78).
+- **`expm1`** (e^x − 1) для малих x: `Math.expm1(1e-10)` = `1.00000000005e-10`, а `Math.exp(1e-10) - 1` = `1.000000082740371e-10` — похибка вже в 8-й цифрі.
+- **`log1p`** (ln(1 + x)): `Math.log1p(1e-10)` = `9.999999999500001e-11`, а `Math.log(1 + 1e-10)` = `1.000000082690371e-10`. `Math.log1p(-1)` = `-Infinity`, `Math.log1p(-2)` = `NaN`.
+- `Math.log(0)` = `-Infinity`, `Math.log(-0)` = `-Infinity`, `Math.log(Infinity)` = `Infinity`, `Math.log(10)` = `2.302585092994046`.
+- `Math.log2(1024)` = `10`, `Math.log2(3)` = `1.584962500721156`, `Math.log2(0.5)` = `-1`, `Math.log2(-1)` = `NaN`.
+- `Math.log10(1000)` = `3`, `Math.log10(0.001)` = `-3`, `Math.log10(5)` = `0.6989700043360189`, `Math.log10(0)` = `-Infinity`.
+- **Реальний приклад похибки ділення логарифмів:** `Math.log(1000) / Math.log(10)` = **`2.9999999999999996`**, а `Math.log10(1000)` = `3`. `Math.log(125) / Math.log(5)` = `3.0000000000000004`. (А `Math.log(8)/Math.log(2)` = `3` — приклад, що не завжди видно.) Висновок: для основ 2 і 10 — `log2/log10`; для довільної основи — `Math.round(...)`, якщо результат має бути цілим.
+- Кількість цифр числа: `Math.floor(Math.log10(12345)) + 1` = `5`; кількість біт: `Math.floor(Math.log2(1000)) + 1` = `10` (= `(1000).toString(2).length`).
+- Складні відсотки: `1000 * Math.exp(0.05 * 10)` = `1648.7212707001281` (неперервне нарахування); `1000 * (1 + 0.05) ** 10` = `1628.894626777442` (щорічне).
+
+## 20. Тригонометрія — граничні випадки
+
+- `Math.sin(Math.PI)` = **`1.2246467991473532e-16`**, не `0`; `Math.cos(Math.PI/2)` = `6.123233995736766e-17`; `Math.tan(Math.PI/2)` = `16331239353195370` (не `Infinity`!); `Math.tan(Math.PI)` = `-1.2246467991473532e-16`.
+- `Math.sin(Math.PI/6)` = `0.49999999999999994`; `Math.cos(Math.PI/3)` = `0.5000000000000001`.
+- `Math.sin(30)` = `-0.9880316240928618` — це 30 **радіан**, не градусів.
+- `Math.sin(Infinity)` = `NaN`.
+- Градуси ↔ радіани: `deg * Math.PI / 180`, `rad * 180 / Math.PI`. `180 * (Math.PI/180)` = `3.141592653589793`.
+- `Math.asin(0.5)` = `0.5235987755982989` (= π/6); `Math.asin(2)` = `NaN` (область −1…1); `Math.acos(0)` = `1.5707963267948966`; `Math.acos(0.5)` = `1.0471975511965979`; `Math.acos(-2)` = `NaN`.
+- `Math.atan(Infinity)` = `1.5707963267948966`, `Math.atan(-Infinity)` = `-1.5707963267948966`.
+- **`atan2(y, x)`** — порядок аргументів: **спочатку y, потім x**. Діапазон `(−π, π]`:
+  `atan2(1,1)` = `0.7853981633974483` (45°), `atan2(1,-1)` = `2.356194490192345` (135°), `atan2(-1,-1)` = `-2.356194490192345` (−135°), `atan2(-1,1)` = `-0.7853981633974483`, `atan2(0,-1)` = `π`, `atan2(-0,-1)` = `-π`, `atan2(0,0)` = `0`, `atan2(1,0)` = `π/2`.
+  Кут у градусах 0…360: `(Math.atan2(y, x) * 180 / Math.PI + 360) % 360`; для (−1,−1): `-135` → `225`.
+  `atan2(3, 4)` у градусах = `36.86989764584402`.
+- Полярні ↔ декартові: `x = r·cos(a)`, `y = r·sin(a)`; для r=2, a=π/3: `(1, 1.7321)`. Назад для (1, √3): `r = Math.hypot(x, y)` = `2`, `a = Math.atan2(y, x)·180/π` = `59.99999999999999°`.
+
+## 21. Гіперболічні функції (виміряно)
+
+`sinh(0)` = `0`, `sinh(1)` = `1.1752011936438014`; `cosh(0)` = `1`, `cosh(1)` = `1.5430806348152437`; `tanh(0)` = `0`, `tanh(1)` = `0.7615941559557649`, `tanh(100)` = `1`, `tanh(-Infinity)` = `-1`; `asinh(1)` = `0.881373587019543`; `acosh(1)` = `0`, `acosh(0.5)` = `NaN` (область x ≥ 1); `atanh(0.5)` = `0.5493061443340548`, `atanh(1)` = `Infinity`, `atanh(-1)` = `-Infinity`, `atanh(2)` = `NaN` (область −1…1).
+Формули: `sinh x = (eˣ − e⁻ˣ)/2`, `cosh x = (eˣ + e⁻ˣ)/2`, `tanh x = sinh/cosh`. Сигмоїда: `1/(1+Math.exp(-x))`: x=2 → `0.8807970779778823`; `tanh(0.5)` = `0.46211715726000974`.
+
+## 22. Бітові утиліти (виміряно)
+
+- `Math.clz32`: `1` → `31`, `0` → `32`, `255` → `24`, `256` → `23`, `-1` → `0`, `0.9` → `32` (ToUint32 → 0), `2**32` → `32`, `NaN` → `32`, `1<<31` → `0`. Кількість біт числа n>0: `32 - Math.clz32(n)`.
+- `Math.imul`: `imul(2,3)` = `6`; `imul(0xffffffff, 5)` = `-5`; `imul(-5, 12)` = `-60`; `imul(2**31, 2)` = `0`; `imul(65536, 65536)` = `0`, а `65536 * 65536` = `4294967296`; `imul(1.9, 2.9)` = `2` (аргументи спершу ToInt32 → 1 і 2); `imul(0x7fffffff, 0x7fffffff)` = `1`, а `0x7fffffff * 0x7fffffff` = `4611686014132420600` (з втратою точності).
+- `Math.fround`: `5.5` → `5.5`; `5.05` → `5.050000190734863`; `0.1` → `0.10000000149011612`; `2**128` → `Infinity`; `1e-50` → `0`; `16777217` → `16777216` (float32 тримає цілі точно лише до 2²⁴); `Math.fround(0.1) === 0.1` → `false`.
+- `Math.f16round` (ES2025): `0.1` → `0.0999755859375`; `1.337` → `1.3369140625`; `65504` → `65504` (макс. half-float); `65520` → `Infinity`; `1e-8` → `0`.
+
+## 23. Константи — перевірені співвідношення
+
+`Math.E === Math.exp(1)` → `true`; `Math.LN2 === Math.log(2)` → `true`; `Math.SQRT2 === Math.sqrt(2)` → `true`; `Math.LOG2E === 1/Math.LN2` → `true`; `Math.LOG10E` = `0.4342944819032518`, а `1/Math.LN10` = `0.43429448190325176` (не збігаються в останньому знаку!); `1/Math.SQRT2` = `0.7071067811865475`, а `Math.SQRT1_2` = `0.7071067811865476`.
+Застосування: площа кола `Math.PI * r**2` (r=5 → `78.53981633974483`), довжина `2*Math.PI*r` (`31.41592653589793`), об'єм кулі `4/3*Math.PI*r**3` (r=3 → `113.09733552923254`).
+
+## 24. Math.random — виміряно
+
+- 10⁶ викликів: мін `2.88e-7`, макс `0.99999998…` — завжди `< 1`.
+- `Math.floor(Math.random() * 6) + 1`: 600 000 кидків → `100055 99847 99765 100083 100211 100039` (рівномірно).
+- `Math.round(Math.random() * 6)` (помилка): `49603 100264 99978 99921 100002 100258 49974` — крайні значення 0 і 6 випадають **вдвічі рідше**.
+- Дійсне в діапазоні `[min, max)`: `Math.random() * (max - min) + min`.
+- Перемішування `arr.sort(() => Math.random() - 0.5)` — **упереджене й не рекомендоване** (результат залежить від алгоритму сортування); правильно — Fisher–Yates: `for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }`.
+- Не можна задати seed — для відтворюваних послідовностей потрібен власний генератор (див. [seed-data.md](../utils/seed-data.md)); для безпеки — `crypto.getRandomValues`.
+
+## 25. Корисне поруч із Math
+
+- Залишок `%` ≠ математичний модуль: `7 % 3` = `1`, `-7 % 3` = `-1`, `((-7 % 3) + 3) % 3` = `2` (правильний mod), `5.5 % 2` = `1.5`, `-0 % 5` = `-0`.
+- Лінійна інтерполяція: `lerp(a, b, t) = a + (b - a) * t`; `lerp(10, 20, 0.25)` = `12.5`.
+- Числові константи Number: `Number.EPSILON` = `2.220446049250313e-16`, `MAX_SAFE_INTEGER` = `9007199254740991`, `MIN_VALUE` = `5e-324`, `MAX_VALUE` = `1.7976931348623157e+308`. За межею 2⁵³: `2**53 === 2**53 + 1` → `true`.
+- Сума дробових: `[0.1,0.2,0.3].reduce((a,b)=>a+b)` = `0.6000000000000001`; з округленням `0.6`.
+
+## 26. Типові помилки (підсумок)
+
+1. `Math.round` для від'ємних «.5» — округлює до +∞ (`-2.5 → -2`).
+2. `floor` замість `trunc` для від'ємних; `|0` / `~~` замість `trunc` для чисел > 2³¹.
+3. `Math.max(array)` без spread (→ `NaN`); `Math.max(...hugeArray)` (→ RangeError).
+4. Градуси замість радіанів.
+5. `atan2(x, y)` замість `atan2(y, x)`.
+6. `Math.round(Math.random() * n)` замість `floor(random() * (n + 1))`.
+7. Порівняння дробових `===` — потрібен допуск (`Math.abs(a - b) < Number.EPSILON` для чисел біля 1).
+8. `log(x) / log(b)` для цілих логарифмів — похибка (`log(1000)/log(10)` = `2.9999999999999996`).
+9. `Math.round(x * 100) / 100` для грошей — `1.005 → 1`; використовуй цілі копійки.
+10. Очікувати `Math.sin(Math.PI)` = `0` або `tan(π/2)` = `Infinity`.
+11. `-2 ** 2` — SyntaxError; `Math.pow(-2, 2)` = `4`.
+12. Перезаписувати `Math.abs` тощо — методи writable.
