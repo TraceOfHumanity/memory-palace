@@ -338,3 +338,38 @@ console.log(r10.toJSON().children); // [ 'Alice Doe' ]
 - Пастка нестабільних залежностей: об'єкт, масив чи функція, створені в тілі компонента, — нове посилання щорендера, тому залежіть від примітивів.
 - Пастка нескінченного циклу: `setState` в ефекті без умови й правильних `deps` перезапускає сам себе.
 - Не використовуйте `useEffect` + `useState` для значення, яке можна обчислити прямо під час рендеру; ефект призначений для синхронізації із зовнішнім світом.
+
+
+## 10. Додатково (перевірено на React 18.3.1): порядок, залежності, пастки
+
+### 10.1. Порядок усіх ефектів (реальний вивід)
+Mount `Parent > Child`: `render parent | render child` → `child insertion | parent insertion` → `child layout | parent layout` → `child effect | parent effect`.
+Unmount: `parent insertion cleanup | parent layout cleanup | child insertion cleanup | child layout cleanup` → `parent effect cleanup | child effect cleanup`.
+Update: спершу cleanups, потім setup (усі passive-cleanups попереду всіх passive-setup). Дитина — раніше за батька. Детально: [hooks/useLayoutEffect.md](hooks/useLayoutEffect.md).
+
+### 10.2. Три форми залежностей
+Три `useEffect` у компоненті: без масиву, `[]`, `[a]`.
+- mount → `effect none | effect [] | effect [a]`;
+- змінився лише `b` → `effect none` (тільки той, що без масиву);
+- змінився `a` → `effect none | effect [a]`.
+
+### 10.3. Strict Mode
+`render | render | effect setup | effect cleanup | effect setup` — компонент рендериться двічі, ефект: setup → cleanup → setup (імітація розмонтування для перевірки cleanup).
+
+### 10.4. Застарілі значення з `[]`
+`setInterval(() => setN(n + 1), 10)` з `[]`: 4 тіки поспіль — усі бачать `n = 0`. Рішення: `setN(x => x + 1)` або `n` у залежностях (з перезапуском таймера).
+
+### 10.5. Гонка запитів і cleanup
+Запит `a` (30 мс) змінили на `b` (5 мс). З прапорцем у cleanup: `resolved data-b applied=true | resolved data-a applied=false` — застарілу відповідь відкинуто. Без нього відповідь `a` перезаписала б `b`. Сучасніше — `AbortController` (`fetch(url, { signal })` + `controller.abort()` у cleanup).
+
+### 10.6. `async` функція як ефект
+`useEffect(async () => {}, [])` → попередження `must not return anything besides a function, which is used for clean-up` (async повертає проміс). Рішення: оголосити `async` функцію всередині й викликати її.
+
+### 10.7. Нескінченний цикл
+`useEffect(() => { setN(n + 1); })` без залежностей → `Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.` Під `act` у тесті процес вичерпує пам'ять.
+
+### 10.8. Об'єкт у залежностях
+`const o = { a: 1 }; useEffect(..., [o])` — ефект виконався **3 рази за 3 рендери** (новий об'єкт щоразу). Виносити об'єкт за межі компонента, `useMemo` або залежати від примітивів.
+
+### 10.9. Ефект і `setState` у ньому
+`setN(n + 1)` в ефекті з `[n]` і умовою `n < 1`: `render 0 | effect 0 | render 1 | effect 1` — оновлення з ефекту породжує другий рендер.
