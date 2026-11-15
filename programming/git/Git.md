@@ -386,6 +386,23 @@ git restore --source=HEAD~2 file.js   # взяти версію файлу з к
 
 `git restore file` **безповоротно** стирає незакомічені зміни — їх не можна відновити.
 
+**Зняти файл з індексу, коли ще не було жодного коміту.** `git restore --staged` бере «еталон» із `HEAD`, а в порожнього репозиторію `HEAD` ще нічого не вказує. Виміряно (Git 2.54.0):
+
+```bash
+git init
+echo x > f && git add f
+git status -s
+# A  f
+git restore --staged f
+# fatal: could not resolve 'HEAD'
+git rm --cached f           # так працює: лише з індексу, файл лишається на диску
+# rm 'f'
+git status -s
+# ?? f
+```
+
+Для кількох файлів — перелічити через пробіл; для всіх — `git rm --cached -r .` (`.` — усі зміни; у репозиторії з комітами підходить і `git restore --staged .`).
+
 ### 7.2. git reset — три режими
 
 `git reset <коміт>` пересуває поточну гілку на `<коміт>`. Режим визначає, що з індексом і робочою директорією:
@@ -484,6 +501,21 @@ git switch -                # назад на попередню гілку
 
 Якщо перейти на коміт, тег або `origin/main` напряму (`git switch --detach abc1234`), HEAD вказує не на гілку, а на коміт. Нові коміти не належать жодній гілці й «загубляться» після перемикання. Збережіть їх: `git switch -c rescue`.
 
+Старий спосіб — `git checkout <id>`: теж переходить на коміт без гілки, історія при цьому не змінюється. Виміряно:
+
+```bash
+git checkout HEAD~1
+# Note: switching to 'HEAD~1'.
+# You are in 'detached HEAD' state. ...
+git status
+# HEAD detached at 5745c67
+git checkout main            # повернутись на останній коміт гілки main
+# Previous HEAD position was 5745c67 first
+# Switched to branch 'main'
+```
+
+`git checkout <назва гілки>` — повернення на кінець гілки (сучасний еквівалент: `git switch main`).
+
 ### 8.2. Злиття (merge)
 
 ```bash
@@ -549,7 +581,18 @@ console.log('A')
 
 1. відредагувати файл: лишити потрібне й **видалити маркери**;
 2. `git add app.js` (позначити розв'язаним);
-3. `git commit` (завершити злиття).
+3. `git commit` (завершити злиття) — або `git merge --continue`, що робить те саме й заодно перевіряє, що злиття справді триває.
+
+Виміряно: поки конфлікт не розв'язано, `git merge --continue` відмовляє:
+
+```
+error: Committing is not possible because you have unmerged files.
+hint: Fix them up in the work tree, and then use 'git add/rm <file>'
+hint: as appropriate to mark resolution and make a commit.
+fatal: Exiting because of an unresolved conflict.
+```
+
+Після `git add c.txt` те саме `git merge --continue` створює merge-коміт (`[main b79a22d] Merge branch 'feat'`), а без злиття, що триває, видає `fatal: There is no merge in progress (MERGE_HEAD missing).` (Опція `--no-edit` разом із `--continue` не приймається — видає довідку; щоб пропустити редактор, задайте `GIT_EDITOR=true`.)
 
 Скасувати: `git merge --abort` — повертає стан до `git merge`. Допомагає: `git mergetool`, `git checkout --ours file` / `--theirs file`, `git diff` під час конфлікту, `rerere`.
 
@@ -626,6 +669,11 @@ git remote -v                                      # список remotes
 git remote show origin                             # детально про remote
 git remote rename origin upstream
 git remote remove origin
+git remote get-url origin                          # лише URL
+# ../remote.git
+git remote set-url origin <new-url>                # змінити URL (наприклад, https → ssh)
+git remote get-url origin
+# ../other.git
 ```
 
 ### 10.1. fetch, pull, push
@@ -641,6 +689,11 @@ git pull --rebase          # = git fetch + git rebase origin/main
 git push                   # відправити поточну гілку
 git push -u origin main    # відправити й запам'ятати upstream (tracking)
 # branch 'main' set up to track 'origin/main'.
+git push --set-upstream origin main   # те саме, довга форма -u (на сервері гілка створюється, якщо її не було)
+# * [new branch]      main -> main
+git pull origin main       # fetch + merge саме origin/main у поточну гілку, незалежно від upstream
+# * branch            main       -> FETCH_HEAD
+# Already up to date.
 ```
 
 `fetch` завжди безпечний (нічого не змінює у вашій роботі) — перевіряйте, що прийшло, а потім зливайте. `pull` — це швидкий спосіб зробити fetch + integrate.
@@ -684,6 +737,70 @@ git push --force                # без перевірок — небезпеч
 - **Fork** (GitHub): ваша копія чужого репозиторію; зазвичай `origin` = ваш fork, `upstream` = оригінал.
 - `git push` отримує/відправляє лише потрібні об'єкти — дельти в packfile.
 - Тільки-серверний «голий» репозиторій: `git init --bare` (без робочої директорії) — що лежить на серверах.
+
+### 10.5. Автентифікація на GitHub через SSH
+
+Замість логіна й токена в HTTPS можна підключатись за **SSH-ключем**: пара «приватний ключ (лишається у вас) + публічний (додається в GitHub)». Тоді remote має вигляд `git@github.com:user/repo.git`.
+
+**1. Згенерувати ключ** (окремий файл для GitHub; `-C ""` — без коментаря; Git/ssh запитає парольну фразу — її краще задати):
+
+```bash
+ssh-keygen -t ed25519 -C "" -f ~/.ssh/id_ed25519_github
+# Generating public/private ed25519 key pair.
+# Your identification has been saved in ~/.ssh/id_ed25519_github
+# Your public key has been saved in ~/.ssh/id_ed25519_github.pub
+# The key fingerprint is: SHA256:...
+```
+
+`ed25519` — сучасний, короткий і швидкий алгоритм. Приватний ключ — `id_ed25519_github` (**нікому не показувати**), публічний — `id_ed25519_github.pub` (виміряно: файл починається з `ssh-ed25519 `). Відбиток ключа: `ssh-keygen -l -f ~/.ssh/id_ed25519_github.pub` → `256 SHA256:... no comment (ED25519)`.
+
+**2. Вказати ssh, який ключ використовувати для GitHub** — файл `~/.ssh/config`:
+
+```bash
+cat >> ~/.ssh/config << 'EOF'
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_github
+    AddKeysToAgent no
+    UseKeychain no
+EOF
+```
+
+- `Host github.com` — блок діє лише для цього хоста;
+- `User git` — GitHub завжди приймає SSH-з'єднання під користувачем `git` (особа визначається ключем);
+- `IdentityFile` — який приватний ключ пропонувати;
+- `AddKeysToAgent no` — не додавати ключ в ssh-agent автоматично;
+- `UseKeychain no` — (опція macOS) не зберігати парольну фразу в Keychain.
+
+Перевірено (`ssh -G github.com` із цим конфігом): `user git`, `hostname github.com`, `identityfile …/id_ed25519_github`, `addkeystoagent false`.
+
+**3. Виставити права доступу** — ssh відмовляється працювати з приватним ключем, який доступний іншим користувачам:
+
+```bash
+chmod 600 ~/.ssh/config
+chmod 600 ~/.ssh/id_ed25519_github      # приватний: лише власник
+chmod 644 ~/.ssh/id_ed25519_github.pub  # публічний: можна читати всім
+```
+
+Виміряно після цих команд: `-rw-------` для `config` і приватного ключа, `-rw-r--r--` для `.pub`.
+
+**4. Додати публічний ключ у GitHub.** Вивести й скопіювати вміст:
+
+```bash
+cat ~/.ssh/id_ed25519_github.pub
+```
+
+GitHub → Settings → SSH and GPG keys → New SSH key → вставити.
+
+**5. Перевірити з'єднання:**
+
+```bash
+ssh -T git@github.com
+# Hi <username>! You've successfully authenticated, but GitHub does not provide shell access.
+```
+
+(Цей рядок відповіді GitHub наведено з документації — підключення до GitHub у перевірках не виконувалось **[довідково]**.) Якщо репозиторій було клоновано по HTTPS, перемкнути його на SSH: `git remote set-url origin git@github.com:user/repo.git`.
 
 ## 11. Stash, теги та інші інструменти
 
