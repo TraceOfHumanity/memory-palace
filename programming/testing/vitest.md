@@ -2,8 +2,6 @@
 
 Нотатка про основи Vitest: як написати перший тест, які є перевірки (matchers), хуки, моки, асинхронні тести, таймери й знімки. Інтеграційні та end-to-end тести — у [playwright.md](playwright.md).
 
-Усі приклади запущено: **Vitest 5.1.0**, **Node.js 24.12.0**, TypeScript. Дані й код англійською, пояснення українською.
-
 ---
 
 ## 1. Що таке unit-тест і навіщо Vitest
@@ -89,7 +87,7 @@ test.each([
 });
 ```
 
-Результат `vitest run --reporter=verbose` **[виміряно]**:
+Результат `vitest run --reporter=verbose`:
 
 ```text
  ✓ src/math.test.ts > sum adds two numbers 1ms
@@ -152,7 +150,7 @@ test('strings, arrays, objects', () => {
 });
 ```
 
-Усі сім тестів зелені **[виміряно]**. Таблиця:
+Усі сім тестів зелені. Таблиця:
 
 | Matcher | Сенс |
 |---|---|
@@ -175,7 +173,7 @@ test('strings, arrays, objects', () => {
 
 Найчастіша помилка новачка — `toBe` для об'єктів і масивів: порівнюється посилання, тому `expect({x: 1}).toBe({x: 1})` падає. Для структур беріть `toEqual`.
 
-Повідомлення про невдачу показує різницю **[виміряно]**:
+Повідомлення про невдачу показує різницю:
 
 ```text
 AssertionError: expected { a: 1, b: [ 1, 2 ] } to deeply equal { a: 1, b: [ 1, 3 ] }
@@ -223,7 +221,7 @@ describe('hooks order', () => {
 });
 ```
 
-Вивід **[виміряно]**:
+Вивід:
 
 ```text
 beforeAll > beforeEach > test one > afterEach > beforeEach > test two > afterEach > afterAll
@@ -293,7 +291,7 @@ test('vi.fn with implementation', () => {
 });
 ```
 
-Обидва тести зелені **[виміряно]**. `vi.fn()` запам'ятовує всі виклики в `fn.mock.calls`; `mockReturnValue(x)`, `mockReturnValueOnce(x)`, `mockResolvedValue(x)`, `mockImplementation(f)` задають поведінку.
+Обидва тести зелені. `vi.fn()` запам'ятовує всі виклики в `fn.mock.calls`; `mockReturnValue(x)`, `mockReturnValueOnce(x)`, `mockResolvedValue(x)`, `mockImplementation(f)` задають поведінку.
 
 ### 7.2. `vi.spyOn` — підмінити метод об'єкта і повернути назад
 
@@ -337,7 +335,7 @@ test('module is replaced', () => {
 });
 ```
 
-Зелений **[виміряно]**. `vi.mock` **піднімається (hoisting) на початок файлу** ще до імпортів, тому підміна діє навіть там, де `import` стоїть вище. Фабрика не може посилатись на змінні файлу, оголошені звичайним `const` (вони ще не існують у момент підйому); для цього є `vi.hoisted`.
+Зелений. `vi.mock` **піднімається (hoisting) на початок файлу** ще до імпортів, тому підміна діє навіть там, де `import` стоїть вище. Фабрика не може посилатись на змінні файлу, оголошені звичайним `const` (вони ще не існують у момент підйому); для цього є `vi.hoisted`.
 
 ## 8. Таймери
 
@@ -365,7 +363,7 @@ test('fake timers skip the wait', async () => {
 });
 ```
 
-Зелений за ~1 мс замість 1 с **[виміряно]**. `vi.useFakeTimers()` підміняє `setTimeout`, `setInterval`, `Date`; час рухається лише за командою (`advanceTimersByTime`, `runAllTimers`). Для коду з промісами використовуйте **`...Async`-варіанти**. Завжди повертайте справжні таймери в `afterEach`.
+Зелений за ~1 мс замість 1 с. `vi.useFakeTimers()` підміняє `setTimeout`, `setInterval`, `Date`; час рухається лише за командою (`advanceTimersByTime`, `runAllTimers`). Для коду з промісами використовуйте **`...Async`-варіанти**. Завжди повертайте справжні таймери в `afterEach`.
 
 ## 9. Знімки (snapshots)
 
@@ -375,7 +373,7 @@ test('inline snapshot', () => {
 });
 ```
 
-Під час першого прогону Vitest сам вписав значення у файл **[виміряно]**:
+Під час першого прогону Vitest сам вписав значення у файл:
 
 ```ts
 test('inline snapshot', () => {
@@ -404,7 +402,7 @@ test('inline snapshot', () => {
 | `test.only(...)` | запускати тільки цей тест у файлі |
 | `describe.skip` / `describe.only` | те саме для групи |
 
-Вивід **[виміряно]**: `↓ skipped`, `□ write later`, підсумок `1 passed | 1 skipped | 1 todo (3)`. Забутий `.only` у закомічених тестах мовчки вимикає решту — у CI його забороняють опцією `allowOnly: false`.
+Вивід: `↓ skipped`, `□ write later`, підсумок `1 passed | 1 skipped | 1 todo (3)`. Забутий `.only` у закомічених тестах мовчки вимикає решту — у CI його забороняють опцією `allowOnly: false`.
 
 ## 11. Конфігурація
 
