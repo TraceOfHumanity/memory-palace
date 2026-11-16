@@ -246,3 +246,282 @@ reverseRec([1 → 2 → 3]):
 | паліндром | середина + розворот половини | O(n) / O(1) |
 | видалення голови, дублікатів | dummy | O(n) / O(1) |
 | LRU-кеш | Map + двозв'язний список | O(1) операція |
+
+## Задачі для закріплення
+
+25 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Назвіть три головні прийоми в задачах на зв'язні списки.
+
+**2.** Чому `slow/fast` знаходить середину списку за один прохід?
+
+**3.** У чому ідея алгоритму Флойда для пошуку циклу?
+
+**4.** Навіщо `dummy` вузол перед `head`?
+
+**5.** Яка складність за часом і пам'яттю в ітеративного розвороту списку?
+
+**6.** Що поверне `middle` для списку з 6 елементів — перший чи другий середній?
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+;(() => { let s = fromArray([1, 2, 3, 4, 5, 6]), f = s; while (f && f.next) { s = s.next; f = f.next.next; } return s.v; })()
+```
+
+**7.** Скільки кроків зробить `slow` у списку з 9 вузлів, поки `fast` дійде до кінця?
+
+```js
+(() => { let n = 9, fast = 0, slow = 0, steps = 0; while (fast + 1 < n) { fast += 2; slow++; steps++; } return steps; })()
+```
+
+### Рівень 2. Методи й поведінка
+
+**8.** Напишіть `middle(head)`.
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+function middle(h) { let s = h, f = h; while (f && f.next) { s = s.next; f = f.next.next } return s }
+```
+
+**9.** Напишіть `hasCycle(head)`.
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+function hasCycle(h) { let s = h, f = h; while (f && f.next) { s = s.next; f = f.next.next; if (s === f) return true } return false }
+```
+
+**10.** Напишіть `cycleLength(head)` — довжина циклу або `0`.
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+function cycleLength(h) {
+  let s = h, f = h
+  while (f && f.next) {
+    s = s.next; f = f.next.next
+    if (s === f) { let n = 1; for (let c = s.next; c !== s; c = c.next) n++; return n }
+  }
+  return 0
+}
+```
+
+**11.** Напишіть `mergeSorted(a, b)` із dummy-вузлом.
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+function mergeSorted(a, b) {
+  const d = new Node(0); let t = d
+  while (a && b) { if (a.v <= b.v) { t.next = a; a = a.next } else { t.next = b; b = b.next } t = t.next }
+  t.next = a ?? b
+  return d.next
+}
+```
+
+**12.** Напишіть `removeNthFromEnd(head, n)`.
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+function removeNthFromEnd(h, n) {
+  const d = new Node(0, h); let f = d, s = d
+  for (let i = 0; i < n; i++) f = f.next
+  while (f.next) { f = f.next; s = s.next }
+  s.next = s.next.next
+  return d.next
+}
+```
+
+**13.** Напишіть ітеративний `reverse(head)`.
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+function reverse(h) { let p = null; while (h) { const n = h.next; h.next = p; p = h; h = n } return p }
+```
+
+**14.** Напишіть рекурсивний `reverseRec(head)`.
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+function reverseRec(h) {
+  if (!h || !h.next) return h
+  const r = reverseRec(h.next)
+  h.next.next = h
+  h.next = null
+  return r
+}
+```
+
+### Рівень 3. Нюанси та пастки
+
+**15.** Напишіть `isPalindrome(head)` за `O(1)` пам'яті (розворот другої половини).
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+function isPalindrome(h) {
+  let s = h, f = h
+  while (f && f.next) { s = s.next; f = f.next.next }
+  let p = null
+  while (s) { const n = s.next; s.next = p; p = s; s = n }
+  for (let a = h, b = p; b; a = a.next, b = b.next) if (a.v !== b.v) return false
+  return true
+}
+```
+
+**16.** Напишіть `getIntersection(a, b)` — спільний вузол двох списків.
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+function getIntersection(a, b) { let p = a, q = b; while (p !== q) { p = p ? p.next : b; q = q ? q.next : a } return p }
+```
+
+**17.** Напишіть `deleteNode(node)` — видалити вузол, маючи лише його (не хвіст).
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+function deleteNode(n) { n.v = n.next.v; n.next = n.next.next }
+```
+
+**18.** Напишіть `splitInHalf(head)` — два списки: перша й друга половини.
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+function splitInHalf(h) {
+  let s = h, f = h, prev = null
+  while (f && f.next) { prev = s; s = s.next; f = f.next.next }
+  if (prev) prev.next = null
+  return [h, s]
+}
+```
+
+**19.** Напишіть `reorderList(head)` — `L0→Ln→L1→Ln-1→…`.
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+function reorderList(h) {
+  const a = toArray(h), out = []
+  for (let i = 0, j = a.length - 1; i <= j; i++, j--) { out.push(a[i]); if (i !== j) out.push(a[j]) }
+  return fromArray(out)
+}
+```
+
+**20.** Напишіть `removeElements(head, val)` — видалити всі вузли зі значенням `val` через dummy.
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+function removeElements(h, val) {
+  const d = new Node(0, h); let c = d
+  while (c.next) c.next.v === val ? (c.next = c.next.next) : (c = c.next)
+  return d.next
+}
+```
+
+**21.** Напишіть `countNodesInCycle`-перевірку: скільки кроків до зустрічі `slow` і `fast` у циклі з 3 вузлів після входу?
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+function meetSteps(h) { let s = h, f = h, n = 0; while (f && f.next) { s = s.next; f = f.next.next; n++; if (s === f) return n } return -1 }
+```
+
+### Рівень 4. Практика й реалізація
+
+**22.** Напишіть `pairSum(head)` — максимальна сума пар «перший + останній» для списку парної довжини.
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+function pairSum(h) {
+  const a = toArray(h); let best = 0
+  for (let i = 0; i < a.length / 2; i++) best = Math.max(best, a[i] + a[a.length - 1 - i])
+  return best
+}
+```
+
+**23.** Напишіть `toBinary(head)` — список бітів (старший першим) у число.
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+const toBinary = h => toArray(h).reduce((n, b) => (n << 1) | b, 0)
+```
+
+**24.** Напишіть `mergeNodesBetweenZeros(head)` — суми між нулями.
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+function mergeNodes(h) {
+  const out = []; let s = 0
+  for (let c = h.next; c; c = c.next) c.v === 0 ? (out.push(s), (s = 0)) : (s += c.v)
+  return fromArray(out)
+}
+```
+
+**25.** Напишіть `sumList(head)` рекурсивно.
+
+```js
+class Node { constructor(v, next = null) { this.v = v; this.next = next } }
+const fromArray = a => a.reduceRight((n, v) => new Node(v, n), null)
+const toArray = h => { const o = []; for (; h; h = h.next) o.push(h.v); return o }
+const sumList = h => (h ? h.v + sumList(h.next) : 0)
+```
+
+### Відповіді
+
+1. Швидкий і повільний вказівники (slow/fast), фіктивний головний вузол (dummy head) і розворот частини списку.
+2. Швидкий рухається на 2 кроки, повільний — на 1; коли швидкий дійде до кінця, повільний буде посередині.
+3. Якщо цикл є, швидкий вказівник наздожене повільний усередині циклу; якщо `fast` дійшов до `null` — циклу немає.
+4. Щоб не розглядати окремо видалення чи вставку на початку: `dummy.next` завжди вказує на актуальну голову.
+5. `O(n)` за часом і `O(1)` додаткової пам'яті.
+6. `4`
+7. `4`
+8. Виклик `[middle(fromArray([1, 2, 3, 4, 5])).v, middle(fromArray([1])).v]` → `[3, 1]`
+9. Виклик `(() => { const a = fromArray([1, 2, 3]); a.next.next.next = a; return [hasCycle(a), hasCycle(null)]; })()` → `[true, false]`
+10. Виклик `(() => { const a = fromArray([1, 2, 3, 4]); a.next.next.next.next = a.next; return [cycleLength(a), cycleLength(fromArray([1, 2]))]; })()` → `[3, 0]`
+11. Виклик `toArray(mergeSorted(fromArray([1, 2, 4]), fromArray([1, 3, 4])))` → `[1, 1, 2, 3, 4, 4]`
+12. Виклик `toArray(removeNthFromEnd(fromArray([1, 2, 3, 4, 5]), 2))` → `[1, 2, 3, 5]`
+13. Виклик `toArray(reverse(fromArray([1, 2, 3])))` → `[3, 2, 1]`
+14. Виклик `toArray(reverseRec(fromArray([1, 2, 3, 4])))` → `[4, 3, 2, 1]`
+15. Виклик `[isPalindrome(fromArray([1, 2, 3, 2, 1])), isPalindrome(fromArray([1, 2, 3, 1]))]` → `[true, false]`
+16. Виклик `(() => { const t = fromArray([8, 9]); const a = new Node(1, t); const b = new Node(2, new Node(3, t)); return getIntersection(a, b) === t; })()` → `true`
+17. Виклик `(() => { const h = fromArray([1, 2, 3, 4]); deleteNode(h.next); return toArray(h); })()` → `[1, 3, 4]`
+18. Виклик `(() => { const [a, b] = splitInHalf(fromArray([1, 2, 3, 4, 5])); return [toArray(a), toArray(b)]; })()` → `[[1, 2], [3, 4, 5]]`
+19. Виклик `[toArray(reorderList(fromArray([1, 2, 3, 4]))), toArray(reorderList(fromArray([1, 2, 3, 4, 5])))]` → `[[1, 4, 2, 3], [1, 5, 2, 4, 3]]`
+20. Виклик `toArray(removeElements(fromArray([1, 2, 6, 3, 4, 5, 6]), 6))` → `[1, 2, 3, 4, 5]`
+21. Виклик `(() => { const a = fromArray([1, 2, 3]); a.next.next.next = a; return meetSteps(a); })()` → `3`
+22. Виклик `[pairSum(fromArray([5, 4, 2, 1])), pairSum(fromArray([4, 2, 2, 3]))]` → `[6, 7]`
+23. Виклик `[toBinary(fromArray([1, 0, 1])), toBinary(fromArray([0]))]` → `[5, 0]`
+24. Виклик `toArray(mergeNodes(fromArray([0, 3, 1, 0, 4, 5, 2, 0])))` → `[4, 11]`
+25. Виклик `sumList(fromArray([1, 2, 3, 4]))` → `10`

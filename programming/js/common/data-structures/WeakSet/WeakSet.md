@@ -218,3 +218,196 @@ const isMine = (o) => created.has(o);
 - Вибирай `WeakSet` замість `Set`, коли потрібне автоматичне «прибирання за собою» пам'яті, а не звичайна, ітерована колекція.
 - Патерни: захист від циклів (`seen`), «брендування» об'єктів, одноразова ініціалізація.
 - Поведінка збирача сміття та слабких посилань — у `WeakMap.md` (розділи 13–17).
+
+## Задачі для закріплення
+
+23 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Що станеться при `new WeakSet().add(1)`?
+
+```js
+(() => { try { new WeakSet().add(1); } catch (e) { return e.name + ': ' + e.message; } })()
+```
+
+**2.** Що поверне `has` для доданого і недоданого об'єкта?
+
+```js
+(() => { const w = new WeakSet(); const a = {}; w.add(a); return [w.has(a), w.has({})]; })()
+```
+
+**3.** Що повертає `add` і чи працює ланцюжок?
+
+```js
+(() => { const w = new WeakSet(); const a = {}, b = {}; return w.add(a).add(b) === w; })()
+```
+
+**4.** Що повертає `delete`?
+
+```js
+(() => { const w = new WeakSet(); const a = {}; w.add(a); return [w.delete(a), w.delete(a), w.delete(1)]; })()
+```
+
+**5.** Чи має `WeakSet` `size`, `clear`, `forEach` та ітерацію?
+
+```js
+(() => { const w = new WeakSet(); return [w.size, typeof w.clear, typeof w.forEach, typeof w[Symbol.iterator]]; })()
+```
+
+**6.** Чи додасться той самий об'єкт двічі?
+
+```js
+(() => { const w = new WeakSet(); const a = {}; w.add(a); w.add(a); return w.has(a); })()
+```
+
+### Рівень 2. Методи й поведінка
+
+**7.** Чи можна ініціалізувати `WeakSet` масивом об'єктів?
+
+```js
+(() => { const a = {}, b = {}; const w = new WeakSet([a, b]); return [w.has(a), w.has(b)]; })()
+```
+
+**8.** Що станеться при `new WeakSet([1, 2])`?
+
+```js
+(() => { try { new WeakSet([1, 2]); } catch (e) { return e.name; } })()
+```
+
+**9.** Які типи допустимі у `WeakSet`?
+
+```js
+(() => { const w = new WeakSet(); return [{}, [], () => {}, Symbol('s'), 'str', 1].map(v => { try { w.add(v); return true; } catch { return false; } }); })()
+```
+
+**10.** Що дасть `WeakSet` над порожнім `{}` і `has({})`?
+
+```js
+(() => { const w = new WeakSet(); w.add({}); return w.has({}); })()
+```
+
+**11.** Що поверне `Object.prototype.toString.call(new WeakSet())`?
+
+```js
+Object.prototype.toString.call(new WeakSet())
+```
+
+**12.** Чи можна порівняти `WeakSet` з `Set` за методами `add/has/delete`?
+
+```js
+['add', 'has', 'delete', 'size', 'clear', 'forEach'].map(m => [m in Set.prototype, m in WeakSet.prototype])
+```
+
+### Рівень 3. Нюанси та пастки
+
+**13.** Позначте оброблені об'єкти через `WeakSet`. Скільки разів виконається обробка?
+
+```js
+const done = new WeakSet()
+let n = 0
+function process(o) { if (done.has(o)) return; done.add(o); n++ }
+```
+
+**14.** Захист від повторної ініціалізації: `init(el)`.
+
+```js
+const inited = new WeakSet()
+function init(el) { if (inited.has(el)) return false; inited.add(el); return true }
+```
+
+**15.** Напишіть захист від циклічних посилань при обході об'єкта через `WeakSet`.
+
+```js
+function walk(o, seen = new WeakSet()) {
+  if (typeof o !== 'object' || o === null) return 0
+  if (seen.has(o)) return 0
+  seen.add(o)
+  return 1 + Object.values(o).reduce((s, v) => s + walk(v, seen), 0)
+}
+```
+
+**16.** Напишіть `isFrozenByUs(o)`: позначайте об'єкти, які ми «заблокували».
+
+```js
+const locked = new WeakSet()
+const lock = o => (locked.add(o), o)
+const isLocked = o => locked.has(o)
+```
+
+**17.** Напишіть `deepClone(o)` із `WeakSet`-перевіркою циклів: кидає помилку при циклі.
+
+```js
+function deepClone(o, seen = new WeakSet()) {
+  if (typeof o !== 'object' || o === null) return o
+  if (seen.has(o)) throw new Error('cycle')
+  seen.add(o)
+  return Array.isArray(o) ? o.map(x => deepClone(x, seen)) : Object.fromEntries(Object.entries(o).map(([k, v]) => [k, deepClone(v, seen)]))
+}
+```
+
+**18.** Напишіть `brand`: перевірка належності об'єкта класу без `instanceof` через `WeakSet` (brand check).
+
+```js
+const brand = new WeakSet()
+class Secure { constructor() { brand.add(this) } static is(o) { return brand.has(o) } }
+```
+
+### Рівень 4. Практика й реалізація
+
+**19.** Напишіть `visitOnce(nodes, visit)` для графа, що може мати спільні вузли. Скільки візитів?
+
+```js
+function visitOnce(nodes, visit) { const seen = new WeakSet(); const go = n => { if (!n || seen.has(n)) return; seen.add(n); visit(n); (n.next ?? []).forEach(go) }; nodes.forEach(go) }
+```
+
+**20.** Напишіть `trackedEvents`: позначати обробники, які вже підписані.
+
+```js
+const subscribed = new WeakSet()
+function subscribe(handler, list) { if (subscribed.has(handler)) return list.length; subscribed.add(handler); list.push(handler); return list.length }
+```
+
+**21.** Напишіть `once(fn)` через `WeakSet` для об'єктів-аргументів: виконується лише один раз для кожного об'єкта.
+
+```js
+function onceFor(fn) { const seen = new WeakSet(); return o => { if (seen.has(o)) return undefined; seen.add(o); return fn(o) } }
+```
+
+**22.** Порівняйте `Set` і `WeakSet`: що з наведеного працює лише в `Set`?
+
+```js
+const onlySet = ['size', 'clear', 'forEach', 'keys', 'values', 'entries'].filter(m => (m in Set.prototype) && !(m in WeakSet.prototype))
+```
+
+**23.** Чи можна покласти замороженний об'єкт у `WeakSet`?
+
+```js
+const w = new WeakSet()
+```
+
+### Відповіді
+
+1. `'TypeError: Invalid value used in weak set'`
+2. `[true, false]`
+3. `true`
+4. `[true, false, false]`
+5. `[undefined, 'undefined', 'undefined', 'undefined']`
+6. `true`
+7. `[true, true]`
+8. `'TypeError'`
+9. `[true, true, true, true, false, false]`
+10. `false`
+11. `'[object WeakSet]'`
+12. `[[true, true], [true, true], [true, true], [true, false], [true, false], [true, false]]`
+13. Виклик `(() => { const a = {}, b = {}; process(a); process(a); process(b); return n; })()` → `2`
+14. Виклик `(() => { const el = {}; return [init(el), init(el), init({})]; })()` → `[true, false, true]`
+15. Виклик `(() => { const a = { b: {} }; a.b.c = a; return walk(a); })()` → `2`
+16. Виклик `(() => { const a = lock({}); return [isLocked(a), isLocked({})]; })()` → `[true, false]`
+17. Виклик `(() => { const a = { n: 1 }; a.self = a; try { deepClone(a); } catch (e) { return [e.message, deepClone({ x: [1, { y: 2 }] })]; } })()` → `['cycle', { x: [1, { y: 2 }] }]`
+18. Виклик `[Secure.is(new Secure()), Secure.is({}), Secure.is(Object.create(Secure.prototype))]` → `[true, false, false]`
+19. Виклик `(() => { const shared = { next: [] }; const a = { next: [shared] }, b = { next: [shared] }; let c = 0; visitOnce([a, b], () => c++); return c; })()` → `3`
+20. Виклик `(() => { const list = [], h = () => {}; return [subscribe(h, list), subscribe(h, list), subscribe(() => {}, list)]; })()` → `[1, 1, 2]`
+21. Виклик `(() => { const f = onceFor(o => o.v); const a = { v: 1 }; return [f(a), f(a), f({ v: 2 })]; })()` → `[1, undefined, 2]`
+22. Виклик `onlySet` → `['size', 'clear', 'forEach', 'keys', 'values', 'entries']`
+23. Виклик `(() => { const f = Object.freeze({}); w.add(f); return w.has(f); })()` → `true`

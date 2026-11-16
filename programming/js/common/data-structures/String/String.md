@@ -462,3 +462,368 @@ String(123);  (123).toString(2);  // "123"  "1111011" — двійкова си�
 - `isWellFormed()` / `toWellFormed()` (ES2024) виправляють самотні сурогати.
 - `String.raw` не обробляє escape-послідовності; у другому аргументі `replace` діють `$&`, `$1`, `$<name>`.
 - `Number("")` = 0, `parseInt` потребує основи; `String(x)` безпечніше за `x.toString()`.
+
+## Задачі для закріплення
+
+П'ятдесят задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Чи можна змінити символ рядка через `s[0] = 'X'`?
+
+```js
+(() => { 'use strict'; const s = 'abc'; try { s[0] = 'X'; } catch (e) { return e.name; } })()
+```
+
+**2.** Що поверне `'abc'.length` і `'😀'.length`?
+
+```js
+['abc'.length, '😀'.length]
+```
+
+**3.** Що дасть `str[10]`, `charAt(10)` і `at(-1)`?
+
+```js
+['abc'[10], 'abc'.charAt(10), 'abc'.at(-1)]
+```
+
+**4.** Що поверне `charCodeAt` і `codePointAt` для `'😀'`?
+
+```js
+['😀'.charCodeAt(0), '😀'.codePointAt(0)]
+```
+
+**5.** Що дасть `String.fromCharCode(72, 105)` і `String.fromCodePoint(128512)`?
+
+```js
+[String.fromCharCode(72, 105), String.fromCodePoint(128512)]
+```
+
+**6.** Що повертає `indexOf` для відсутнього підрядка і `includes`?
+
+```js
+['hello'.indexOf('x'), 'hello'.includes('ell')]
+```
+
+**7.** Що дасть `lastIndexOf('l')` і `indexOf('l', 3)`?
+
+```js
+['hello'.lastIndexOf('l'), 'hello'.indexOf('l', 3)]
+```
+
+**8.** Що поверне `startsWith` і `endsWith` з позицією?
+
+```js
+['hello'.startsWith('ell', 1), 'hello'.endsWith('ell', 4)]
+```
+
+**9.** Що дасть `slice(-3)`, `substring(-3)` і `substr(-3, 2)`?
+
+```js
+['hello'.slice(-3), 'hello'.substring(-3), 'hello'.substr(-3, 2)]
+```
+
+**10.** Чим відрізняється `slice(3, 1)` від `substring(3, 1)`?
+
+```js
+['hello'.slice(3, 1), 'hello'.substring(3, 1)]
+```
+
+**11.** Що дають `toUpperCase` і `toLowerCase` для `'Straße'`?
+
+```js
+['Straße'.toUpperCase(), 'İ'.toLowerCase().length]
+```
+
+**12.** Що видаляють `trim`, `trimStart`, `trimEnd`?
+
+```js
+['  a  '.trim(), '  a  '.trimStart(), '  a  '.trimEnd()].map(s => '[' + s + ']')
+```
+
+**13.** Що дають `padStart` і `padEnd`?
+
+```js
+['5'.padStart(3, '0'), 'ab'.padEnd(5, 'xy')]
+```
+
+### Рівень 2. Методи й поведінка
+
+**14.** Що дасть `repeat` і що станеться для від'ємного числа?
+
+```js
+(() => { try { return ['ab'.repeat(3), 'a'.repeat(-1)]; } catch (e) { return e.name + ': ' + e.message; } })()
+```
+
+**15.** Що поверне `replace` зі рядком і `replaceAll`?
+
+```js
+['a-b-c'.replace('-', '+'), 'a-b-c'.replaceAll('-', '+')]
+```
+
+**16.** Що дасть `split('')` для `'😀a'` і `[...'😀a']`?
+
+```js
+['😀a'.split('').length, [...'😀a'].length]
+```
+
+**17.** Що поверне `split(',', 2)` і `split()` без аргументів?
+
+```js
+['a,b,c'.split(',', 2), 'a,b'.split()]
+```
+
+**18.** Що дасть `join` після `split` для заміни роздільника?
+
+```js
+'a-b-c'.split('-').join('+')
+```
+
+**19.** Як порівнюються рядки операторами `<` і `===`?
+
+```js
+['a' < 'b', 'a' < 'B', '10' < '9', '10' < 9]
+```
+
+**20.** Що поверне `localeCompare` для `'a'` і `'b'`?
+
+```js
+[Math.sign('a'.localeCompare('b')), Math.sign('b'.localeCompare('a')), 'a'.localeCompare('a')]
+```
+
+**21.** Що дає `'résumé'.normalize('NFD').length` порівняно з `NFC`?
+
+```js
+['résumé'.normalize('NFC').length, 'résumé'.normalize('NFD').length]
+```
+
+**22.** Чи рівні `'é'` (один символ) і `'e\u0301'`, а після `normalize`?
+
+```js
+['\u00e9' === 'e\u0301', '\u00e9' === 'e\u0301'.normalize()]
+```
+
+**23.** Що дасть `for...of` по `'a😀'`?
+
+```js
+(() => { const o = []; for (const ch of 'a😀') o.push(ch); return o; })()
+```
+
+**24.** Що поверне `'abc'.at(-1)` і `'abc'.at(5)`?
+
+```js
+['abc'.at(-1), 'abc'.at(5)]
+```
+
+**25.** Що поверне шаблонний рядок із виразом?
+
+```js
+(() => { const n = 2; return `${n} + ${n} = ${n + n}`; })()
+```
+
+**26.** Що дає `String.raw`?
+
+```js
+String.raw`a\nb${1 + 1}`
+```
+
+### Рівень 3. Нюанси та пастки
+
+**27.** Що дасть `'5' + 3` і `'5' - 3`?
+
+```js
+['5' + 3, '5' - 3]
+```
+
+**28.** Що поверне `Number('12px')`, `parseInt('12px')`, `parseFloat('3.14abc')`?
+
+```js
+[Number('12px'), parseInt('12px'), parseFloat('3.14abc')]
+```
+
+**29.** Що дасть `(255).toString(16)` і `parseInt('ff', 16)`?
+
+```js
+[(255).toString(16), parseInt('ff', 16)]
+```
+
+**30.** Що дасть `'abc' > 'abd'` і `'Z' < 'a'`?
+
+```js
+['abc' > 'abd', 'Z' < 'a']
+```
+
+**31.** Що поверне `'a,b'.concat('c', 1)`?
+
+```js
+'a,b'.concat('c', 1)
+```
+
+**32.** Що повертає `isWellFormed` і `toWellFormed` для непарного сурогата?
+
+```js
+['a\uD800'.isWellFormed(), 'a\uD800'.toWellFormed()]
+```
+
+**33.** Чи змінює `toUpperCase` оригінал?
+
+```js
+(() => { const s = 'abc'; s.toUpperCase(); return s; })()
+```
+
+**34.** Що дасть `'abc'.search(/c/)` і `'abc'.match(/x/)`?
+
+```js
+['abc'.search(/c/), 'abc'.match(/x/)]
+```
+
+**35.** Що поверне `'a\tb'.length` та `'a\\tb'.length`?
+
+```js
+['a\tb'.length, 'a\\tb'.length]
+```
+
+**36.** Що дає `'abc'.localeCompare('ABC', undefined, { sensitivity: 'base' })`?
+
+```js
+'abc'.localeCompare('ABC', undefined, { sensitivity: 'base' })
+```
+
+**37.** Як відсортувати слова з кирилицею за алфавітом?
+
+```js
+['яблуко', 'абрикос', 'гарбуз', 'їжак'].sort((a, b) => a.localeCompare(b, 'uk'))
+```
+
+**38.** Що дасть `'Привіт'.length` і `'Привіт'.toUpperCase()`?
+
+```js
+['Привіт'.length, 'Привіт'.toUpperCase()]
+```
+
+**39.** Що поверне порівняння `new String('a') === 'a'` і `typeof new String('a')`?
+
+```js
+[new String('a') === 'a', typeof new String('a'), new String('a') == 'a']
+```
+
+### Рівень 4. Практика й реалізація
+
+**40.** Чому `split('').reverse().join('')` ламає емодзі?
+
+```js
+['a😀b'.split('').reverse().join('') === 'b😀a', [...'a😀b'].reverse().join('') === 'b😀a']
+```
+
+**41.** Напишіть `reverse(str)`, що коректно працює з емодзі.
+
+```js
+const reverse = str => [...str].reverse().join('')
+```
+
+**42.** Напишіть `isPalindrome(str)` без урахування регістру й пробілів.
+
+```js
+const isPalindrome = s => { const t = s.toLowerCase().replace(/\s+/g, ''); return t === [...t].reverse().join('') }
+```
+
+**43.** Напишіть `capitalize(str)` — перша літера велика.
+
+```js
+const capitalize = s => s.charAt(0).toUpperCase() + s.slice(1)
+```
+
+**44.** Напишіть `countChars(str)` — частоти символів.
+
+```js
+const countChars = s => [...s].reduce((o, c) => ((o[c] = (o[c] ?? 0) + 1), o), {})
+```
+
+**45.** Напишіть `truncate(str, n)` — обрізати до `n` символів і додати `…`.
+
+```js
+const truncate = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
+```
+
+**46.** Напишіть `camelToKebab(str)`.
+
+```js
+const camelToKebab = s => s.replace(/[A-Z]/g, m => '-' + m.toLowerCase())
+```
+
+**47.** Напишіть `isAnagram(a, b)`.
+
+```js
+const isAnagram = (a, b) => [...a].sort().join('') === [...b].sort().join('')
+```
+
+**48.** Напишіть `titleCase(str)` — кожне слово з великої літери.
+
+```js
+const titleCase = s => s.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ')
+```
+
+**49.** Напишіть `longestWord(str)`.
+
+```js
+const longestWord = s => s.split(/\s+/).reduce((a, b) => (b.length > a.length ? b : a))
+```
+
+**50.** Напишіть `vowelCount(str)` через регулярний вираз.
+
+```js
+const vowelCount = s => (s.match(/[aeiou]/gi) ?? []).length
+```
+
+### Відповіді
+
+1. `'TypeError'`
+2. `[3, 2]`
+3. `[undefined, '', 'c']`
+4. `[55357, 128512]`
+5. `['Hi', '😀']`
+6. `[-1, true]`
+7. `[3, 3]`
+8. `[true, true]`
+9. `['llo', 'hello', 'll']`
+10. `['', 'el']`
+11. `['STRASSE', 2]`
+12. `['[a]', '[a  ]', '[  a]']`
+13. `['005', 'abxyx']`
+14. `'RangeError: Invalid count value: -1'`
+15. `['a+b-c', 'a+b+c']`
+16. `[3, 2]`
+17. `[['a', 'b'], ['a,b']]`
+18. `'a+b+c'`
+19. `[true, false, true, false]`
+20. `[-1, 1, 0]`
+21. `[6, 8]`
+22. `[false, true]`
+23. `['a', '😀']`
+24. `['c', undefined]`
+25. `'2 + 2 = 4'`
+26. `'a\nb2'`
+27. `['53', 2]`
+28. `[NaN, 12, 3.14]`
+29. `['ff', 255]`
+30. `[false, true]`
+31. `'a,bc1'`
+32. `[false, 'a�']`
+33. `'abc'`
+34. `[2, null]`
+35. `[3, 4]`
+36. `0`
+37. `['абрикос', 'гарбуз', 'їжак', 'яблуко']`
+38. `[6, 'ПРИВІТ']`
+39. `[false, 'object', true]`
+40. `[false, true]`
+41. Виклик `reverse('a😀b')` → `'b😀a'`
+42. Виклик `[isPalindrome('Race car'), isPalindrome('hello')]` → `[true, false]`
+43. Виклик `capitalize('привіт світ')` → `'Привіт світ'`
+44. Виклик `countChars('hello')` → `{ h: 1, e: 1, l: 2, o: 1 }`
+45. Виклик `[truncate('hello world', 6), truncate('hi', 6)]` → `['hello…', 'hi']`
+46. Виклик `camelToKebab('myVariableName')` → `'my-variable-name'`
+47. Виклик `[isAnagram('listen', 'silent'), isAnagram('abc', 'abd')]` → `[true, false]`
+48. Виклик `titleCase('the quick brown fox')` → `'The Quick Brown Fox'`
+49. Виклик `longestWord('a quick brownish fox')` → `'brownish'`
+50. Виклик `vowelCount('Programming Language')` → `7`

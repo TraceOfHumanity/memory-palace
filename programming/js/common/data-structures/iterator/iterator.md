@@ -509,3 +509,272 @@ for await (const items of pages(api)) process(items);
 - `return()` ітератора викликається при `break`, помилці й неповній деструктуризації (не при природному завершенні).
 - Ітерація ліниво проходить увесь ланцюжок по одному елементу; Iterator Helpers: `map/filter/take/drop/flatMap/reduce/toArray/forEach/some/every/find`, `Iterator.from`.
 - Асинхронні: `Symbol.asyncIterator`, `async function*`, `for await…of`.
+
+## Задачі для закріплення
+
+36 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Що повертає `[Symbol.iterator]()` масиву і що має результат `next()`?
+
+```js
+(() => { const it = [1][Symbol.iterator](); return [it.next(), it.next()]; })()
+```
+
+**2.** Яку різницю між iterable та iterator показує перевірка `[]`?
+
+```js
+(() => { const a = []; return [typeof a[Symbol.iterator], typeof a.next, typeof a[Symbol.iterator]().next]; })()
+```
+
+**3.** Чи є ітератор масиву сам iterable?
+
+```js
+(() => { const it = [1, 2][Symbol.iterator](); return [it[Symbol.iterator]() === it, [...it]]; })()
+```
+
+**4.** Що збере `for...of` по рядку з емодзі?
+
+```js
+[...'a😀b']
+```
+
+**5.** Що поверне `[...new Map([['a', 1]])]` і `[...new Set('aab')]`?
+
+```js
+[[...new Map([['a', 1]])], [...new Set('aab')]]
+```
+
+**6.** Чи можна використовувати `for...of` для звичайного об'єкта?
+
+```js
+(() => { try { for (const x of { a: 1 }) ; } catch (e) { return e.name + ': ' + e.message; } })()
+```
+
+**7.** Що дасть генератор `function*` при послідовних `next()`?
+
+```js
+(() => { function* g() { yield 1; yield 2; return 3; } const it = g(); return [it.next(), it.next(), it.next(), it.next()]; })()
+```
+
+**8.** Що збере спред по генератору, який має `return 3`?
+
+```js
+(() => { function* g() { yield 1; yield 2; return 3; } return [...g()]; })()
+```
+
+**9.** Як працює двосторонній `next(value)` у генераторі?
+
+```js
+(() => { function* g() { const a = yield 1; const b = yield a + 1; return a + b; } const it = g(); return [it.next().value, it.next(10).value, it.next(5)]; })()
+```
+
+### Рівень 2. Методи й поведінка
+
+**10.** Що поверне `yield*` при делегуванні?
+
+```js
+(() => { function* inner() { yield 'a'; yield 'b'; return 'r'; } function* outer() { const r = yield* inner(); yield r; } return [...outer()]; })()
+```
+
+**11.** Що дає `return()` на генераторі до завершення?
+
+```js
+(() => { function* g() { try { yield 1; yield 2; } finally { yield 'cleanup'; } } const it = g(); it.next(); return [it.return('done'), it.next(), it.next()]; })()
+```
+
+**12.** Що станеться після `throw()` у генераторі без `catch`?
+
+```js
+(() => { function* g() { yield 1; } const it = g(); it.next(); try { it.throw(new Error('boom')); } catch (e) { return [e.message, it.next()]; } })()
+```
+
+**13.** Чи викликається `return()` ітератора при `break` у `for...of`?
+
+```js
+(() => { const log = []; const it = { [Symbol.iterator]() { let i = 0; return { next: () => ({ value: i++, done: false }), return() { log.push('closed'); return { done: true }; } }; } }; for (const x of it) { if (x === 2) break; } return log; })()
+```
+
+**14.** Скільки елементів видасть ліниво `take`, якщо ітератор нескінченний?
+
+```js
+(() => { function* nat() { let i = 0; while (true) yield i++; } function* take(it, n) { let c = 0; for (const x of it) { if (c++ >= n) return; yield x; } } return [...take(nat(), 4)]; })()
+```
+
+**15.** Що дасть `Iterator.from(...).map(...).filter(...).toArray()`?
+
+```js
+[1, 2, 3, 4].values().map(x => x * 2).filter(x => x > 2).toArray()
+```
+
+**16.** Що поверне `take`, `drop` і `reduce` у iterator helpers?
+
+```js
+(() => { const nums = () => [1, 2, 3, 4, 5].values(); return [nums().take(2).toArray(), nums().drop(3).toArray(), nums().reduce((a, b) => a + b)]; })()
+```
+
+**17.** Що поверне `flatMap`, `some`, `every`, `find` на ітераторі?
+
+```js
+(() => { const n = () => [1, 2, 3].values(); return [n().flatMap(x => [x, x]).toArray(), n().some(x => x > 2), n().every(x => x > 0), n().find(x => x > 1)]; })()
+```
+
+**18.** Чи повторно використовується ітератор після `toArray()`?
+
+```js
+(() => { const it = [1, 2].values(); return [it.toArray(), it.toArray()]; })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**19.** Чи лінивий `map` на ітераторі? Скільки разів виконається колбек до першого `next()`?
+
+```js
+(() => { let n = 0; const it = [1, 2, 3].values().map(x => (n++, x)); const before = n; it.next(); return [before, n]; })()
+```
+
+**20.** Який порядок `yield` у двох генераторів, переплетених через `for`?
+
+```js
+(() => { function* a() { yield 1; yield 3; } function* b() { yield 2; yield 4; } const x = a(), y = b(), o = []; for (let i = 0; i < 2; i++) o.push(x.next().value, y.next().value); return o; })()
+```
+
+**21.** Що дасть `Array.from` для iterable із mapper?
+
+```js
+Array.from(new Set([1, 2, 3]), x => x * 2)
+```
+
+**22.** Що розгорне деструктуризація з ітератора?
+
+```js
+(() => { function* g() { yield 1; yield 2; yield 3; } const [a, , c] = g(); return [a, c]; })()
+```
+
+**23.** Зробіть клас `Range` ітерованим (генератор). Що дасть `[...new Range(1, 5, 2)]`?
+
+```js
+class Range { constructor(a, b, step = 1) { this.a = a; this.b = b; this.step = step } *[Symbol.iterator]() { for (let i = this.a; i < this.b; i += this.step) yield i } }
+```
+
+**24.** Напишіть ітератор вручну (без генератора) для зворотного обходу масиву.
+
+```js
+const reversed = arr => ({ [Symbol.iterator]() { let i = arr.length; return { next: () => (i > 0 ? { value: arr[--i], done: false } : { value: undefined, done: true }) } } })
+```
+
+**25.** Напишіть генератор `fib()` і `take(n, it)`. Перші 8 чисел Фібоначчі?
+
+```js
+function* fib() { let [a, b] = [0, 1]; while (true) { yield a; [a, b] = [b, a + b] } }
+function* take(n, it) { let i = 0; for (const x of it) { if (i++ >= n) return; yield x } }
+```
+
+**26.** Напишіть `zip(...iters)` на генераторі.
+
+```js
+function* zip(...its) { const iters = its.map(i => i[Symbol.iterator]()); while (true) { const rs = iters.map(i => i.next()); if (rs.some(r => r.done)) return; yield rs.map(r => r.value) } }
+```
+
+**27.** Напишіть `chunked(iter, n)` — шматки по `n`.
+
+```js
+function* chunked(it, n) { let buf = []; for (const x of it) { buf.push(x); if (buf.length === n) { yield buf; buf = [] } } if (buf.length) yield buf }
+```
+
+### Рівень 4. Практика й реалізація
+
+**28.** Напишіть `flatten(iter)` генератором для вкладених масивів.
+
+```js
+function* flatten(it) { for (const x of it) Array.isArray(x) ? yield* flatten(x) : yield x }
+```
+
+**29.** Напишіть `enumerate(iter)` — пари `[індекс, значення]`.
+
+```js
+function* enumerate(it, start = 0) { let i = start; for (const x of it) yield [i++, x] }
+```
+
+**30.** Напишіть `cycle(iter)` і візьміть перші 7 елементів.
+
+```js
+function* cycle(it) { const saved = [...it]; while (saved.length) yield* saved }
+```
+
+**31.** Напишіть `range(n)` як `Symbol.iterator`-об'єкт і порівняйте з масивом `Array.from`.
+
+```js
+const range = n => ({ *[Symbol.iterator]() { for (let i = 0; i < n; i++) yield i } })
+```
+
+**32.** Напишіть `pairs(arr)` — усі пари `[a, b]` (a < b за індексом) генератором.
+
+```js
+function* pairs(a) { for (let i = 0; i < a.length; i++) for (let j = i + 1; j < a.length; j++) yield [a[i], a[j]] }
+```
+
+**33.** Напишіть `treeWalk(node)` — inorder-обхід дерева генератором (`yield*`).
+
+```js
+function* treeWalk(n) { if (!n) return; yield* treeWalk(n.l); yield n.v; yield* treeWalk(n.r) }
+```
+
+**34.** Напишіть `lazyMap(it, fn)` і `lazyFilter(it, pred)`. Скільки разів викличеться `fn`, якщо взяти перший елемент?
+
+```js
+function* lazyMap(it, fn) { for (const x of it) yield fn(x) }
+function* lazyFilter(it, p) { for (const x of it) if (p(x)) yield x }
+```
+
+**35.** Напишіть `groupConsecutive(iter)` — групи однакових сусідніх елементів.
+
+```js
+function* groupConsecutive(it) { let cur, group = []; for (const x of it) { if (group.length && x !== cur) { yield group; group = [] } cur = x; group.push(x) } if (group.length) yield group }
+```
+
+**36.** Напишіть `windowed(arr, k)` — ковзні вікна розміром `k`.
+
+```js
+function* windowed(a, k) { for (let i = 0; i + k <= a.length; i++) yield a.slice(i, i + k) }
+```
+
+### Відповіді
+
+1. `[{ value: 1, done: false }, { value: undefined, done: true }]`
+2. `['function', 'undefined', 'function']`
+3. `[true, [1, 2]]`
+4. `['a', '😀', 'b']`
+5. `[[['a', 1]], ['a', 'b']]`
+6. `'TypeError: {(intermediate value)} is not iterable'`
+7. `[{ value: 1, done: false }, { value: 2, done: false }, { value: 3, done: true }, { value: undefined, done: true }]`
+8. `[1, 2]`
+9. `[1, 11, { value: 15, done: true }]`
+10. `['a', 'b', 'r']`
+11. `[{ value: 'cleanup', done: false }, { value: 'done', done: true }, { value: undefined, done: true }]`
+12. `['boom', { value: undefined, done: true }]`
+13. `['closed']`
+14. `[0, 1, 2, 3]`
+15. `[4, 6, 8]`
+16. `[[1, 2], [4, 5], 15]`
+17. `[[1, 1, 2, 2, 3, 3], true, true, 2]`
+18. `[[1, 2], []]`
+19. `[0, 1]`
+20. `[1, 2, 3, 4]`
+21. `[2, 4, 6]`
+22. `[1, 3]`
+23. Виклик `[...new Range(1, 8, 3)]` → `[1, 4, 7]`
+24. Виклик `[...reversed([1, 2, 3])]` → `[3, 2, 1]`
+25. Виклик `[...take(8, fib())]` → `[0, 1, 1, 2, 3, 5, 8, 13]`
+26. Виклик `[...zip([1, 2, 3], 'ab', new Set([true, false, null]))]` → `[[1, 'a', true], [2, 'b', false]]`
+27. Виклик `[...chunked([1, 2, 3, 4, 5], 2)]` → `[[1, 2], [3, 4], [5]]`
+28. Виклик `[...flatten([1, [2, [3, [4]]], 5])]` → `[1, 2, 3, 4, 5]`
+29. Виклик `[...enumerate(['a', 'b', 'c'], 1)]` → `[[1, 'a'], [2, 'b'], [3, 'c']]`
+30. Виклик `(() => { const o = []; for (const x of cycle([1, 2, 3])) { if (o.length === 7) break; o.push(x); } return o; })()` → `[1, 2, 3, 1, 2, 3, 1]`
+31. Виклик `[[...range(4)], Array.from(range(3))]` → `[[0, 1, 2, 3], [0, 1, 2]]`
+32. Виклик `[...pairs([1, 2, 3])]` → `[[1, 2], [1, 3], [2, 3]]`
+33. Виклик `[...treeWalk({ v: 2, l: { v: 1 }, r: { v: 3 } })]` → `[1, 2, 3]`
+34. Виклик `(() => { let calls = 0; const it = lazyFilter(lazyMap([1, 2, 3, 4], x => (calls++, x * 2)), x => x > 2); const first = it.next().value; return [first, calls]; })()` → `[4, 2]`
+35. Виклик `[...groupConsecutive([1, 1, 2, 2, 2, 3, 1])]` → `[[1, 1], [2, 2, 2], [3], [1]]`
+36. Виклик `[...windowed([1, 2, 3, 4], 2)]` → `[[1, 2], [2, 3], [3, 4]]`

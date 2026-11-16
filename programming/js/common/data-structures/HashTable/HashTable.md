@@ -363,3 +363,379 @@ hash("A") = 2, hash("B") = 2 (колізія!), hash("C") = 3
 3. При колізії — ланцюжок або зондування.
 4. Слідкувати за load factor; перевищив — збільшити і rehash.
 5. Для реального коду → `Map`/`Set`.
+
+## Задачі для закріплення
+
+29 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Яка ідея хеш-таблиці і яка середня складність `set`/`get`/`delete`?
+
+**2.** Що таке колізія і які два основні способи її розв'язати?
+
+**3.** Що таке коефіцієнт завантаження (load factor) і навіщо потрібен ресайз?
+
+**4.** Які властивості має хороша хеш-функція?
+
+**5.** Що дасть хеш рядка `'ab'` за формулою `h = h * 31 + code` по модулю 8?
+
+```js
+(() => { let h = 0; for (const ch of 'ab') h = (h * 31 + ch.charCodeAt(0)) >>> 0; return [h, h % 8]; })()
+```
+
+**6.** Чи завжди однакові ключі дають однаковий хеш?
+
+```js
+(() => { const f = s => { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h; }; return f('abc') === f('abc'); })()
+```
+
+**7.** Які колізії дає `key % 4` для ключів `1, 5, 9, 2`?
+
+```js
+[1, 5, 9, 2].map(k => k % 4)
+```
+
+**8.** Що поверне `'Aa'` і `'BB'` у Java-подібному хеші `h * 31 + code`?
+
+```js
+(() => { const f = s => { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) | 0; return h; }; return [f('Aa'), f('BB')]; })()
+```
+
+### Рівень 2. Методи й поведінка
+
+**9.** Реалізуйте `HashTable` із ланцюжками (`set`, `get`, `has`, `delete`). Що дасть послідовність?
+
+```js
+class HashTable {
+  constructor(size = 8) { this.buckets = Array.from({ length: size }, () => []); this.count = 0 }
+  #hash(key) { let h = 0; for (const ch of String(key)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h % this.buckets.length }
+  set(key, value) {
+    const b = this.buckets[this.#hash(key)]
+    const e = b.find(p => p[0] === key)
+    if (e) e[1] = value; else { b.push([key, value]); this.count++ }
+    return this
+  }
+  get(key) { return this.buckets[this.#hash(key)].find(p => p[0] === key)?.[1] }
+  has(key) { return this.buckets[this.#hash(key)].some(p => p[0] === key) }
+  delete(key) {
+    const b = this.buckets[this.#hash(key)]
+    const i = b.findIndex(p => p[0] === key)
+    if (i < 0) return false
+    b.splice(i, 1); this.count--; return true
+  }
+}
+```
+
+**10.** Скільки елементів у кошиках після вставки 5 ключів у таблицю з 4 кошиками (довжини кошиків)?
+
+```js
+class HashTable {
+  constructor(size = 8) { this.buckets = Array.from({ length: size }, () => []); this.count = 0 }
+  #hash(key) { let h = 0; for (const ch of String(key)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h % this.buckets.length }
+  set(key, value) {
+    const b = this.buckets[this.#hash(key)]
+    const e = b.find(p => p[0] === key)
+    if (e) e[1] = value; else { b.push([key, value]); this.count++ }
+    return this
+  }
+  get(key) { return this.buckets[this.#hash(key)].find(p => p[0] === key)?.[1] }
+  has(key) { return this.buckets[this.#hash(key)].some(p => p[0] === key) }
+  delete(key) {
+    const b = this.buckets[this.#hash(key)]
+    const i = b.findIndex(p => p[0] === key)
+    if (i < 0) return false
+    b.splice(i, 1); this.count--; return true
+  }
+}
+```
+
+**11.** Напишіть `resize(table)`, що подвоює кількість кошиків і перехешовує елементи.
+
+```js
+class HashTable {
+  constructor(size = 8) { this.buckets = Array.from({ length: size }, () => []); this.count = 0 }
+  #hash(key) { let h = 0; for (const ch of String(key)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h % this.buckets.length }
+  set(key, value) {
+    const b = this.buckets[this.#hash(key)]
+    const e = b.find(p => p[0] === key)
+    if (e) e[1] = value; else { b.push([key, value]); this.count++ }
+    return this
+  }
+  get(key) { return this.buckets[this.#hash(key)].find(p => p[0] === key)?.[1] }
+  has(key) { return this.buckets[this.#hash(key)].some(p => p[0] === key) }
+  delete(key) {
+    const b = this.buckets[this.#hash(key)]
+    const i = b.findIndex(p => p[0] === key)
+    if (i < 0) return false
+    b.splice(i, 1); this.count--; return true
+  }
+}
+function resize(t) {
+  const old = t.buckets.flat()
+  const n = new HashTable(t.buckets.length * 2)
+  old.forEach(([k, v]) => n.set(k, v))
+  return n
+}
+```
+
+**12.** Напишіть `loadFactor(table)`.
+
+```js
+class HashTable {
+  constructor(size = 8) { this.buckets = Array.from({ length: size }, () => []); this.count = 0 }
+  #hash(key) { let h = 0; for (const ch of String(key)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h % this.buckets.length }
+  set(key, value) {
+    const b = this.buckets[this.#hash(key)]
+    const e = b.find(p => p[0] === key)
+    if (e) e[1] = value; else { b.push([key, value]); this.count++ }
+    return this
+  }
+  get(key) { return this.buckets[this.#hash(key)].find(p => p[0] === key)?.[1] }
+  has(key) { return this.buckets[this.#hash(key)].some(p => p[0] === key) }
+  delete(key) {
+    const b = this.buckets[this.#hash(key)]
+    const i = b.findIndex(p => p[0] === key)
+    if (i < 0) return false
+    b.splice(i, 1); this.count--; return true
+  }
+}
+const loadFactor = t => t.count / t.buckets.length
+```
+
+**13.** Напишіть `keys(table)` — усі ключі.
+
+```js
+class HashTable {
+  constructor(size = 8) { this.buckets = Array.from({ length: size }, () => []); this.count = 0 }
+  #hash(key) { let h = 0; for (const ch of String(key)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h % this.buckets.length }
+  set(key, value) {
+    const b = this.buckets[this.#hash(key)]
+    const e = b.find(p => p[0] === key)
+    if (e) e[1] = value; else { b.push([key, value]); this.count++ }
+    return this
+  }
+  get(key) { return this.buckets[this.#hash(key)].find(p => p[0] === key)?.[1] }
+  has(key) { return this.buckets[this.#hash(key)].some(p => p[0] === key) }
+  delete(key) {
+    const b = this.buckets[this.#hash(key)]
+    const i = b.findIndex(p => p[0] === key)
+    if (i < 0) return false
+    b.splice(i, 1); this.count--; return true
+  }
+}
+const keys = t => t.buckets.flat().map(p => p[0])
+```
+
+**14.** Реалізуйте таблицю з відкритою адресацією (лінійне зондування) на `set`/`get`. Що поверне `get` після колізій?
+
+```js
+class OpenTable {
+  constructor(size = 8) { this.k = new Array(size).fill(undefined); this.v = new Array(size) }
+  #h(key) { let h = 0; for (const ch of String(key)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h % this.k.length }
+  set(key, val) {
+    let i = this.#h(key)
+    for (let n = 0; n < this.k.length; n++, i = (i + 1) % this.k.length) {
+      if (this.k[i] === undefined || this.k[i] === key) { this.k[i] = key; this.v[i] = val; return true }
+    }
+    return false
+  }
+  get(key) {
+    let i = this.#h(key)
+    for (let n = 0; n < this.k.length; n++, i = (i + 1) % this.k.length) {
+      if (this.k[i] === undefined) return undefined
+      if (this.k[i] === key) return this.v[i]
+    }
+  }
+}
+```
+
+**15.** Що станеться, якщо в таблиці з відкритою адресацією просто обнулити комірку при видаленні? Що поверне пошук ключа, що стояв далі в ланцюжку?
+
+```js
+(() => { const keys = ['a', 'b', 'c']; const idx = () => keys.findIndex(k => k === 'c'); keys[1] = undefined; let found = -1; for (let i = 0; i < keys.length; i++) { if (keys[i] === undefined) break; if (keys[i] === 'c') found = i; } return found; })()
+```
+
+**16.** Напишіть `twoSum(nums, target)` через хеш-таблицю (`Map`).
+
+```js
+function twoSum(nums, target) {
+  const seen = new Map()
+  for (let i = 0; i < nums.length; i++) {
+    if (seen.has(target - nums[i])) return [seen.get(target - nums[i]), i]
+    seen.set(nums[i], i)
+  }
+  return null
+}
+```
+
+### Рівень 3. Нюанси та пастки
+
+**17.** Напишіть `groupAnagrams(words)` через `Map`.
+
+```js
+function groupAnagrams(words) {
+  const m = new Map()
+  for (const w of words) { const k = [...w].sort().join(''); m.set(k, [...(m.get(k) ?? []), w]) }
+  return [...m.values()]
+}
+```
+
+**18.** Напишіть `firstDuplicate(arr)`.
+
+```js
+function firstDuplicate(a) { const s = new Set(); for (const x of a) { if (s.has(x)) return x; s.add(x) } return null }
+```
+
+**19.** Напишіть `subarraySum(nums, k)` — кількість підмасивів із сумою `k` (префіксні суми й `Map`).
+
+```js
+function subarraySum(nums, k) {
+  const m = new Map([[0, 1]]); let sum = 0, cnt = 0
+  for (const x of nums) { sum += x; cnt += m.get(sum - k) ?? 0; m.set(sum, (m.get(sum) ?? 0) + 1) }
+  return cnt
+}
+```
+
+**20.** Напишіть `longestConsecutive(nums)` — довжина найдовшої послідовності підряд (через `Set`).
+
+```js
+function longestConsecutive(nums) {
+  const s = new Set(nums); let best = 0
+  for (const x of s) if (!s.has(x - 1)) { let y = x; while (s.has(y + 1)) y++; best = Math.max(best, y - x + 1) }
+  return best
+}
+```
+
+**21.** Напишіть `isIsomorphic(a, b)` для рядків.
+
+```js
+function isIsomorphic(a, b) {
+  const m = new Map(), used = new Set()
+  for (let i = 0; i < a.length; i++) {
+    if (m.has(a[i])) { if (m.get(a[i]) !== b[i]) return false }
+    else { if (used.has(b[i])) return false; m.set(a[i], b[i]); used.add(b[i]) }
+  }
+  return true
+}
+```
+
+**22.** Напишіть `topKFrequent(nums, k)`.
+
+```js
+const topKFrequent = (nums, k) => { const m = new Map(); nums.forEach(x => m.set(x, (m.get(x) ?? 0) + 1)); return [...m].sort((a, b) => b[1] - a[1]).slice(0, k).map(p => p[0]) }
+```
+
+**23.** Напишіть `intersect(a, b)` — перетин двох масивів з урахуванням кратності.
+
+```js
+function intersect(a, b) {
+  const m = new Map(); a.forEach(x => m.set(x, (m.get(x) ?? 0) + 1))
+  const out = []
+  for (const x of b) if (m.get(x) > 0) { out.push(x); m.set(x, m.get(x) - 1) }
+  return out
+}
+```
+
+**24.** Напишіть `wordPattern(pattern, s)`.
+
+```js
+function wordPattern(p, s) {
+  const w = s.split(' ')
+  if (w.length !== p.length) return false
+  const a = new Map(), b = new Map()
+  for (let i = 0; i < p.length; i++) {
+    if ((a.has(p[i]) && a.get(p[i]) !== w[i]) || (b.has(w[i]) && b.get(w[i]) !== p[i])) return false
+    a.set(p[i], w[i]); b.set(w[i], p[i])
+  }
+  return true
+}
+```
+
+### Рівень 4. Практика й реалізація
+
+**25.** Напишіть `containsNearbyDuplicate(nums, k)`.
+
+```js
+function containsNearbyDuplicate(nums, k) {
+  const m = new Map()
+  for (let i = 0; i < nums.length; i++) { if (m.has(nums[i]) && i - m.get(nums[i]) <= k) return true; m.set(nums[i], i) }
+  return false
+}
+```
+
+**26.** Напишіть `fourSumCount(a, b, c, d)` — кількість четвірок із нульовою сумою (через `Map` сум пар).
+
+```js
+function fourSumCount(a, b, c, d) {
+  const m = new Map()
+  for (const x of a) for (const y of b) m.set(x + y, (m.get(x + y) ?? 0) + 1)
+  let n = 0
+  for (const x of c) for (const y of d) n += m.get(-(x + y)) ?? 0
+  return n
+}
+```
+
+**27.** Напишіть `validAnagram(s, t)` через лічильник.
+
+```js
+function validAnagram(s, t) {
+  if (s.length !== t.length) return false
+  const m = new Map()
+  for (const c of s) m.set(c, (m.get(c) ?? 0) + 1)
+  for (const c of t) { if (!m.get(c)) return false; m.set(c, m.get(c) - 1) }
+  return true
+}
+```
+
+**28.** Напишіть `majorityElement(nums)` через `Map`.
+
+```js
+function majorityElement(nums) {
+  const m = new Map(); let best, bc = 0
+  for (const x of nums) { const c = (m.get(x) ?? 0) + 1; m.set(x, c); if (c > bc) { bc = c; best = x } }
+  return best
+}
+```
+
+**29.** Напишіть `happy(n)` — число щасливе, якщо послідовність сум квадратів цифр доходить до 1 (виявлення циклу через `Set`).
+
+```js
+function happy(n) {
+  const seen = new Set()
+  while (n !== 1 && !seen.has(n)) { seen.add(n); n = [...String(n)].reduce((s, d) => s + d * d, 0) }
+  return n === 1
+}
+```
+
+### Відповіді
+
+1. Ключ через хеш-функцію перетворюється на індекс масиву; середня складність `O(1)`, у найгіршому випадку (усі ключі в одному кошику) — `O(n)`.
+2. Колізія — коли різні ключі мають однаковий індекс. Способи: ланцюжки (кожен кошик — список) і відкрита адресація (пошук наступної вільної комірки).
+3. `load = count / buckets`; коли він перевищує поріг (наприклад 0.75), таблицю збільшують і перехешують ключі, щоб ланцюжки лишались короткими.
+4. Детермінована, швидка, рівномірно розподіляє ключі, малу зміну ключа перетворює на велику зміну хеша.
+5. `[3105, 1]`
+6. `true`
+7. `[1, 1, 1, 2]`
+8. `[2112, 2112]`
+9. Виклик `(() => { const t = new HashTable(); t.set('a', 1).set('b', 2).set('a', 3); return [t.get('a'), t.get('z'), t.has('b'), t.count, t.delete('b'), t.delete('b'), t.count]; })()` → `[3, undefined, true, 2, true, false, 1]`
+10. Виклик `(() => { const t = new HashTable(4); ['a', 'b', 'c', 'd', 'e'].forEach(k => t.set(k, 1)); return [t.buckets.map(b => b.length), t.count]; })()` → `[[1, 2, 1, 1], 5]`
+11. Виклик `(() => { const t = new HashTable(2); ['a', 'b', 'c', 'd'].forEach((k, i) => t.set(k, i)); const r = resize(t); return [r.buckets.length, r.count, r.get('c')]; })()` → `[4, 4, 2]`
+12. Виклик `(() => { const t = new HashTable(4); t.set('a', 1).set('b', 2); return loadFactor(t); })()` → `0.5`
+13. Виклик `(() => { const t = new HashTable(4); t.set('x', 1).set('y', 2); return keys(t).sort(); })()` → `['x', 'y']`
+14. Виклик `(() => { const t = new OpenTable(4); const r = ['a', 'e', 'i', 'm', 'q'].map((k, i) => t.set(k, i)); return [r, t.get('i'), t.get('zz')]; })()` → `[[true, true, true, true, false], 2, undefined]`
+15. `-1`
+16. Виклик `[twoSum([3, 2, 4], 6), twoSum([1, 2], 9)]` → `[[1, 2], null]`
+17. Виклик `groupAnagrams(['eat', 'tea', 'tan', 'ate', 'nat', 'bat'])` → `[['eat', 'tea', 'ate'], ['tan', 'nat'], ['bat']]`
+18. Виклик `[firstDuplicate([2, 1, 3, 5, 3, 2]), firstDuplicate([1, 2])]` → `[3, null]`
+19. Виклик `[subarraySum([1, 1, 1], 2), subarraySum([1, 2, 3], 3)]` → `[2, 2]`
+20. Виклик `[longestConsecutive([100, 4, 200, 1, 3, 2]), longestConsecutive([])]` → `[4, 0]`
+21. Виклик `[isIsomorphic('egg', 'add'), isIsomorphic('foo', 'bar'), isIsomorphic('ab', 'aa')]` → `[true, false, false]`
+22. Виклик `topKFrequent([1, 1, 1, 2, 2, 3], 2)` → `[1, 2]`
+23. Виклик `intersect([1, 2, 2, 1], [2, 2, 3])` → `[2, 2]`
+24. Виклик `[wordPattern('abba', 'dog cat cat dog'), wordPattern('abba', 'dog cat cat fish')]` → `[true, false]`
+25. Виклик `[containsNearbyDuplicate([1, 2, 3, 1], 3), containsNearbyDuplicate([1, 0, 1, 1], 1), containsNearbyDuplicate([1, 2, 3, 1, 2, 3], 2)]` → `[true, true, false]`
+26. Виклик `fourSumCount([1, 2], [-2, -1], [-1, 2], [0, 2])` → `2`
+27. Виклик `[validAnagram('anagram', 'nagaram'), validAnagram('rat', 'car')]` → `[true, false]`
+28. Виклик `[majorityElement([3, 2, 3]), majorityElement([2, 2, 1, 1, 1, 2, 2])]` → `[3, 2]`
+29. Виклик `[happy(19), happy(2)]` → `[true, false]`

@@ -2088,3 +2088,386 @@ const doubled = Object.fromEntries(Object.entries({ a: 1, b: 2 }).map(([k, v]) =
 6. Тонке налаштування поля → `defineProperty` / геттери-сеттери.
 7. Динамічний словник → `Map` (або `Object.create(null)`).
 8. Порівняти вміст → вручну / бібліотека, не `===`.
+
+## Задачі для закріплення
+
+П'ятдесят задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Що поверне `Object.keys` для об'єкта з числовими і рядковими ключами?
+
+```js
+Object.keys({ b: 1, 2: 1, a: 1, 1: 1 })
+```
+
+**2.** Які методи повертають лише власні перелічувані властивості: `keys`, `values`, `entries`?
+
+```js
+(() => { const o = Object.create({ inherited: 1 }); o.own = 2; return [Object.keys(o), Object.values(o), Object.entries(o)]; })()
+```
+
+**3.** Що дасть `for...in` і `Object.keys` для успадкованих властивостей?
+
+```js
+(() => { const o = Object.create({ p: 1 }); o.q = 2; const f = []; for (const k in o) f.push(k); return [f, Object.keys(o)]; })()
+```
+
+**4.** Як `Object.assign` копіює властивості і що повертає?
+
+```js
+(() => { const t = { a: 1 }; const r = Object.assign(t, { b: 2 }, { a: 9 }); return [r === t, t]; })()
+```
+
+**5.** Чи глибоко копіює `Object.assign` і `{ ...obj }`?
+
+```js
+(() => { const a = { n: { x: 1 } }; const b = { ...a }; b.n.x = 2; return a.n.x; })()
+```
+
+**6.** Що поверне `structuredClone` для вкладеного об'єкта?
+
+```js
+(() => { const a = { n: { x: 1 }, d: new Date(0) }; const b = structuredClone(a); b.n.x = 2; return [a.n.x, b.d instanceof Date]; })()
+```
+
+**7.** Що поверне `Object.fromEntries` для пар?
+
+```js
+Object.fromEntries([['a', 1], ['b', 2]])
+```
+
+**8.** Яке значення поверне `Object.entries` для рядка `'ab'`?
+
+```js
+Object.entries('ab')
+```
+
+**9.** Що дасть `Object.defineProperty` без прапорців?
+
+```js
+(() => { const o = {}; Object.defineProperty(o, 'x', { value: 1 }); return Object.getOwnPropertyDescriptor(o, 'x'); })()
+```
+
+**10.** Чи можна змінити неперезаписувану властивість у суворому режимі?
+
+```js
+(() => { 'use strict'; const o = {}; Object.defineProperty(o, 'x', { value: 1 }); try { o.x = 2; } catch (e) { return e.message; } })()
+```
+
+**11.** Чи з'явиться неперелічувана властивість у `Object.keys` і `getOwnPropertyNames`?
+
+```js
+(() => { const o = { a: 1 }; Object.defineProperty(o, 'h', { value: 2, enumerable: false }); return [Object.keys(o), Object.getOwnPropertyNames(o), JSON.stringify(o)]; })()
+```
+
+**12.** Що поверне геттер, визначений через `defineProperty`?
+
+```js
+(() => { const o = {}; Object.defineProperty(o, 'r', { get() { return 42; } }); o.r = 1; return o.r; })()
+```
+
+**13.** Що поверне `getOwnPropertyDescriptor` звичайної властивості?
+
+```js
+Object.getOwnPropertyDescriptor({ a: 1 }, 'a')
+```
+
+### Рівень 2. Методи й поведінка
+
+**14.** Що поверне `getOwnPropertySymbols`?
+
+```js
+(() => { const s = Symbol('s'); const o = { [s]: 1, a: 2 }; return [Object.keys(o), Object.getOwnPropertySymbols(o).length]; })()
+```
+
+**15.** Що дасть `Object.hasOwn` і `in` для успадкованого ключа?
+
+```js
+(() => { const o = Object.create({ p: 1 }); return [Object.hasOwn(o, 'p'), 'p' in o]; })()
+```
+
+**16.** Що поверне `Object.getPrototypeOf({}) === Object.prototype`?
+
+```js
+[Object.getPrototypeOf({}) === Object.prototype, Object.getPrototypeOf(Object.prototype)]
+```
+
+**17.** Що поверне `Object.create(null)` з погляду прототипа?
+
+```js
+(() => { const o = Object.create(null); return [Object.getPrototypeOf(o), 'toString' in o]; })()
+```
+
+**18.** Що дасть `Object.setPrototypeOf` і пошук по ланцюжку?
+
+```js
+(() => { const p = { hi() { return 'hi'; } }; const o = {}; Object.setPrototypeOf(o, p); return [o.hi(), Object.hasOwn(o, 'hi')]; })()
+```
+
+**19.** Що станеться з `Object.freeze` у суворому режимі при зміні?
+
+```js
+(() => { 'use strict'; const o = Object.freeze({ a: 1 }); try { o.a = 2; } catch (e) { return e.message; } })()
+```
+
+**20.** Чи заморожує `freeze` вкладені об'єкти?
+
+```js
+(() => { const o = Object.freeze({ n: { x: 1 } }); o.n.x = 2; return [o.n.x, Object.isFrozen(o), Object.isFrozen(o.n)]; })()
+```
+
+**21.** Чим відрізняється `seal` від `freeze` і `preventExtensions`?
+
+```js
+(() => { const s = Object.seal({ a: 1 }); s.a = 2; s.b = 3; delete s.a; const p = Object.preventExtensions({ a: 1 }); p.b = 3; delete p.a; return [s, p]; })()
+```
+
+**22.** Що дасть `Object.is` для `NaN`, `0`, `-0`?
+
+```js
+[Object.is(NaN, NaN), Object.is(0, -0), 0 === -0, NaN === NaN]
+```
+
+**23.** Що поверне `Object.groupBy` для рядків за довжиною?
+
+```js
+Object.groupBy(['a', 'bb', 'c'], s => s.length)
+```
+
+**24.** Що поверне `toString` об'єкта і `Object.prototype.toString.call([])`?
+
+```js
+[({}).toString(), Object.prototype.toString.call([]), Object.prototype.toString.call(null)]
+```
+
+**25.** Що дасть `valueOf` і `toString` для порівняння об'єкта з числом?
+
+```js
+(() => { const o = { valueOf() { return 42; } }; return [o + 1, o > 40, `${o}`]; })()
+```
+
+**26.** Що дасть `JSON.stringify` для об'єкта з `undefined`, функцією і `Symbol`?
+
+```js
+JSON.stringify({ a: undefined, b() {}, c: Symbol('x'), d: null, e: NaN })
+```
+
+### Рівень 3. Нюанси та пастки
+
+**27.** Що поверне оператор `?.` та `??` на вкладених властивостях?
+
+```js
+(() => { const o = { a: { b: 0 } }; return [o.a?.b, o.x?.b, o.a.b ?? 5, o.x ?? 5]; })()
+```
+
+**28.** Як працює деструктуризація з перейменуванням і значенням за замовчуванням?
+
+```js
+(() => { const { a: x = 1, b = 2, ...rest } = { a: undefined, c: 3, d: 4 }; return [x, b, rest]; })()
+```
+
+**29.** Що дасть spread з однаковими ключами?
+
+```js
+({ ...{ a: 1, b: 2 }, ...{ b: 3 }, c: 4 })
+```
+
+**30.** Який порядок ключів після видалення і додавання?
+
+```js
+(() => { const o = { a: 1, b: 2 }; delete o.a; o.a = 3; return Object.keys(o); })()
+```
+
+**31.** Що поверне `obj.hasOwnProperty('x')` для об'єкта з прототипом `null`?
+
+```js
+(() => { const o = Object.create(null); o.x = 1; return typeof o.hasOwnProperty; })()
+```
+
+**32.** Що дає обчислюваний ключ у літералі?
+
+```js
+(() => { const k = 'dyn'; return { [k + 1]: 1, [`${k}2`]: 2 }; })()
+```
+
+**33.** Що поверне скорочений запис методів і властивостей?
+
+```js
+(() => { const a = 1; return { a, f() { return a; } }.f(); })()
+```
+
+**34.** Як порівняти два об'єкти за вмістом (неглибоко)?
+
+```js
+(() => { const a = { x: 1, y: 2 }, b = { x: 1, y: 2 }; return [a === b, Object.keys(a).every(k => a[k] === b[k])]; })()
+```
+
+**35.** Що дасть `Object.keys` для масиву і рядка?
+
+```js
+[Object.keys(['a', 'b']), Object.keys('ab')]
+```
+
+**36.** Що поверне `Object.entries` + `map` + `fromEntries` для подвоєння значень?
+
+```js
+Object.fromEntries(Object.entries({ a: 1, b: 2 }).map(([k, v]) => [k, v * 2]))
+```
+
+**37.** Що станеться, якщо ключем об'єкта є інший об'єкт?
+
+```js
+(() => { const o = {}; o[{ a: 1 }] = 'x'; return Object.keys(o); })()
+```
+
+**38.** Що поверне `typeof null`, `typeof []`, `typeof function(){}`?
+
+```js
+[typeof null, typeof [], typeof function () {}]
+```
+
+**39.** Що поверне `Object.getOwnPropertyNames('ab')`?
+
+```js
+Object.getOwnPropertyNames('ab')
+```
+
+### Рівень 4. Практика й реалізація
+
+**40.** Що дасть `Object.entries(new Map([['a', 1]]))`?
+
+```js
+Object.entries(new Map([['a', 1]]))
+```
+
+**41.** Напишіть `pick(obj, keys)`.
+
+```js
+const pick = (o, keys) => Object.fromEntries(keys.filter(k => k in o).map(k => [k, o[k]]))
+```
+
+**42.** Напишіть `omit(obj, keys)`.
+
+```js
+const omit = (o, keys) => Object.fromEntries(Object.entries(o).filter(([k]) => !keys.includes(k)))
+```
+
+**43.** Напишіть `deepClone(value)` для об'єктів і масивів (без `structuredClone`).
+
+```js
+function deepClone(v) {
+  if (v === null || typeof v !== 'object') return v
+  if (Array.isArray(v)) return v.map(deepClone)
+  return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, deepClone(x)]))
+}
+```
+
+**44.** Напишіть `deepEqual(a, b)`.
+
+```js
+function deepEqual(a, b) {
+  if (a === b) return true
+  if (typeof a !== 'object' || typeof b !== 'object' || !a || !b) return false
+  const ka = Object.keys(a), kb = Object.keys(b)
+  return ka.length === kb.length && ka.every(k => deepEqual(a[k], b[k]))
+}
+```
+
+**45.** Напишіть `invert(obj)` — ключі й значення міняються місцями.
+
+```js
+const invert = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [v, k]))
+```
+
+**46.** Напишіть `get(obj, path)` для шляху `'a.b.c'`.
+
+```js
+const get = (o, path) => path.split('.').reduce((x, k) => x?.[k], o)
+```
+
+**47.** Напишіть `countBy(arr, fn)` — частоти за ключем.
+
+```js
+const countBy = (arr, fn) => arr.reduce((o, x) => ((o[fn(x)] = (o[fn(x)] ?? 0) + 1), o), {})
+```
+
+**48.** Напишіть `merge(a, b)` — глибоке злиття об'єктів.
+
+```js
+function merge(a, b) {
+  const out = { ...a }
+  for (const [k, v] of Object.entries(b)) {
+    out[k] = v && typeof v === 'object' && !Array.isArray(v) && typeof out[k] === 'object' ? merge(out[k], v) : v
+  }
+  return out
+}
+```
+
+**49.** Напишіть `mapValues(obj, fn)`.
+
+```js
+const mapValues = (o, fn) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, fn(v, k)]))
+```
+
+**50.** Напишіть `deepFreeze(obj)` і перевірте вкладений об'єкт.
+
+```js
+function deepFreeze(o) {
+  Object.values(o).forEach(v => typeof v === 'object' && v && deepFreeze(v))
+  return Object.freeze(o)
+}
+```
+
+### Відповіді
+
+1. `['1', '2', 'b', 'a']`
+2. `[['own'], [2], [['own', 2]]]`
+3. `[['q', 'p'], ['q']]`
+4. `[true, { a: 9, b: 2 }]`
+5. `2`
+6. `[1, true]`
+7. `{ a: 1, b: 2 }`
+8. `[['0', 'a'], ['1', 'b']]`
+9. `{ value: 1, writable: false, enumerable: false, configurable: false }`
+10. `'Cannot assign to read only property 'x' of object '#<Object>''`
+11. `[['a'], ['a', 'h'], '{"a":1}']`
+12. `42`
+13. `{ value: 1, writable: true, enumerable: true, configurable: true }`
+14. `[['a'], 1]`
+15. `[false, true]`
+16. `[true, null]`
+17. `[null, false]`
+18. `['hi', false]`
+19. `'Cannot assign to read only property 'a' of object '#<Object>''`
+20. `[2, true, false]`
+21. `[{ a: 2 }, {}]`
+22. `[true, false, true, false]`
+23. `{ '1': ['a', 'c'], '2': ['bb'] }`
+24. `['[object Object]', '[object Array]', '[object Null]']`
+25. `[43, true, '[object Object]']`
+26. `'{"d":null,"e":null}'`
+27. `[0, undefined, 0, 5]`
+28. `[1, 2, { c: 3, d: 4 }]`
+29. `{ a: 1, b: 3, c: 4 }`
+30. `['b', 'a']`
+31. `'undefined'`
+32. `{ dyn1: 1, dyn2: 2 }`
+33. `1`
+34. `[false, true]`
+35. `[['0', '1'], ['0', '1']]`
+36. `{ a: 2, b: 4 }`
+37. `['[object Object]']`
+38. `['object', 'object', 'function']`
+39. `['0', '1', 'length']`
+40. `[]`
+41. Виклик `pick({ a: 1, b: 2, c: 3 }, ['a', 'c', 'z'])` → `{ a: 1, c: 3 }`
+42. Виклик `omit({ a: 1, b: 2, c: 3 }, ['b'])` → `{ a: 1, c: 3 }`
+43. Виклик `(() => { const a = { n: [1, { x: 2 }] }; const b = deepClone(a); b.n[1].x = 9; return [a.n[1].x, b.n[1].x]; })()` → `[2, 9]`
+44. Виклик `[deepEqual({ a: [1, { b: 2 }] }, { a: [1, { b: 2 }] }), deepEqual({ a: 1 }, { a: 2 })]` → `[true, false]`
+45. Виклик `invert({ a: 'x', b: 'y' })` → `{ x: 'a', y: 'b' }`
+46. Виклик `[get({ a: { b: { c: 7 } } }, 'a.b.c'), get({ a: 1 }, 'a.b.c')]` → `[7, undefined]`
+47. Виклик `countBy(['one', 'two', 'three'], s => s.length)` → `{ '3': 2, '5': 1 }`
+48. Виклик `merge({ a: 1, n: { x: 1, y: 2 } }, { b: 2, n: { y: 9, z: 3 } })` → `{ a: 1, n: { x: 1, y: 9, z: 3 }, b: 2 }`
+49. Виклик `mapValues({ a: 1, b: 2 }, v => v * 10)` → `{ a: 10, b: 20 }`
+50. Виклик `(() => { const o = deepFreeze({ n: { x: 1 } }); o.n.x = 2; return o.n.x; })()` → `1`

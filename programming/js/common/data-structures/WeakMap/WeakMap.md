@@ -350,3 +350,211 @@ A.isA({});       // false
 - Ключі-символи: незареєстровані (`Symbol()`), не `Symbol.for()`.
 - `WeakRef`/`FinalizationRegistry` — для оптимізації, момент збирання не детермінований.
 - Для власних класів краще `#private`; `WeakMap` — для чужих об'єктів і метаданих.
+
+## Задачі для закріплення
+
+26 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Що станеться при `new WeakMap().set(1, 'x')`?
+
+```js
+(() => { try { new WeakMap().set(1, 'x'); } catch (e) { return e.name + ': ' + e.message; } })()
+```
+
+**2.** Які типи можуть бути ключами `WeakMap`?
+
+```js
+(() => { const w = new WeakMap(); const ok = []; for (const k of [{}, [], () => {}, Symbol('s'), Symbol.for('g'), 'str', 1, null]) { try { w.set(k, 1); ok.push(true); } catch { ok.push(false); } } return ok; })()
+```
+
+**3.** Що поверне `get` для відсутнього ключа і `has`?
+
+```js
+(() => { const w = new WeakMap(); const k = {}; w.set(k, 'v'); return [w.get(k), w.get({}), w.has(k), w.has({})]; })()
+```
+
+**4.** Що повертає `set` і чи працює ланцюжок?
+
+```js
+(() => { const w = new WeakMap(); const a = {}, b = {}; return w.set(a, 1).set(b, 2) === w; })()
+```
+
+**5.** Що повертає `delete` для існуючого й відсутнього ключа?
+
+```js
+(() => { const w = new WeakMap(); const k = {}; w.set(k, 1); return [w.delete(k), w.delete(k)]; })()
+```
+
+**6.** Чи має `WeakMap` `size`, `keys`, `forEach`, `clear`?
+
+```js
+(() => { const w = new WeakMap(); return [w.size, typeof w.keys, typeof w.forEach, typeof w.clear, typeof w[Symbol.iterator]]; })()
+```
+
+**7.** Що дасть `get(undefined)` і `has(null)`?
+
+```js
+(() => { const w = new WeakMap(); return [w.get(undefined), w.has(null), w.delete(1)]; })()
+```
+
+### Рівень 2. Методи й поведінка
+
+**8.** Що буде, якщо ключ-об'єкт `{}` створити в `set` і спробувати прочитати новим `{}`?
+
+```js
+(() => { const w = new WeakMap(); w.set({}, 1); return w.get({}); })()
+```
+
+**9.** Що поверне `typeof` `WeakMap` і `Object.prototype.toString.call`?
+
+```js
+[typeof new WeakMap(), Object.prototype.toString.call(new WeakMap())]
+```
+
+**10.** Чи можна ініціалізувати `WeakMap` масивом пар?
+
+```js
+(() => { const a = {}, b = {}; const w = new WeakMap([[a, 1], [b, 2]]); return [w.get(a), w.get(b)]; })()
+```
+
+**11.** Що станеться при ініціалізації `new WeakMap([[1, 'x']])`?
+
+```js
+(() => { try { new WeakMap([[1, 'x']]); } catch (e) { return e.name; } })()
+```
+
+**12.** Чи зберігає `WeakMap` ключ-символ (ES2023)? Глобальний `Symbol.for`?
+
+```js
+(() => { const w = new WeakMap(); const r = []; for (const s of [Symbol('a'), Symbol.for('b')]) { try { w.set(s, 1); r.push('ok'); } catch (e) { r.push(e.name); } } return r; })()
+```
+
+**13.** Що дасть `WeakMap` над функцією-ключем?
+
+```js
+(() => { const w = new WeakMap(); const f = () => 1; w.set(f, 'meta'); return w.get(f); })()
+```
+
+**14.** Зробіть «приватні» дані об'єкта через `WeakMap`. Що поверне `getAge` і чи видно `age` в `Object.keys`?
+
+```js
+const priv = new WeakMap()
+class Person { constructor(name, age) { this.name = name; priv.set(this, { age }) } getAge() { return priv.get(this).age } }
+```
+
+### Рівень 3. Нюанси та пастки
+
+**15.** Напишіть мемоізацію результатів для об'єктів через `WeakMap`. Скільки обчислень для двох викликів з тим самим об'єктом?
+
+```js
+const cache = new WeakMap()
+let computed = 0
+function heavy(o) { if (!cache.has(o)) { computed++; cache.set(o, Object.keys(o).length) } return cache.get(o) }
+```
+
+**16.** Напишіть `tag(obj, meta)` і `getTag(obj)` — позначки без зміни об'єкта.
+
+```js
+const tags = new WeakMap()
+const tag = (o, m) => tags.set(o, m)
+const getTag = o => tags.get(o)
+```
+
+**17.** Напишіть клас, що рахує кількість викликів методу на кожному екземплярі через `WeakMap`.
+
+```js
+const calls = new WeakMap()
+class Counter { hit() { calls.set(this, (calls.get(this) ?? 0) + 1); return calls.get(this) } }
+```
+
+**18.** Напишіть `memoizeObjectFn(fn)` для функції від одного об'єкта.
+
+```js
+function memoizeObjectFn(fn) { const c = new WeakMap(); return o => { if (!c.has(o)) c.set(o, fn(o)); return c.get(o) } }
+```
+
+**19.** Напишіть `nodeData(el)` — додаткові дані для DOM-подібних вузлів без витоку.
+
+```js
+const data = new WeakMap()
+function nodeData(el) { if (!data.has(el)) data.set(el, { clicks: 0 }); return data.get(el) }
+```
+
+**20.** Напишіть `once(obj, fn)`: виконати `fn` лише раз для кожного об'єкта.
+
+```js
+const done = new WeakMap()
+function once(o, fn) { if (done.has(o)) return done.get(o); const r = fn(o); done.set(o, r); return r }
+```
+
+**21.** Порівняйте `Map` і `WeakMap` за API: скільки спільних методів із `get/set/has/delete`?
+
+```js
+const shared = ['get', 'set', 'has', 'delete'].filter(m => m in Map.prototype && m in WeakMap.prototype)
+```
+
+### Рівень 4. Практика й реалізація
+
+**22.** Напишіть `linkParent(child, parent)` і `parentOf(child)` без властивості на об'єкті.
+
+```js
+const parents = new WeakMap()
+const linkParent = (c, p) => parents.set(c, p)
+const parentOf = c => parents.get(c)
+```
+
+**23.** Напишіть `weakRefDemo`: `WeakRef` повертає значення через `deref()`. Що поверне `new WeakRef(obj).deref() === obj`?
+
+```js
+const ref = o => new WeakRef(o)
+```
+
+**24.** Напишіть `privateCounter()` — лічильник із приватним станом у `WeakMap` та методами `inc`/`value`.
+
+```js
+const state = new WeakMap()
+class PC { constructor() { state.set(this, 0) } inc() { state.set(this, state.get(this) + 1); return this } value() { return state.get(this) } }
+```
+
+**25.** Чому `Object.freeze` не заважає запису в `WeakMap` для замороженого ключа?
+
+```js
+const w = new WeakMap()
+```
+
+**26.** Напишіть `extendedInfo`: додайте метадані до вбудованого об'єкта (масив) без зміни прототипу.
+
+```js
+const info = new WeakMap()
+```
+
+### Відповіді
+
+1. `'TypeError: Invalid value used as weak map key'`
+2. `[true, true, true, true, false, false, false, false]`
+3. `['v', undefined, true, false]`
+4. `true`
+5. `[true, false]`
+6. `[undefined, 'undefined', 'undefined', 'undefined', 'undefined']`
+7. `[undefined, false, false]`
+8. `undefined`
+9. `['object', '[object WeakMap]']`
+10. `[1, 2]`
+11. `'TypeError'`
+12. `['ok', 'TypeError']`
+13. `'meta'`
+14. Виклик `(() => { const p = new Person('Ann', 30); return [p.getAge(), Object.keys(p), JSON.stringify(p)]; })()` → `[30, ['name'], '{"name":"Ann"}']`
+15. Виклик `(() => { const o = { a: 1, b: 2 }; heavy(o); heavy(o); heavy({ a: 1 }); return [heavy(o), computed]; })()` → `[2, 2]`
+16. Виклик `(() => { const o = {}; tag(o, 'important'); return [getTag(o), Object.keys(o), getTag({})]; })()` → `['important', [], undefined]`
+17. Виклик `(() => { const a = new Counter(), b = new Counter(); a.hit(); a.hit(); return [a.hit(), b.hit()]; })()` → `[3, 1]`
+18. Виклик `(() => { let n = 0; const f = memoizeObjectFn(o => (n++, o.x * 2)); const a = { x: 2 }; return [f(a), f(a), n, f({ x: 5 }), n]; })()` → `[4, 4, 1, 10, 2]`
+19. Виклик `(() => { const el = {}; nodeData(el).clicks++; nodeData(el).clicks++; return nodeData(el).clicks; })()` → `2`
+20. Виклик `(() => { let n = 0; const o = {}; once(o, () => ++n); once(o, () => ++n); return n; })()` → `1`
+21. Виклик `shared` → `['get', 'set', 'has', 'delete']`
+22. Виклик `(() => { const p = { name: 'p' }, c = {}; linkParent(c, p); return [parentOf(c).name, 'parent' in c]; })()` → `['p', false]`
+23. Виклик `(() => { const o = { a: 1 }; return ref(o).deref() === o; })()` → `true`
+24. Виклик `new PC().inc().inc().inc().value()` → `3`
+25. Виклик `(() => { const k = Object.freeze({}); w.set(k, 'ok'); return w.get(k); })()` → `'ok'`
+26. Виклик `(() => { const arr = [1, 2]; info.set(arr, { source: 'api' }); return [info.get(arr).source, Object.keys(arr)]; })()` → `['api', ['0', '1']]`

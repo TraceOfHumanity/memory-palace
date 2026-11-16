@@ -599,3 +599,263 @@ path().users.list.all(); // "users.list.all"
 - `Proxy.revocable` дає проксі, який можна вимкнути.
 - Приватні поля та `Map`/`Set`/`Date` не працюють через проксі без `bind(target)`.
 - Глибока реактивність = проксі для вкладених об'єктів + `WeakMap`-кеш + track/trigger.
+
+## Задачі для закріплення
+
+35 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Що поверне `get`-trap, який логує і повертає `Reflect.get`?
+
+```js
+(() => { const log = []; const p = new Proxy({ a: 1 }, { get(t, k, r) { log.push(k); return Reflect.get(t, k, r); } }); return [p.a, p.b, log]; })()
+```
+
+**2.** Як `get`-trap задає значення за замовчуванням для відсутніх ключів?
+
+```js
+(() => { const p = new Proxy({}, { get: (t, k) => (k in t ? t[k] : 0) }); p.x++; p.x++; return [p.x, p.y]; })()
+```
+
+**3.** Що станеться, якщо `set`-trap поверне `false` у суворому режимі?
+
+```js
+(() => { 'use strict'; const p = new Proxy({}, { set() { return false; } }); try { p.a = 1; } catch (e) { return e.name; } })()
+```
+
+**4.** Що станеться, якщо `set`-trap нічого не повертає в нестрогому режимі?
+
+```js
+(() => { const p = new Proxy({}, { set(t, k, v) { t[k] = v; } }); p.a = 1; return p.a; })()
+```
+
+**5.** Як валідувати значення через `set`-trap? Що станеться при `p.age = 'x'`?
+
+```js
+(() => { const p = new Proxy({}, { set(t, k, v) { if (typeof v !== 'number') throw new TypeError('number only'); t[k] = v; return true; } }); try { p.age = 'x'; } catch (e) { return e.message; } })()
+```
+
+**6.** Що поверне `has`-trap для оператора `in`?
+
+```js
+(() => { const p = new Proxy({}, { has: (t, k) => k.startsWith('x') }); return ['xa' in p, 'ya' in p]; })()
+```
+
+**7.** Що поверне `deleteProperty`-trap, який забороняє видалення?
+
+```js
+(() => { const p = new Proxy({ a: 1 }, { deleteProperty() { return false; } }); return [Reflect.deleteProperty(p, 'a'), p.a]; })()
+```
+
+**8.** Як `ownKeys`-trap приховує ключі, що починаються з `_`?
+
+```js
+(() => { const p = new Proxy({ _s: 1, a: 2 }, { ownKeys: t => Reflect.ownKeys(t).filter(k => !String(k).startsWith('_')) }); return Object.keys(p); })()
+```
+
+**9.** Що дасть `apply`-trap для функції-цілі?
+
+```js
+(() => { const p = new Proxy((a, b) => a + b, { apply: (t, th, args) => t(...args) * 10 }); return p(1, 2); })()
+```
+
+### Рівень 2. Методи й поведінка
+
+**10.** Що дасть `construct`-trap?
+
+```js
+(() => { class A { constructor(x) { this.x = x; } } const P = new Proxy(A, { construct(t, args) { return new t(args[0] * 2); } }); return new P(5).x; })()
+```
+
+**11.** Що поверне `typeof` для Proxy над функцією і над об'єктом?
+
+```js
+[typeof new Proxy(function () {}, {}), typeof new Proxy({}, {}), Array.isArray(new Proxy([], {}))]
+```
+
+**12.** Чи дорівнює Proxy своїй цілі за `===`?
+
+```js
+(() => { const t = {}; return [new Proxy(t, {}) === t, new Proxy(t, {}) === new Proxy(t, {})]; })()
+```
+
+**13.** Як працює `Proxy.revocable` після `revoke()`?
+
+```js
+(() => { const { proxy, revoke } = Proxy.revocable({ a: 1 }, {}); const a = proxy.a; revoke(); try { proxy.a; } catch (e) { return [a, e.name]; } })()
+```
+
+**14.** Яка помилка при зверненні до приватного поля через Proxy?
+
+```js
+(() => { class A { #x = 1; get x() { return this.#x; } } const p = new Proxy(new A(), {}); try { return p.x; } catch (e) { return e.name; } })()
+```
+
+**15.** Чи працює Proxy над `Map` без прив'язки методів?
+
+```js
+(() => { const p = new Proxy(new Map(), {}); try { p.set('a', 1); } catch (e) { return e.name; } })()
+```
+
+**16.** Як виправити Proxy над `Map` — прив'язати метод до цілі?
+
+```js
+(() => { const m = new Map(); const p = new Proxy(m, { get(t, k) { const v = Reflect.get(t, k, t); return typeof v === 'function' ? v.bind(t) : v; } }); p.set('a', 1); return [p.get('a'), p.size]; })()
+```
+
+**17.** Що поверне `getPrototypeOf`-trap?
+
+```js
+(() => { const p = new Proxy({}, { getPrototypeOf: () => Array.prototype }); return [p instanceof Array, Object.getPrototypeOf(p) === Array.prototype]; })()
+```
+
+**18.** Що дасть `defineProperty`-trap, який забороняє нові властивості?
+
+```js
+(() => { const p = new Proxy({}, { defineProperty: () => false }); try { 'use strict'; Object.defineProperty(p, 'a', { value: 1 }); } catch (e) { return e.name; } })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**19.** Який порядок викликів trap-ів при `p.a = 1`: чи викликається `has`?
+
+```js
+(() => { const log = []; const p = new Proxy({}, { set(t, k, v, r) { log.push('set'); return Reflect.set(t, k, v, r); }, getOwnPropertyDescriptor(t, k) { log.push('gopd'); return Reflect.getOwnPropertyDescriptor(t, k); }, defineProperty(t, k, d) { log.push('define'); return Reflect.defineProperty(t, k, d); } }); p.a = 1; return log; })()
+```
+
+**20.** Що дасть `Reflect.has`, `Reflect.ownKeys`, `Reflect.getPrototypeOf`?
+
+```js
+[Reflect.has({ a: 1 }, 'a'), Reflect.ownKeys({ a: 1, [Symbol.for('s')]: 1 }).length, Reflect.getPrototypeOf([]) === Array.prototype]
+```
+
+**21.** Що поверне `Reflect.apply` і `Reflect.construct`?
+
+```js
+[Reflect.apply(Math.max, null, [1, 5, 3]), Reflect.construct(Date, [0]).getTime()]
+```
+
+**22.** Що поверне `Reflect.set` для замороженого об'єкта?
+
+```js
+Reflect.set(Object.freeze({ a: 1 }), 'a', 2)
+```
+
+**23.** Напишіть `readonly(obj)` — Proxy, який забороняє запис. Що станеться при `p.a = 2` у суворому режимі?
+
+```js
+const readonly = o => new Proxy(o, { set() { return false }, deleteProperty() { return false } })
+```
+
+**24.** Напишіть `withDefault(obj, def)` — значення за замовчуванням для відсутніх ключів.
+
+```js
+const withDefault = (o, d) => new Proxy(o, { get: (t, k) => (k in t ? t[k] : d) })
+```
+
+**25.** Напишіть `negativeIndex(arr)` — Proxy над масивом з від'ємними індексами.
+
+```js
+const negativeIndex = a => new Proxy(a, { get: (t, k, r) => { const i = typeof k === 'string' && /^-\d+$/.test(k) ? t.length + +k : k; return Reflect.get(t, i, r) } })
+```
+
+**26.** Напишіть `counter(fn)` — Proxy над функцією, що рахує виклики.
+
+```js
+function counter(fn) { let n = 0; const p = new Proxy(fn, { apply(t, th, args) { n++; return Reflect.apply(t, th, args) } }); p.count = () => n; return p }
+```
+
+**27.** Напишіть `observable(obj, onChange)` — виклик колбека при записі.
+
+```js
+function observable(o, cb) { return new Proxy(o, { set(t, k, v, r) { const old = t[k]; const ok = Reflect.set(t, k, v, r); cb(k, old, v); return ok } }) }
+```
+
+### Рівень 4. Практика й реалізація
+
+**28.** Напишіть `validated(schema)` — Proxy, що перевіряє тип при записі. Що станеться при `p.age = 'x'`?
+
+```js
+const validated = schema => new Proxy({}, { set(t, k, v) { if (typeof v !== schema[k]) throw new TypeError(`${k} must be ${schema[k]}`); t[k] = v; return true } })
+```
+
+**29.** Напишіть `hidePrivate(obj)` — приховує ключі з `_` у `ownKeys`, `has`, `get`.
+
+```js
+const hidePrivate = o => new Proxy(o, { ownKeys: t => Reflect.ownKeys(t).filter(k => typeof k !== 'string' || !k.startsWith('_')), has: (t, k) => !(typeof k === 'string' && k.startsWith('_')) && k in t, get: (t, k, r) => (typeof k === 'string' && k.startsWith('_') ? undefined : Reflect.get(t, k, r)) })
+```
+
+**30.** Напишіть `memoizeProxy(fn)` — мемоізація через `apply`-trap. Скільки викликів оригіналу?
+
+```js
+function memoizeProxy(fn) { const c = new Map(); return new Proxy(fn, { apply(t, th, [x]) { if (!c.has(x)) c.set(x, Reflect.apply(t, th, [x])); return c.get(x) } }) }
+```
+
+**31.** Напишіть `loggingProxy(obj)` — запис усіх звернень до властивостей. Який лог?
+
+```js
+function loggingProxy(o, log) { return new Proxy(o, { get(t, k, r) { log.push(`get ${String(k)}`); return Reflect.get(t, k, r) }, set(t, k, v, r) { log.push(`set ${String(k)}`); return Reflect.set(t, k, v, r) } }) }
+```
+
+**32.** Напишіть `deepProxy(obj, onSet)` — реактивність для вкладених об'єктів (як у Vue 3).
+
+```js
+function deepProxy(o, cb) { return new Proxy(o, { get(t, k, r) { const v = Reflect.get(t, k, r); return v && typeof v === 'object' ? deepProxy(v, cb) : v }, set(t, k, v, r) { cb(k); return Reflect.set(t, k, v, r) } }) }
+```
+
+**33.** Напишіть `singleton(Class)` — Proxy над класом із `construct`-trap, що повертає один екземпляр.
+
+```js
+function singleton(C) { let inst; return new Proxy(C, { construct(t, args) { return inst ??= Reflect.construct(t, args) } }) }
+```
+
+**34.** Напишіть `range(a, b)` — Proxy, що відповідає на `in` для чисел у діапазоні.
+
+```js
+const range = (a, b) => new Proxy({}, { has: (t, k) => +k >= a && +k <= b })
+```
+
+**35.** Напишіть `enumGuard(obj)` — кидає помилку при зверненні до неіснуючого ключа.
+
+```js
+const enumGuard = o => new Proxy(o, { get(t, k, r) { if (!(k in t)) throw new ReferenceError(`unknown key: ${String(k)}`); return Reflect.get(t, k, r) } })
+```
+
+### Відповіді
+
+1. `[1, undefined, ['a', 'b']]`
+2. `[2, 0]`
+3. `'TypeError'`
+4. `1`
+5. `'number only'`
+6. `[true, false]`
+7. `[false, 1]`
+8. `['a']`
+9. `30`
+10. `10`
+11. `['function', 'object', true]`
+12. `[false, false]`
+13. `[1, 'TypeError']`
+14. `'TypeError'`
+15. `'TypeError'`
+16. `[1, 1]`
+17. `[true, true]`
+18. `'TypeError'`
+19. `['set', 'gopd', 'define']`
+20. `[true, 2, true]`
+21. `[5, 0]`
+22. `false`
+23. Виклик `(() => { 'use strict'; const p = readonly({ a: 1 }); try { p.a = 2; } catch (e) { return [e.name, p.a]; } })()` → `['TypeError', 1]`
+24. Виклик `(() => { const p = withDefault({ a: 1 }, 0); return [p.a, p.zzz]; })()` → `[1, 0]`
+25. Виклик `(() => { const p = negativeIndex([1, 2, 3]); return [p[-1], p[-3], p[0], p.length]; })()` → `[3, 1, 1, 3]`
+26. Виклик `(() => { const f = counter(x => x * 2); f(1); f(2); f(3); return f.count(); })()` → `3`
+27. Виклик `(() => { const log = []; const p = observable({ a: 1 }, (k, o, n) => log.push([k, o, n])); p.a = 2; p.b = 3; return log; })()` → `[['a', 1, 2], ['b', undefined, 3]]`
+28. Виклик `(() => { const p = validated({ age: 'number' }); p.age = 5; try { p.age = 'x'; } catch (e) { return [p.age, e.message]; } })()` → `[5, 'age must be number']`
+29. Виклик `(() => { const p = hidePrivate({ _s: 1, a: 2 }); return [Object.keys(p), '_s' in p, p._s, p.a]; })()` → `[['a'], false, undefined, 2]`
+30. Виклик `(() => { let calls = 0; const f = memoizeProxy(x => { calls++; return x * x; }); f(3); f(3); f(4); return calls; })()` → `2`
+31. Виклик `(() => { const log = []; const p = loggingProxy({ a: 1 }, log); p.a; p.b = 2; return log; })()` → `['get a', 'set b']`
+32. Виклик `(() => { const log = []; const p = deepProxy({ a: { b: 1 } }, k => log.push(k)); p.a.b = 2; p.c = 1; return [log, p.a.b]; })()` → `[['b', 'c'], 2]`
+33. Виклик `(() => { class A { constructor(x) { this.x = x } } const S = singleton(A); const a = new S(1), b = new S(2); return [a === b, a.x]; })()` → `[true, 1]`
+34. Виклик `[5 in range(1, 10), 15 in range(1, 10)]` → `[true, false]`
+35. Виклик `(() => { const p = enumGuard({ A: 1 }); try { p.B; } catch (e) { return [p.A, e.message]; } })()` → `[1, 'unknown key: B']`

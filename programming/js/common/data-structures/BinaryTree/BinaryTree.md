@@ -533,3 +533,846 @@ post-order: 18, 27, 21, 52, 82, 76, 47
 4. **Відсортований вивід** → in-order.
 5. **По рівнях** → BFS з чергою.
 6. **Боїшся виродження** → самобалансівне дерево або хеш-таблиця.
+
+## Задачі для закріплення
+
+31 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Яку властивість має бінарне дерево пошуку (BST)?
+
+**2.** Яка складність пошуку, вставки й видалення в збалансованому та в виродженому BST?
+
+**3.** Чим відрізняються обходи preorder, inorder, postorder?
+
+**4.** Чим BFS-обхід (по рівнях) відрізняється від DFS і яку структуру використовує?
+
+**5.** Коли вузол видаляється з BST, які три випадки розглядають?
+
+**6.** Реалізуйте `BST` із `insert`, `has`, `inorder`. Що дасть вставка `5, 3, 8, 1, 4, 9` і перевірки?
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+```
+
+**7.** Які порядки обходів дає дерево з вставки `5, 3, 8, 1, 4, 9`?
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+```
+
+**8.** Яка висота дерева зі вставки `1, 2, 3, 4, 5` і зі вставки `3, 1, 5, 2, 4`?
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+```
+
+### Рівень 2. Методи й поведінка
+
+**9.** Що поверне `min` і `max` для порожнього дерева і для `[5, 3, 8]`?
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+```
+
+**10.** Напишіть `size(node)` — кількість вузлів.
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+const size = n => (n ? 1 + size(n.l) + size(n.r) : 0)
+```
+
+**11.** Напишіть `leaves(root)` — значення листків.
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+const leaves = n => (!n ? [] : !n.l && !n.r ? [n.v] : [...leaves(n.l), ...leaves(n.r)])
+```
+
+**12.** Напишіть `levelOrder(root)` — BFS по рівнях.
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+function levelOrder(root) {
+  const out = []; if (!root) return out
+  let level = [root]
+  while (level.length) { out.push(level.map(n => n.v)); level = level.flatMap(n => [n.l, n.r].filter(Boolean)) }
+  return out
+}
+```
+
+**13.** Напишіть `isValidBST(root)`.
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+function isValidBST(n, lo = -Infinity, hi = Infinity) {
+  if (!n) return true
+  return n.v > lo && n.v < hi && isValidBST(n.l, lo, n.v) && isValidBST(n.r, n.v, hi)
+}
+```
+
+**14.** Напишіть `lca(root, p, q)` — найближчий спільний предок у BST.
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+function lca(root, p, q) {
+  let c = root
+  while (c) { if (p < c.v && q < c.v) c = c.l; else if (p > c.v && q > c.v) c = c.r; else return c.v }
+}
+```
+
+**15.** Напишіть `remove(root, v)` — видалення з BST. Результат inorder після видалення `3` із `[5, 3, 8, 1, 4, 9]` і `5`?
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+function remove(n, v) {
+  if (!n) return null
+  if (v < n.v) n.l = remove(n.l, v)
+  else if (v > n.v) n.r = remove(n.r, v)
+  else {
+    if (!n.l) return n.r
+    if (!n.r) return n.l
+    let m = n.r; while (m.l) m = m.l
+    n.v = m.v; n.r = remove(n.r, m.v)
+  }
+  return n
+}
+```
+
+**16.** Напишіть `kthSmallest(root, k)`.
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+const kthSmallest = (root, k) => { const t = new BST(); t.root = root; return t.inorder()[k - 1] }
+```
+
+### Рівень 3. Нюанси та пастки
+
+**17.** Напишіть `floor(root, x)` — найбільше значення, що не перевищує `x`.
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+function floor(root, x) {
+  let c = root, best = null
+  while (c) { if (c.v === x) return x; if (c.v < x) { best = c.v; c = c.r } else c = c.l }
+  return best
+}
+```
+
+**18.** Напишіть `sortedArrayToBST(arr)` — збалансоване дерево зі відсортованого масиву. Висота для 7 елементів?
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+function sortedArrayToBST(a) {
+  if (!a.length) return null
+  const m = a.length >> 1, n = new TreeNode(a[m])
+  n.l = sortedArrayToBST(a.slice(0, m)); n.r = sortedArrayToBST(a.slice(m + 1))
+  return n
+}
+```
+
+**19.** Напишіть `maxDepth(root)` і `minDepth(root)`.
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+const maxDepth = n => (n ? 1 + Math.max(maxDepth(n.l), maxDepth(n.r)) : 0)
+const minDepth = n => (!n ? 0 : !n.l ? 1 + minDepth(n.r) : !n.r ? 1 + minDepth(n.l) : 1 + Math.min(minDepth(n.l), minDepth(n.r)))
+```
+
+**20.** Напишіть `isSymmetric(root)` для бінарного дерева.
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+const mirror = (a, b) => (!a && !b) || (a && b && a.v === b.v && mirror(a.l, b.r) && mirror(a.r, b.l))
+const isSymmetric = r => !r || mirror(r.l, r.r)
+```
+
+**21.** Напишіть `pathSum(root, target)` — чи є шлях від кореня до листка із сумою.
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+const pathSum = (n, t) => (!n ? false : !n.l && !n.r ? n.v === t : pathSum(n.l, t - n.v) || pathSum(n.r, t - n.v))
+```
+
+**22.** Напишіть `invert(root)` — дзеркальне відображення дерева.
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+function invert(n) { if (!n) return null; [n.l, n.r] = [invert(n.r), invert(n.l)]; return n }
+```
+
+**23.** Напишіть `rightSideView(root)` — що видно справа (останній вузол кожного рівня).
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+function rightSideView(root) {
+  const out = []; let level = root ? [root] : []
+  while (level.length) { out.push(level.at(-1).v); level = level.flatMap(n => [n.l, n.r].filter(Boolean)) }
+  return out
+}
+```
+
+**24.** Напишіть `serialize(root)` і `deserialize(str)` для preorder зі `#` на місці null. Що дасть `serialize` для дерева `[5, 3, 8]`?
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+const serialize = n => (n ? `${n.v},${serialize(n.l)},${serialize(n.r)}` : '#')
+function deserialize(s) {
+  const t = s.split(','); let i = 0
+  const go = () => { const x = t[i++]; if (x === '#') return null; const n = new TreeNode(+x); n.l = go(); n.r = go(); return n }
+  return go()
+}
+```
+
+### Рівень 4. Практика й реалізація
+
+**25.** Напишіть `diameter(root)` — найдовший шлях між двома вузлами (у ребрах).
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+function diameter(root) {
+  let best = 0
+  const h = n => { if (!n) return 0; const l = h(n.l), r = h(n.r); best = Math.max(best, l + r); return 1 + Math.max(l, r) }
+  h(root)
+  return best
+}
+```
+
+**26.** Напишіть `buildFromTraversals(pre, ino)` — дерево з preorder та inorder. Postorder результату для `pre=[3,9,20,15,7]`, `in=[9,3,15,20,7]`?
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+function build(pre, ino) {
+  if (!pre.length) return null
+  const v = pre[0], i = ino.indexOf(v), n = new TreeNode(v)
+  n.l = build(pre.slice(1, 1 + i), ino.slice(0, i)); n.r = build(pre.slice(1 + i), ino.slice(i + 1))
+  return n
+}
+```
+
+**27.** Напишіть ітеративний `inorderIterative(root)` через стек.
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+function inorderIterative(root) {
+  const out = [], st = []; let c = root
+  while (c || st.length) { while (c) { st.push(c); c = c.l } c = st.pop(); out.push(c.v); c = c.r }
+  return out
+}
+```
+
+**28.** Напишіть `countNodesInRange(root, lo, hi)` для BST.
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+const countRange = (n, lo, hi) => (!n ? 0 : (n.v >= lo && n.v <= hi ? 1 : 0) + (n.v > lo ? countRange(n.l, lo, hi) : 0) + (n.v < hi ? countRange(n.r, lo, hi) : 0))
+```
+
+**29.** Напишіть `isBalanced(root)` — різниця висот піддерев не більша за 1 для кожного вузла.
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+function isBalanced(root) {
+  const h = n => { if (!n) return 0; const l = h(n.l), r = h(n.r); return l < 0 || r < 0 || Math.abs(l - r) > 1 ? -1 : 1 + Math.max(l, r) }
+  return h(root) >= 0
+}
+```
+
+**30.** Напишіть `treeToSortedList(root)` — зв'язати inorder-значення в масив пар `[v, next]`. Для `[2, 1, 3]` результат?
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+const treeToSortedList = r => { const a = new BST(); a.root = r; return a.inorder().map((v, i, arr) => [v, arr[i + 1] ?? null]) }
+```
+
+**31.** Напишіть `zigzagLevelOrder(root)`.
+
+```js
+class TreeNode { constructor(v) { this.v = v; this.l = null; this.r = null } }
+class BST {
+  root = null
+  insert(v) {
+    const n = new TreeNode(v)
+    if (!this.root) { this.root = n; return this }
+    let c = this.root
+    for (;;) {
+      if (v < c.v) { if (!c.l) { c.l = n; break } c = c.l }
+      else { if (!c.r) { c.r = n; break } c = c.r }
+    }
+    return this
+  }
+  has(v) { let c = this.root; while (c) { if (v === c.v) return true; c = v < c.v ? c.l : c.r } return false }
+  inorder(n = this.root, o = []) { if (n) { this.inorder(n.l, o); o.push(n.v); this.inorder(n.r, o) } return o }
+  preorder(n = this.root, o = []) { if (n) { o.push(n.v); this.preorder(n.l, o); this.preorder(n.r, o) } return o }
+  postorder(n = this.root, o = []) { if (n) { this.postorder(n.l, o); this.postorder(n.r, o); o.push(n.v) } return o }
+  height(n = this.root) { return n ? 1 + Math.max(this.height(n.l), this.height(n.r)) : 0 }
+  min() { let c = this.root; while (c?.l) c = c.l; return c?.v }
+  max() { let c = this.root; while (c?.r) c = c.r; return c?.v }
+}
+const fromArr = a => a.reduce((t, v) => t.insert(v), new BST())
+function zigzag(root) {
+  const out = []; let level = root ? [root] : [], rev = false
+  while (level.length) { const vals = level.map(n => n.v); out.push(rev ? vals.reverse() : vals); rev = !rev; level = level.flatMap(n => [n.l, n.r].filter(Boolean)) }
+  return out
+}
+```
+
+### Відповіді
+
+1. Для кожного вузла всі значення в лівому піддереві менші, а в правому — більші (чи рівні, залежно від правила дублікатів).
+2. Збалансоване: `O(log n)`; вироджене (відсортований ввід): `O(n)`, дерево перетворюється на список.
+3. Preorder: корінь → ліве → праве; inorder: ліве → корінь → праве (для BST дає відсортований порядок); postorder: ліве → праве → корінь.
+4. BFS відвідує вузли рівень за рівнем і використовує чергу; DFS (pre/in/post) іде вглиб, використовуючи рекурсію або стек.
+5. Листок — просто видалити; один нащадок — замінити вузол нащадком; два нащадки — замінити значенням inorder-наступника (мінімум правого піддерева) і видалити його.
+6. Виклик `(() => { const t = fromArr([5, 3, 8, 1, 4, 9]); return [t.inorder(), t.has(4), t.has(7)]; })()` → `[[1, 3, 4, 5, 8, 9], true, false]`
+7. Виклик `(() => { const t = fromArr([5, 3, 8, 1, 4, 9]); return [t.preorder(), t.inorder(), t.postorder()]; })()` → `[[5, 3, 1, 4, 8, 9], [1, 3, 4, 5, 8, 9], [1, 4, 3, 9, 8, 5]]`
+8. Виклик `[fromArr([1, 2, 3, 4, 5]).height(), fromArr([3, 1, 5, 2, 4]).height()]` → `[5, 3]`
+9. Виклик `[new BST().min(), fromArr([5, 3, 8]).min(), fromArr([5, 3, 8]).max()]` → `[undefined, 3, 8]`
+10. Виклик `size(fromArr([5, 3, 8, 1, 4, 9]).root)` → `6`
+11. Виклик `leaves(fromArr([5, 3, 8, 1, 4, 9]).root)` → `[1, 4, 9]`
+12. Виклик `levelOrder(fromArr([5, 3, 8, 1, 4, 9]).root)` → `[[5], [3, 8], [1, 4, 9]]`
+13. Виклик `(() => { const t = fromArr([5, 3, 8]); const bad = fromArr([5, 3, 8]); bad.root.l.r = new TreeNode(7); return [isValidBST(t.root), isValidBST(bad.root)]; })()` → `[true, false]`
+14. Виклик `(() => { const r = fromArr([6, 2, 8, 0, 4, 7, 9, 3, 5]).root; return [lca(r, 2, 8), lca(r, 2, 4), lca(r, 3, 5)]; })()` → `[6, 2, 4]`
+15. Виклик `(() => { const t = fromArr([5, 3, 8, 1, 4, 9]); t.root = remove(t.root, 3); const a = t.inorder(); t.root = remove(t.root, 5); return [a, t.inorder(), t.root.v]; })()` → `[[1, 4, 5, 8, 9], [1, 4, 8, 9], 8]`
+16. Виклик `kthSmallest(fromArr([5, 3, 8, 1, 4, 9]).root, 3)` → `4`
+17. Виклик `[floor(fromArr([5, 3, 8, 1, 4, 9]).root, 6), floor(fromArr([5, 3, 8]).root, 2)]` → `[5, null]`
+18. Виклик `(() => { const t = new BST(); t.root = sortedArrayToBST([1, 2, 3, 4, 5, 6, 7]); return [t.height(), t.inorder(), t.preorder()]; })()` → `[3, [1, 2, 3, 4, 5, 6, 7], [4, 2, 1, 3, 6, 5, 7]]`
+19. Виклик `(() => { const r = fromArr([5, 3, 8, 1]).root; return [maxDepth(r), minDepth(r)]; })()` → `[3, 2]`
+20. Виклик `(() => { const n = (v, l = null, r = null) => Object.assign(new TreeNode(v), { l, r }); return [isSymmetric(n(1, n(2, n(3), n(4)), n(2, n(4), n(3)))), isSymmetric(n(1, n(2, null, n(3)), n(2, null, n(3))))]; })()` → `[true, null]`
+21. Виклик `[pathSum(fromArr([5, 3, 8, 1, 4, 9]).root, 9), pathSum(fromArr([5, 3, 8, 1, 4, 9]).root, 10)]` → `[true, false]`
+22. Виклик `(() => { const t = fromArr([5, 3, 8, 1, 4, 9]); t.root = invert(t.root); return t.inorder(); })()` → `[9, 8, 5, 4, 3, 1]`
+23. Виклик `rightSideView(fromArr([5, 3, 8, 1, 4, 9]).root)` → `[5, 8, 9]`
+24. Виклик `(() => { const s = serialize(fromArr([5, 3, 8]).root); return [s, serialize(deserialize(s)) === s]; })()` → `['5,3,#,#,8,#,#', true]`
+25. Виклик `[diameter(fromArr([5, 3, 8, 1, 4, 9]).root), diameter(fromArr([1, 2, 3, 4]).root)]` → `[4, 3]`
+26. Виклик `(() => { const t = new BST(); t.root = build([3, 9, 20, 15, 7], [9, 3, 15, 20, 7]); return t.postorder(); })()` → `[9, 15, 7, 20, 3]`
+27. Виклик `inorderIterative(fromArr([5, 3, 8, 1, 4, 9]).root)` → `[1, 3, 4, 5, 8, 9]`
+28. Виклик `countRange(fromArr([5, 3, 8, 1, 4, 9]).root, 3, 8)` → `4`
+29. Виклик `[isBalanced(fromArr([5, 3, 8, 1, 4, 9]).root), isBalanced(fromArr([1, 2, 3]).root)]` → `[true, false]`
+30. Виклик `treeToSortedList(fromArr([2, 1, 3]).root)` → `[[1, 2], [2, 3], [3, null]]`
+31. Виклик `zigzag(fromArr([5, 3, 8, 1, 4, 7, 9]).root)` → `[[5], [8, 3], [1, 4, 7, 9]]`

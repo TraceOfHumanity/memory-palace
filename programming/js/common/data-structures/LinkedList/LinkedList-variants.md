@@ -494,3 +494,317 @@ insertAt(l, 1, 99)  →  [1'] → [99] ┐
 | швидкий `pop`, LRU, дек, видалення за готовим вузлом | варіант 3 (двозв'язний) |
 | історія версій, чиста функціональність | варіант 4 |
 | просто зберігати колекцію в JS | **звичайний `Array`** |
+
+## Задачі для закріплення
+
+22 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Навіщо сторожові вузли (sentinel) у списку?
+
+**2.** Яка перевага двозв'язного списку перед однозв'язним при видаленні за посиланням на вузол?
+
+**3.** Скільки пам'яті додатково потрібно на вузол у двозв'язному списку?
+
+**4.** Що таке persistent (незмінний) список і що спільного в двох версій після `prepend`?
+
+**5.** Чому LRU-кеш будують із двозв'язного списку та `Map`?
+
+**6.** Реалізуйте `DList` із сторожами. Що дасть послідовність `addLast(1), addLast(2), addFirst(0)` і видалення кінців?
+
+```js
+class DNode { constructor(v) { this.v = v; this.prev = null; this.next = null } }
+class DList {
+  constructor() { this.head = new DNode(null); this.tail = new DNode(null); this.head.next = this.tail; this.tail.prev = this.head; this.size = 0 }
+  addFirst(v) { this.#insert(this.head, v) }
+  addLast(v) { this.#insert(this.tail.prev, v) }
+  #insert(after, v) { const n = new DNode(v); n.prev = after; n.next = after.next; after.next.prev = n; after.next = n; this.size++; return n }
+  remove(n) { n.prev.next = n.next; n.next.prev = n.prev; this.size--; return n.v }
+  removeFirst() { return this.size ? this.remove(this.head.next) : undefined }
+  removeLast() { return this.size ? this.remove(this.tail.prev) : undefined }
+  toArray() { const o = []; for (let n = this.head.next; n !== this.tail; n = n.next) o.push(n.v); return o }
+}
+```
+
+### Рівень 2. Методи й поведінка
+
+**7.** Що поверне `removeFirst` для порожнього `DList`?
+
+```js
+class DNode { constructor(v) { this.v = v; this.prev = null; this.next = null } }
+class DList {
+  constructor() { this.head = new DNode(null); this.tail = new DNode(null); this.head.next = this.tail; this.tail.prev = this.head; this.size = 0 }
+  addFirst(v) { this.#insert(this.head, v) }
+  addLast(v) { this.#insert(this.tail.prev, v) }
+  #insert(after, v) { const n = new DNode(v); n.prev = after; n.next = after.next; after.next.prev = n; after.next = n; this.size++; return n }
+  remove(n) { n.prev.next = n.next; n.next.prev = n.prev; this.size--; return n.v }
+  removeFirst() { return this.size ? this.remove(this.head.next) : undefined }
+  removeLast() { return this.size ? this.remove(this.tail.prev) : undefined }
+  toArray() { const o = []; for (let n = this.head.next; n !== this.tail; n = n.next) o.push(n.v); return o }
+}
+```
+
+**8.** Що станеться з `size` після `addLast` ×3 і `removeLast` ×1?
+
+```js
+class DNode { constructor(v) { this.v = v; this.prev = null; this.next = null } }
+class DList {
+  constructor() { this.head = new DNode(null); this.tail = new DNode(null); this.head.next = this.tail; this.tail.prev = this.head; this.size = 0 }
+  addFirst(v) { this.#insert(this.head, v) }
+  addLast(v) { this.#insert(this.tail.prev, v) }
+  #insert(after, v) { const n = new DNode(v); n.prev = after; n.next = after.next; after.next.prev = n; after.next = n; this.size++; return n }
+  remove(n) { n.prev.next = n.next; n.next.prev = n.prev; this.size--; return n.v }
+  removeFirst() { return this.size ? this.remove(this.head.next) : undefined }
+  removeLast() { return this.size ? this.remove(this.tail.prev) : undefined }
+  toArray() { const o = []; for (let n = this.head.next; n !== this.tail; n = n.next) o.push(n.v); return o }
+}
+```
+
+**9.** Напишіть `toArrayReverse(list)` для `DList` обходом із хвоста.
+
+```js
+class DNode { constructor(v) { this.v = v; this.prev = null; this.next = null } }
+class DList {
+  constructor() { this.head = new DNode(null); this.tail = new DNode(null); this.head.next = this.tail; this.tail.prev = this.head; this.size = 0 }
+  addFirst(v) { this.#insert(this.head, v) }
+  addLast(v) { this.#insert(this.tail.prev, v) }
+  #insert(after, v) { const n = new DNode(v); n.prev = after; n.next = after.next; after.next.prev = n; after.next = n; this.size++; return n }
+  remove(n) { n.prev.next = n.next; n.next.prev = n.prev; this.size--; return n.v }
+  removeFirst() { return this.size ? this.remove(this.head.next) : undefined }
+  removeLast() { return this.size ? this.remove(this.tail.prev) : undefined }
+  toArray() { const o = []; for (let n = this.head.next; n !== this.tail; n = n.next) o.push(n.v); return o }
+}
+const toArrayReverse = l => { const o = []; for (let n = l.tail.prev; n !== l.head; n = n.prev) o.push(n.v); return o }
+```
+
+**10.** Напишіть `reverse(list)` для `DList` (поміняти `prev`/`next`).
+
+```js
+class DNode { constructor(v) { this.v = v; this.prev = null; this.next = null } }
+class DList {
+  constructor() { this.head = new DNode(null); this.tail = new DNode(null); this.head.next = this.tail; this.tail.prev = this.head; this.size = 0 }
+  addFirst(v) { this.#insert(this.head, v) }
+  addLast(v) { this.#insert(this.tail.prev, v) }
+  #insert(after, v) { const n = new DNode(v); n.prev = after; n.next = after.next; after.next.prev = n; after.next = n; this.size++; return n }
+  remove(n) { n.prev.next = n.next; n.next.prev = n.prev; this.size--; return n.v }
+  removeFirst() { return this.size ? this.remove(this.head.next) : undefined }
+  removeLast() { return this.size ? this.remove(this.tail.prev) : undefined }
+  toArray() { const o = []; for (let n = this.head.next; n !== this.tail; n = n.next) o.push(n.v); return o }
+}
+function reverse(l) {
+  const vals = l.toArray().reverse()
+  const r = new DList()
+  vals.forEach(v => r.addLast(v))
+  return r
+}
+```
+
+**11.** Реалізуйте `LRUCache(cap)` на `Map` (порядок вставки). Які ключі лишаться?
+
+```js
+class LRUCache {
+  constructor(cap) { this.cap = cap; this.m = new Map() }
+  get(k) {
+    if (!this.m.has(k)) return -1
+    const v = this.m.get(k); this.m.delete(k); this.m.set(k, v)
+    return v
+  }
+  put(k, v) {
+    this.m.delete(k); this.m.set(k, v)
+    if (this.m.size > this.cap) this.m.delete(this.m.keys().next().value)
+  }
+}
+```
+
+**12.** Реалізуйте `LRUCache` на двозв'язному списку і `Map` вузлів. Що дасть послідовність?
+
+```js
+class LRU {
+  constructor(cap) { this.cap = cap; this.map = new Map(); this.h = { next: null }; this.t = { prev: null }; this.h.next = this.t; this.t.prev = this.h }
+  #unlink(n) { n.prev.next = n.next; n.next.prev = n.prev }
+  #front(n) { n.next = this.h.next; n.prev = this.h; this.h.next.prev = n; this.h.next = n }
+  get(k) { const n = this.map.get(k); if (!n) return -1; this.#unlink(n); this.#front(n); return n.v }
+  put(k, v) {
+    let n = this.map.get(k)
+    if (n) { n.v = v; this.#unlink(n) } else { n = { k, v }; this.map.set(k, n); if (this.map.size > this.cap) { const old = this.t.prev; this.#unlink(old); this.map.delete(old.k) } }
+    this.#front(n)
+  }
+}
+```
+
+### Рівень 3. Нюанси та пастки
+
+**13.** Реалізуйте незмінний список `prepend`/`toArray`. Чи ділять `a` і `b = prepend(a, 0)` вузли?
+
+```js
+const nil = null
+const cons = (v, next) => Object.freeze({ v, next })
+const toA = l => { const o = []; for (; l; l = l.next) o.push(l.v); return o }
+```
+
+**14.** Напишіть `append(list, v)` для незмінного списку (повертає новий список).
+
+```js
+const cons = (v, next) => Object.freeze({ v, next })
+const toA = l => { const o = []; for (; l; l = l.next) o.push(l.v); return o }
+const append = (l, v) => (l ? cons(l.v, append(l.next, v)) : cons(v, null))
+```
+
+**15.** Напишіть `map(list, fn)` для незмінного списку.
+
+```js
+const cons = (v, next) => Object.freeze({ v, next })
+const toA = l => { const o = []; for (; l; l = l.next) o.push(l.v); return o }
+const map = (l, fn) => (l ? cons(fn(l.v), map(l.next, fn)) : null)
+```
+
+**16.** Що станеться при спробі змінити поле замороженого вузла у суворому режимі?
+
+```js
+const cons = (v, next) => Object.freeze({ v, next })
+```
+
+**17.** Напишіть `insertSorted(list, v)` у відсортований двозв'язний `DList`.
+
+```js
+class DNode { constructor(v) { this.v = v; this.prev = null; this.next = null } }
+class DList {
+  constructor() { this.head = new DNode(null); this.tail = new DNode(null); this.head.next = this.tail; this.tail.prev = this.head; this.size = 0 }
+  addFirst(v) { this.#insert(this.head, v) }
+  addLast(v) { this.#insert(this.tail.prev, v) }
+  #insert(after, v) { const n = new DNode(v); n.prev = after; n.next = after.next; after.next.prev = n; after.next = n; this.size++; return n }
+  remove(n) { n.prev.next = n.next; n.next.prev = n.prev; this.size--; return n.v }
+  removeFirst() { return this.size ? this.remove(this.head.next) : undefined }
+  removeLast() { return this.size ? this.remove(this.tail.prev) : undefined }
+  toArray() { const o = []; for (let n = this.head.next; n !== this.tail; n = n.next) o.push(n.v); return o }
+}
+function insertSorted(l, v) {
+  let n = l.head.next
+  while (n !== l.tail && n.v < v) n = n.next
+  const node = new DNode(v)
+  node.prev = n.prev; node.next = n; n.prev.next = node; n.prev = node; l.size++
+}
+```
+
+**18.** Напишіть `moveToFront(list, node)` для `DList`.
+
+```js
+class DNode { constructor(v) { this.v = v; this.prev = null; this.next = null } }
+class DList {
+  constructor() { this.head = new DNode(null); this.tail = new DNode(null); this.head.next = this.tail; this.tail.prev = this.head; this.size = 0 }
+  addFirst(v) { this.#insert(this.head, v) }
+  addLast(v) { this.#insert(this.tail.prev, v) }
+  #insert(after, v) { const n = new DNode(v); n.prev = after; n.next = after.next; after.next.prev = n; after.next = n; this.size++; return n }
+  remove(n) { n.prev.next = n.next; n.next.prev = n.prev; this.size--; return n.v }
+  removeFirst() { return this.size ? this.remove(this.head.next) : undefined }
+  removeLast() { return this.size ? this.remove(this.tail.prev) : undefined }
+  toArray() { const o = []; for (let n = this.head.next; n !== this.tail; n = n.next) o.push(n.v); return o }
+}
+function moveToFront(l, n) {
+  l.remove(n)
+  n.prev = l.head; n.next = l.head.next; l.head.next.prev = n; l.head.next = n; l.size++
+}
+```
+
+### Рівень 4. Практика й реалізація
+
+**19.** Напишіть `rotate(list, k)` для `DList` (перенести `k` елементів із початку в кінець).
+
+```js
+class DNode { constructor(v) { this.v = v; this.prev = null; this.next = null } }
+class DList {
+  constructor() { this.head = new DNode(null); this.tail = new DNode(null); this.head.next = this.tail; this.tail.prev = this.head; this.size = 0 }
+  addFirst(v) { this.#insert(this.head, v) }
+  addLast(v) { this.#insert(this.tail.prev, v) }
+  #insert(after, v) { const n = new DNode(v); n.prev = after; n.next = after.next; after.next.prev = n; after.next = n; this.size++; return n }
+  remove(n) { n.prev.next = n.next; n.next.prev = n.prev; this.size--; return n.v }
+  removeFirst() { return this.size ? this.remove(this.head.next) : undefined }
+  removeLast() { return this.size ? this.remove(this.tail.prev) : undefined }
+  toArray() { const o = []; for (let n = this.head.next; n !== this.tail; n = n.next) o.push(n.v); return o }
+}
+function rotate(l, k) { for (let i = 0; i < k; i++) l.addLast(l.removeFirst()) }
+```
+
+**20.** Напишіть `isPalindromeDList(list)` двома вказівниками з кінців.
+
+```js
+class DNode { constructor(v) { this.v = v; this.prev = null; this.next = null } }
+class DList {
+  constructor() { this.head = new DNode(null); this.tail = new DNode(null); this.head.next = this.tail; this.tail.prev = this.head; this.size = 0 }
+  addFirst(v) { this.#insert(this.head, v) }
+  addLast(v) { this.#insert(this.tail.prev, v) }
+  #insert(after, v) { const n = new DNode(v); n.prev = after; n.next = after.next; after.next.prev = n; after.next = n; this.size++; return n }
+  remove(n) { n.prev.next = n.next; n.next.prev = n.prev; this.size--; return n.v }
+  removeFirst() { return this.size ? this.remove(this.head.next) : undefined }
+  removeLast() { return this.size ? this.remove(this.tail.prev) : undefined }
+  toArray() { const o = []; for (let n = this.head.next; n !== this.tail; n = n.next) o.push(n.v); return o }
+}
+function isPalindromeDList(l) {
+  let a = l.head.next, b = l.tail.prev
+  while (a !== b && a.prev !== b) { if (a.v !== b.v) return false; a = a.next; b = b.prev }
+  return true
+}
+```
+
+**21.** Скільки вузлів вилучено, якщо видалити з `DList` усі елементи, більші за 2?
+
+```js
+class DNode { constructor(v) { this.v = v; this.prev = null; this.next = null } }
+class DList {
+  constructor() { this.head = new DNode(null); this.tail = new DNode(null); this.head.next = this.tail; this.tail.prev = this.head; this.size = 0 }
+  addFirst(v) { this.#insert(this.head, v) }
+  addLast(v) { this.#insert(this.tail.prev, v) }
+  #insert(after, v) { const n = new DNode(v); n.prev = after; n.next = after.next; after.next.prev = n; after.next = n; this.size++; return n }
+  remove(n) { n.prev.next = n.next; n.next.prev = n.prev; this.size--; return n.v }
+  removeFirst() { return this.size ? this.remove(this.head.next) : undefined }
+  removeLast() { return this.size ? this.remove(this.tail.prev) : undefined }
+  toArray() { const o = []; for (let n = this.head.next; n !== this.tail; n = n.next) o.push(n.v); return o }
+}
+function removeIf(l, pred) {
+  let removed = 0
+  for (let n = l.head.next; n !== l.tail;) { const nx = n.next; if (pred(n.v)) { l.remove(n); removed++ } n = nx }
+  return removed
+}
+```
+
+**22.** Напишіть `deque` через `DList`: `popFront`/`popBack`. Порядок після `[1,2,3]`.
+
+```js
+class DNode { constructor(v) { this.v = v; this.prev = null; this.next = null } }
+class DList {
+  constructor() { this.head = new DNode(null); this.tail = new DNode(null); this.head.next = this.tail; this.tail.prev = this.head; this.size = 0 }
+  addFirst(v) { this.#insert(this.head, v) }
+  addLast(v) { this.#insert(this.tail.prev, v) }
+  #insert(after, v) { const n = new DNode(v); n.prev = after; n.next = after.next; after.next.prev = n; after.next = n; this.size++; return n }
+  remove(n) { n.prev.next = n.next; n.next.prev = n.prev; this.size--; return n.v }
+  removeFirst() { return this.size ? this.remove(this.head.next) : undefined }
+  removeLast() { return this.size ? this.remove(this.tail.prev) : undefined }
+  toArray() { const o = []; for (let n = this.head.next; n !== this.tail; n = n.next) o.push(n.v); return o }
+}
+```
+
+### Відповіді
+
+1. Вони прибирають особливі випадки для порожнього списку, голови й хвоста: вставка й видалення завжди мають сусідів.
+2. Вузол знає `prev` і `next`, тому видалення `O(1)` без пошуку попередника.
+3. Один додатковий вказівник (`prev`) на кожен вузол.
+4. Операції не змінюють старий список, а повертають новий; нова версія ділить із старою всі вузли хвоста (структурне ділення).
+5. `Map` дає `O(1)` пошук вузла за ключем, а двозв'язний список — `O(1)` переміщення вузла в голову й видалення з хвоста.
+6. Виклик `(() => { const l = new DList(); l.addLast(1); l.addLast(2); l.addFirst(0); const a = l.toArray(); return [a, l.removeFirst(), l.removeLast(), l.toArray(), l.size]; })()` → `[[0, 1, 2], 0, 2, [1], 1]`
+7. Виклик `new DList().removeFirst()` → `undefined`
+8. Виклик `(() => { const l = new DList(); l.addLast(1); l.addLast(2); l.addLast(3); l.removeLast(); return l.size; })()` → `2`
+9. Виклик `(() => { const l = new DList(); [1, 2, 3].forEach(v => l.addLast(v)); return toArrayReverse(l); })()` → `[3, 2, 1]`
+10. Виклик `(() => { const l = new DList(); [1, 2, 3].forEach(v => l.addLast(v)); return reverse(l).toArray(); })()` → `[3, 2, 1]`
+11. Виклик `(() => { const c = new LRUCache(2); c.put(1, 1); c.put(2, 2); const a = c.get(1); c.put(3, 3); return [a, c.get(2), c.get(3), [...c.m.keys()]]; })()` → `[1, -1, 3, [1, 3]]`
+12. Виклик `(() => { const c = new LRU(2); c.put('a', 1); c.put('b', 2); c.get('a'); c.put('c', 3); return [c.get('a'), c.get('b'), c.get('c')]; })()` → `[1, -1, 3]`
+13. Виклик `(() => { const a = cons(1, cons(2, nil)); const b = cons(0, a); return [toA(a), toA(b), b.next === a]; })()` → `[[1, 2], [0, 1, 2], true]`
+14. Виклик `(() => { const a = cons(1, cons(2, null)); const b = append(a, 3); return [toA(a), toA(b), a.next === b.next]; })()` → `[[1, 2], [1, 2, 3], false]`
+15. Виклик `toA(map(cons(1, cons(2, cons(3, null))), x => x * x))` → `[1, 4, 9]`
+16. Виклик `(() => { 'use strict'; const n = cons(1, null); try { n.v = 2; } catch (e) { return e.name; } })()` → `'TypeError'`
+17. Виклик `(() => { const l = new DList(); [1, 3, 5].forEach(v => l.addLast(v)); insertSorted(l, 4); insertSorted(l, 0); insertSorted(l, 9); return l.toArray(); })()` → `[0, 1, 3, 4, 5, 9]`
+18. Виклик `(() => { const l = new DList(); [1, 2, 3].forEach(v => l.addLast(v)); const n = l.tail.prev; moveToFront(l, n); return [l.toArray(), l.size]; })()` → `[[3, 1, 2], 3]`
+19. Виклик `(() => { const l = new DList(); [1, 2, 3, 4].forEach(v => l.addLast(v)); rotate(l, 1); return l.toArray(); })()` → `[2, 3, 4, 1]`
+20. Виклик `(() => { const mk = arr => { const l = new DList(); arr.forEach(v => l.addLast(v)); return l; }; return [isPalindromeDList(mk([1, 2, 1])), isPalindromeDList(mk([1, 2, 2, 1])), isPalindromeDList(mk([1, 2]))]; })()` → `[true, true, false]`
+21. Виклик `(() => { const l = new DList(); [1, 3, 2, 5, 4].forEach(v => l.addLast(v)); return [removeIf(l, v => v > 2), l.toArray()]; })()` → `[3, [1, 2]]`
+22. Виклик `(() => { const l = new DList(); [1, 2, 3].forEach(v => l.addLast(v)); return [l.removeFirst(), l.removeLast(), l.removeFirst(), l.removeFirst()]; })()` → `[1, 3, 2, undefined]`

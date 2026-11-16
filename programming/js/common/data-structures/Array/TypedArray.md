@@ -264,3 +264,243 @@ animateSnow();
 - `DataView` — коли в одному буфері потрібно змішати різні типи за конкретними зсувами (бінарні формати файлів).
 - У Three.js: вся геометрія (`BufferGeometry`) будується на `Float32Array`, бо GPU фізично не вміє читати нічого іншого; типовий патерн для анімованих частинок (сніг, дощ, зорі) — один `Float32Array`, що мутується in-place щокадру, а не масив об'єктів `{x,y,z}`, що перестворюється щоразу.
 - Цей самий патерн об'єднує одразу кілька принципів продуктивності з `performance/` — allocation optimization, GC patterns, loop optimization, і є прямою вимогою самого WebGL/GPU, а не лише «оптимізацією про всяк випадок».
+
+## Задачі для закріплення
+
+32 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Скільки байтів займає елемент `Int8Array`, `Uint16Array`, `Float32Array`, `Float64Array`, `BigInt64Array`?
+
+```js
+[Int8Array, Uint16Array, Float32Array, Float64Array, BigInt64Array].map(T => T.BYTES_PER_ELEMENT)
+```
+
+**2.** Що дасть переповнення в `Uint8Array`?
+
+```js
+(() => { const a = new Uint8Array(2); a[0] = 256; a[1] = -1; return [...a]; })()
+```
+
+**3.** Що дасть `Uint8ClampedArray` при виході за межі?
+
+```js
+(() => { const a = new Uint8ClampedArray(3); a[0] = 300; a[1] = -5; a[2] = 1.5; return [...a]; })()
+```
+
+**4.** Що дасть переповнення в `Int8Array` для 128?
+
+```js
+(() => { const a = new Int8Array(1); a[0] = 128; return a[0]; })()
+```
+
+**5.** Яка довжина `Float32Array.from([1.1, 2.2])` і точність значення?
+
+```js
+(() => { const a = Float32Array.from([1.1, 2.2]); return [a.length, a[0] === 1.1, Math.abs(a[0] - 1.1) < 1e-6]; })()
+```
+
+**6.** Чи можна змінити довжину `TypedArray` через `push`?
+
+```js
+typeof new Uint8Array(2).push
+```
+
+**7.** Що поверне `ArrayBuffer(8).byteLength` і `Int32Array` над ним?
+
+```js
+(() => { const b = new ArrayBuffer(8); return [b.byteLength, new Int32Array(b).length, new Uint8Array(b).length]; })()
+```
+
+**8.** Чи ділять `Int32Array` і `Uint8Array` один буфер змін?
+
+```js
+(() => { const b = new ArrayBuffer(4); const i = new Int32Array(b), u = new Uint8Array(b); i[0] = 258; return [...u]; })()
+```
+
+### Рівень 2. Методи й поведінка
+
+**9.** Що дасть `subarray` і `slice`: хто копіює?
+
+```js
+(() => { const a = new Uint8Array([1, 2, 3, 4]); const s = a.subarray(1, 3), c = a.slice(1, 3); a[1] = 99; return [s[0], c[0]]; })()
+```
+
+**10.** Що дасть `new Uint8Array([1, 2, 3]).map(x => x * 100)`?
+
+```js
+[...new Uint8Array([1, 2, 3]).map(x => x * 100)]
+```
+
+**11.** Що поверне `Array.isArray(new Uint8Array(1))` і `ArrayBuffer.isView`?
+
+```js
+[Array.isArray(new Uint8Array(1)), ArrayBuffer.isView(new Uint8Array(1)), ArrayBuffer.isView([])]
+```
+
+**12.** Що поверне `sort()` для `Int8Array([10, -2, 3])` без компаратора?
+
+```js
+[...new Int8Array([10, -2, 3]).sort()]
+```
+
+**13.** Чим відрізняється `fill` і `set` для `TypedArray`?
+
+```js
+(() => { const a = new Uint8Array(5); a.fill(7, 1, 3); a.set([1, 2], 3); return [...a]; })()
+```
+
+**14.** Що дасть `DataView` для запису `setUint16` у big-endian та little-endian?
+
+```js
+(() => { const dv = new DataView(new ArrayBuffer(4)); dv.setUint16(0, 258); dv.setUint16(2, 258, true); return [dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3)]; })()
+```
+
+**15.** Що поверне `new Float32Array(2).fill(0.1)[0]` порівняно з `0.1`?
+
+```js
+(() => { const x = new Float32Array(1).fill(0.1)[0]; return [x === 0.1, x]; })()
+```
+
+**16.** Чи є `TypedArray` ітерованим і чи працює spread?
+
+```js
+[...new Uint8Array([1, 2, 3])]
+```
+
+### Рівень 3. Нюанси та пастки
+
+**17.** Що поверне `Object.keys(new Uint8Array(3))` та `.length`?
+
+```js
+(() => { const a = new Uint8Array(3); return [Object.keys(a), a.length]; })()
+```
+
+**18.** Що поверне `BigInt64Array` при записі звичайного числа?
+
+```js
+(() => { try { const a = new BigInt64Array(1); a[0] = 1; } catch (e) { return e.name; } })()
+```
+
+**19.** Що дасть `TextEncoder().encode('Привіт').length` і чому не 6?
+
+```js
+new TextEncoder().encode('Привіт').length
+```
+
+**20.** Що поверне `Uint8Array.of(1, 2, 3).reverse()` і `toReversed()`?
+
+```js
+[[...Uint8Array.of(1, 2, 3).reverse()], [...Uint8Array.of(1, 2, 3).toReversed()]]
+```
+
+**21.** Напишіть `concat(a, b)` для двох `Uint8Array`.
+
+```js
+function concat(a, b) { const r = new Uint8Array(a.length + b.length); r.set(a); r.set(b, a.length); return r }
+```
+
+**22.** Напишіть `sum(typed)` і порівняйте `reduce` для `Float32Array([0.1, 0.2])`.
+
+```js
+const sum = t => t.reduce((s, x) => s + x, 0)
+```
+
+**23.** Напишіть `toHex(bytes)` — рядок у hex.
+
+```js
+const toHex = b => [...b].map(x => x.toString(16).padStart(2, '0')).join('')
+```
+
+**24.** Напишіть `fromHex(str)` — зворотне перетворення.
+
+```js
+const fromHex = s => Uint8Array.from(s.match(/../g), h => parseInt(h, 16))
+```
+
+### Рівень 4. Практика й реалізація
+
+**25.** Напишіть `grayscale(rgba)` для `Uint8ClampedArray` пікселів `[r,g,b,a]`. Результат для одного червоного пікселя?
+
+```js
+function grayscale(px) { const o = new Uint8ClampedArray(px.length); for (let i = 0; i < px.length; i += 4) { const g = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]; o[i] = o[i + 1] = o[i + 2] = g; o[i + 3] = px[i + 3] } return o }
+```
+
+**26.** Напишіть `readUint32BE(bytes, offset)` через `DataView`.
+
+```js
+const readUint32BE = (b, o) => new DataView(b.buffer, b.byteOffset, b.byteLength).getUint32(o)
+```
+
+**27.** Напишіть `float32Bits(x)` — бітове представлення `Float32`.
+
+```js
+function float32Bits(x) { const dv = new DataView(new ArrayBuffer(4)); dv.setFloat32(0, x); return dv.getUint32(0).toString(2).padStart(32, '0') }
+```
+
+**28.** Напишіть `isLittleEndian()` для платформи.
+
+```js
+const isLittleEndian = () => new Uint8Array(new Uint16Array([1]).buffer)[0] === 1
+```
+
+**29.** Напишіть `histogram(bytes)` — масив із 4 корзин для значень `0–255` (по 64).
+
+```js
+function histogram(b) { const h = new Uint32Array(4); for (const x of b) h[x >> 6]++; return h }
+```
+
+**30.** Напишіть `swapBytes16(arr)` — поміняти порядок байтів кожного `Uint16`.
+
+```js
+function swapBytes16(a) { return a.map(x => ((x & 0xff) << 8) | (x >> 8)) }
+```
+
+**31.** Напишіть `bufferToBase64(bytes)` і `base64ToBuffer(str)` (Node `Buffer`).
+
+```js
+const toB64 = b => Buffer.from(b).toString('base64')
+const fromB64 = s => new Uint8Array(Buffer.from(s, 'base64'))
+```
+
+**32.** Напишіть `moveParticles(positions, velocities, dt)` — оновлення `Float32Array` позицій на місці.
+
+```js
+function moveParticles(p, v, dt) { for (let i = 0; i < p.length; i++) p[i] += v[i] * dt; return p }
+```
+
+### Відповіді
+
+1. `[1, 2, 4, 8, 8]`
+2. `[0, 255]`
+3. `[255, 0, 2]`
+4. `-128`
+5. `[2, false, true]`
+6. `'undefined'`
+7. `[8, 2, 8]`
+8. `[2, 1, 0, 0]`
+9. `[99, 2]`
+10. `[100, 200, 44]`
+11. `[false, true, false]`
+12. `[-2, 3, 10]`
+13. `[0, 7, 7, 1, 2]`
+14. `[1, 2, 2, 1]`
+15. `[false, 0.10000000149011612]`
+16. `[1, 2, 3]`
+17. `[['0', '1', '2'], 3]`
+18. `'TypeError'`
+19. `12`
+20. `[[3, 2, 1], [3, 2, 1]]`
+21. Виклик `[...concat(new Uint8Array([1, 2]), new Uint8Array([3]))]` → `[1, 2, 3]`
+22. Виклик `[sum(new Float32Array([0.1, 0.2])), sum(new Float64Array([0.1, 0.2]))]` → `[0.30000000447034836, 0.30000000000000004]`
+23. Виклик `toHex(new Uint8Array([0, 15, 255]))` → `'000fff'`
+24. Виклик `[...fromHex('000fff')]` → `[0, 15, 255]`
+25. Виклик `[...grayscale(new Uint8ClampedArray([255, 0, 0, 255]))]` → `[76, 76, 76, 255]`
+26. Виклик `readUint32BE(new Uint8Array([0, 0, 1, 2]), 0)` → `258`
+27. Виклик `[float32Bits(1), float32Bits(-2)]` → `['00111111100000000000000000000000', '11000000000000000000000000000000']`
+28. Виклик `typeof isLittleEndian()` → `'boolean'`
+29. Виклик `[...histogram(new Uint8Array([0, 10, 70, 130, 200, 255, 64]))]` → `[2, 2, 1, 2]`
+30. Виклик `[...swapBytes16(new Uint16Array([0x0102, 0xaabb]))].map(x => x.toString(16))` → `['201', 'bbaa']`
+31. Виклик `[toB64(new Uint8Array([104, 105])), [...fromB64('aGk=')]]` → `['aGk=', [104, 105]]`
+32. Виклик `[...moveParticles(new Float32Array([0, 1, 2]), new Float32Array([1, 1, 1]), 0.5)]` → `[0.5, 1.5, 2.5]`
