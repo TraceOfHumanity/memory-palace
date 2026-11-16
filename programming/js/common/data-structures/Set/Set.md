@@ -422,3 +422,386 @@ const unique = [...new Map(users.map((u) => [u.id, u])).values()];
 - Ітерація «жива»: додані під час обходу елементи відвідуються, видалені — пропускаються.
 - Методи множин (ES2025) не мутують, приймають set-подібні аргументи (`size`, `has`, `keys`).
 - Для унікальних об'єктів за `id` використовуй `Map`; `JSON.stringify(set)` потребує `[...set]`.
+
+## Задачі для закріплення
+
+П'ятдесят задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Створення й основні методи
+
+**1.** Скільки елементів у `Set` після створення з масиву з дублікатами?
+
+```js
+new Set([1, 2, 2, 3, 3, 3]).size
+```
+
+**2.** Що отримаємо, якщо розгорнути `Set` з рядка?
+
+```js
+[...new Set('hello')]
+```
+
+**3.** Що поверне `has` для наявного і відсутнього значення?
+
+```js
+(() => { const s = new Set([1, 2]); return [s.has(1), s.has(3)]; })()
+```
+
+**4.** Що повертає `add` і чи працює ланцюжок викликів?
+
+```js
+(() => { const s = new Set(); const r = s.add(1).add(2).add(1); return [r === s, s.size]; })()
+```
+
+**5.** Що повертає `delete` для існуючого і неіснуючого значення?
+
+```js
+(() => { const s = new Set([1]); return [s.delete(1), s.delete(1)]; })()
+```
+
+**6.** Яким буде `size` після `clear()` і що поверне `clear()`?
+
+```js
+(() => { const s = new Set([1, 2]); const r = s.clear(); return [s.size, r]; })()
+```
+
+**7.** Скільки елементів у `Set` із трьох `NaN`?
+
+```js
+new Set([NaN, NaN, NaN]).size
+```
+
+**8.** Скільки елементів у `new Set([0, -0])`?
+
+```js
+new Set([0, -0]).size
+```
+
+**9.** Скільки елементів у `Set`, якщо додати два об'єкти `{ id: 1 }`?
+
+```js
+(() => { const s = new Set(); s.add({ id: 1 }); s.add({ id: 1 }); return s.size; })()
+```
+
+**10.** Скільки елементів у `Set` з `'1'` і `1`?
+
+```js
+new Set(['1', 1]).size
+```
+
+**11.** Яким буде порядок елементів `Set`?
+
+```js
+[...new Set([3, 1, 2, 1, 3])]
+```
+
+**12.** Що поверне `new Set()` без аргументів, якщо перетворити на масив, і що дасть `new Set(null).size`?
+
+```js
+[[...new Set()], new Set(null).size]
+```
+
+### Рівень 2. Ітерація, порядок, конвертація
+
+**13.** Чи збігаються `keys()` і `values()` у `Set`?
+
+```js
+(() => { const s = new Set(['a']); return [s.keys === s.values, [...s.keys()], [...s.values()]]; })()
+```
+
+**14.** Що поверне `[...set.entries()]`?
+
+```js
+[...new Set(['a', 'b']).entries()]
+```
+
+**15.** Які аргументи отримує колбек `forEach` у `Set`?
+
+```js
+(() => { const o = []; new Set(['a']).forEach((v, k, s) => o.push([v, k, s instanceof Set])); return o; })()
+```
+
+**16.** Чи є в `Set` доступ за індексом?
+
+```js
+new Set(['a', 'b'])[0]
+```
+
+**17.** Видаліть дублікати з масиву зі збереженням порядку.
+
+```js
+[...new Set([5, 3, 5, 1, 3])]
+```
+
+**18.** Чи видалить `Set` дублікати об'єктів із однаковим вмістом?
+
+```js
+[...new Set([{ a: 1 }, { a: 1 }])].length
+```
+
+**19.** Яким буде порядок після повторного `add` існуючого значення?
+
+```js
+(() => { const s = new Set(['a', 'b', 'c']); s.add('a'); return [...s]; })()
+```
+
+**20.** Яким буде порядок після `delete` і повторного `add`?
+
+```js
+(() => { const s = new Set(['a', 'b', 'c']); s.delete('a'); s.add('a'); return [...s]; })()
+```
+
+**21.** Які елементи відвідає цикл, якщо під час обходу додати `4` і видалити `3`?
+
+```js
+(() => { const s = new Set([1, 2, 3]); const seen = []; for (const x of s) { seen.push(x); if (x === 1) s.add(4); if (x === 2) s.delete(3); } return seen; })()
+```
+
+**22.** Чи можна обійти ітератор `set.values()` двічі?
+
+```js
+(() => { const it = new Set([1, 2]).values(); return [[...it], [...it]]; })()
+```
+
+**23.** Що поверне `next()` у ітератора `Set`?
+
+```js
+(() => { const it = new Set(['x']).values(); return [it.next(), it.next()]; })()
+```
+
+**24.** Перетворіть `Set` на масив трьома способами. Які результати?
+
+```js
+(() => { const s = new Set([1, 2]); return [[...s], Array.from(s), Array.from(s, x => x * 10)]; })()
+```
+
+**25.** Що дасть `Array.from(new Set('aabbc')).join('')`?
+
+```js
+Array.from(new Set('aabbc')).join('')
+```
+
+**26.** Що виведе `for...of` по `Set` без виклику `.values()`?
+
+```js
+(() => { const o = []; for (const x of new Set([1, 2])) o.push(x); return o; })()
+```
+
+### Рівень 3. Операції над множинами, WeakSet, серіалізація
+
+**27.** Який `size` у `Set`, створеного від `Set`, і чи це копія?
+
+```js
+(() => { const a = new Set([1, 2]); const b = new Set(a); b.add(3); return [a.size, b.size]; })()
+```
+
+**28.** Що дасть `A.union(B)` для `A = {1,2,3,4}`, `B = {3,4,5,6}`?
+
+```js
+const A = new Set([1, 2, 3, 4]), B = new Set([3, 4, 5, 6]);
+A.union(B)
+```
+
+**29.** Що дасть `A.intersection(B)`?
+
+```js
+const A = new Set([1, 2, 3, 4]), B = new Set([3, 4, 5, 6]);
+A.intersection(B)
+```
+
+**30.** Що дасть `A.difference(B)`?
+
+```js
+const A = new Set([1, 2, 3, 4]), B = new Set([3, 4, 5, 6]);
+A.difference(B)
+```
+
+**31.** Що дасть `A.symmetricDifference(B)`?
+
+```js
+const A = new Set([1, 2, 3, 4]), B = new Set([3, 4, 5, 6]);
+A.symmetricDifference(B)
+```
+
+**32.** Що повернуть `isSubsetOf`, `isSupersetOf`, `isDisjointFrom`?
+
+```js
+const A = new Set([1, 2, 3, 4]), B = new Set([3, 4, 5, 6]);
+[A.isSubsetOf(new Set([1, 2, 3, 4, 5])), A.isSupersetOf(new Set([1, 2])), A.isDisjointFrom(new Set([9, 10]))]
+```
+
+**33.** Чи змінюють методи множин вихідні `Set`?
+
+```js
+const A = new Set([1, 2, 3, 4]), B = new Set([3, 4, 5, 6]);
+A.union(B); [A.size, B.size]
+```
+
+**34.** Що станеться, якщо передати масив у `union`?
+
+```js
+new Set([1]).union([2])
+```
+
+**35.** Чи підійде `Map` як аргумент `union`?
+
+```js
+new Set([1]).union(new Map([[2, 'x']]))
+```
+
+**36.** Що поверне `[...A.union(B)]` і чому спершу йдуть елементи `A`?
+
+```js
+(() => { const A = new Set([3, 1]), B = new Set([2, 1]); return [...A.union(B)]; })()
+```
+
+**37.** Напишіть `union(a, b)`, `intersection(a, b)` і `difference(a, b)` без вбудованих методів (через `filter` і `has`).
+
+```js
+const union = (a, b) => new Set([...a, ...b])
+const intersection = (a, b) => new Set([...a].filter(x => b.has(x)))
+const difference = (a, b) => new Set([...a].filter(x => !b.has(x)))
+```
+
+**38.** Що станеться при `new WeakSet().add(1)`?
+
+```js
+new WeakSet().add(1)
+```
+
+**39.** Чи має `WeakSet` властивість `size` і чи можна його перебрати?
+
+```js
+(() => { const w = new WeakSet(); return [w.size, typeof w[Symbol.iterator]]; })()
+```
+
+**40.** Що дасть `JSON.stringify(new Set([1, 2]))` і `JSON.stringify([...new Set([1, 2])])`?
+
+```js
+[JSON.stringify(new Set([1, 2])), JSON.stringify([...new Set([1, 2])])]
+```
+
+### Рівень 4. Практичні функції
+
+**41.** Напишіть `uniqueBy(arr, key)` — унікальні об'єкти за полем із збереженням першого.
+
+```js
+function uniqueBy(arr, key) {
+  const seen = new Set()
+  return arr.filter(o => !seen.has(o[key]) && seen.add(o[key]))
+}
+```
+
+**42.** Напишіть `countUnique(text)` — кількість унікальних слів без урахування регістру.
+
+```js
+const countUnique = text => new Set(text.toLowerCase().match(/\p{L}+/gu)).size
+```
+
+**43.** Напишіть `duplicates(arr)` — значення, що повторюються.
+
+```js
+function duplicates(arr) {
+  const seen = new Set(), dup = new Set()
+  for (const x of arr) (seen.has(x) ? dup : seen).add(x)
+  return [...dup]
+}
+```
+
+**44.** Напишіть `common(...arrays)` — елементи, що є в усіх масивах.
+
+```js
+const common = (first, ...rest) => [...new Set(first)].filter(x => rest.every(a => a.includes(x)))
+```
+
+**45.** Напишіть `hasDuplicates(arr)` без вкладених циклів.
+
+```js
+const hasDuplicates = arr => new Set(arr).size !== arr.length
+```
+
+**46.** Напишіть `sameSet(a, b)` — чи містять два `Set` однакові елементи.
+
+```js
+const sameSet = (a, b) => a.size === b.size && [...a].every(x => b.has(x))
+```
+
+**47.** Напишіть `touch(set, value)` для LRU-подібного списку: освіжити значення, переніс його в кінець.
+
+```js
+function touch(set, value) {
+  set.delete(value)
+  set.add(value)
+}
+```
+
+**48.** Напишіть `hasPermission(user, required)` — чи є всі потрібні ролі, використовуючи `isSupersetOf`.
+
+```js
+const hasPermission = (user, required) => new Set(user).isSupersetOf(new Set(required))
+```
+
+**49.** Напишіть `uniqueChars(str)` — рядок без повторних символів зі збереженням порядку.
+
+```js
+const uniqueChars = str => [...new Set(str)].join('')
+```
+
+**50.** Напишіть `sortedSet(set)` — відсортований масив чисел із `Set`.
+
+```js
+const sortedSet = set => [...set].sort((a, b) => a - b)
+```
+
+### Відповіді
+
+1. `3`
+2. `['h', 'e', 'l', 'o']`
+3. `[true, false]`
+4. `[true, 2]`
+5. `[true, false]`
+6. `[0, undefined]`
+7. `1`
+8. `1`
+9. `2`
+10. `2`
+11. `[3, 1, 2]`
+12. `[[], 0]`
+13. `[true, ['a'], ['a']]`
+14. `[['a', 'a'], ['b', 'b']]`
+15. `[['a', 'a', true]]`
+16. `undefined`
+17. `[5, 3, 1]`
+18. `2`
+19. `['a', 'b', 'c']`
+20. `['b', 'c', 'a']`
+21. `[1, 2, 4]`
+22. `[[1, 2], []]`
+23. `[{ value: 'x', done: false }, { value: undefined, done: true }]`
+24. `[[1, 2], [1, 2], [10, 20]]`
+25. `'abc'`
+26. `[1, 2]`
+27. `[2, 3]`
+28. `Set(6) {1, 2, 3, 4, 5, 6}`
+29. `Set(2) {3, 4}`
+30. `Set(2) {1, 2}`
+31. `Set(4) {1, 2, 5, 6}`
+32. `[true, true, true]`
+33. `[4, 4]`
+34. `TypeError: The .size property is NaN`
+35. `Set(2) {1, 2}`
+36. `[3, 1, 2]`
+37. Виклик `[union(new Set([1, 2]), new Set([2, 3])), intersection(new Set([1, 2]), new Set([2, 3])), difference(new Set([1, 2]), new Set([2, 3]))]` → `[Set(3) {1, 2, 3}, Set(1) {2}, Set(1) {1}]`
+38. `TypeError: Invalid value used in weak set`
+39. `[undefined, 'undefined']`
+40. `['{}', '[1,2]']`
+41. Виклик `uniqueBy([{ id: 1, v: 'a' }, { id: 2, v: 'b' }, { id: 1, v: 'c' }], 'id')` → `[{ id: 1, v: 'a' }, { id: 2, v: 'b' }]`
+42. Виклик `countUnique('Cat cat DOG dog bird')` → `3`
+43. Виклик `duplicates([1, 2, 3, 2, 4, 1, 1])` → `[2, 1]`
+44. Виклик `common([1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 6])` → `[3, 4]`
+45. Виклик `[hasDuplicates([1, 2, 3]), hasDuplicates([1, 2, 1])]` → `[false, true]`
+46. Виклик `[sameSet(new Set([1, 2]), new Set([2, 1])), sameSet(new Set([1, 2]), new Set([1, 3]))]` → `[true, false]`
+47. Виклик `(() => { const s = new Set(['a', 'b', 'c']); touch(s, 'a'); return [...s]; })()` → `['b', 'c', 'a']`
+48. Виклик `[hasPermission(['admin', 'edit', 'view'], ['edit', 'view']), hasPermission(['view'], ['edit'])]` → `[true, false]`
+49. Виклик `uniqueChars('mississippi')` → `'misp'`
+50. Виклик `sortedSet(new Set([10, 2, 33, 1]))` → `[1, 2, 10, 33]`

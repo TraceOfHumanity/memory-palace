@@ -544,3 +544,423 @@ Map.groupBy(items, (item) => item.category);
 - Складені ключі: рядок із роздільником або вкладені `Map`; масиви/об'єкти як ключі — за посиланням.
 - `JSON.stringify(map)` порожній: використовуй `[...map]` чи replacer; `structuredClone(map)` працює.
 - Перевіряй наявність через `has`, а не через `if (map.get(key))`.
+
+## Задачі для закріплення
+
+П'ятдесят задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Створення й основні методи
+
+**1.** Скільки елементів у `Map`, створеному з масиву пар?
+
+```js
+new Map([['a', 1], ['b', 2], ['a', 3]]).size
+```
+
+**2.** Яке значення має ключ `'a'` після створення `new Map([['a', 1], ['a', 3]])`?
+
+```js
+new Map([['a', 1], ['a', 3]]).get('a')
+```
+
+**3.** Що поверне `get` для відсутнього ключа і як задати значення за замовчуванням?
+
+```js
+(() => { const m = new Map([['a', 1]]); return [m.get('x'), m.get('x') ?? 0]; })()
+```
+
+**4.** Що повертає `set` і чи працює ланцюжок?
+
+```js
+(() => { const m = new Map(); const r = m.set('a', 1).set('b', 2); return [r === m, m.size]; })()
+```
+
+**5.** Що станеться при повторному `set` з тим самим ключем?
+
+```js
+(() => { const m = new Map([['a', 1]]); m.set('a', 9); return [m.get('a'), m.size]; })()
+```
+
+**6.** Що поверне `has` для ключа зі значенням `undefined`?
+
+```js
+(() => { const m = new Map([['a', undefined]]); return [m.has('a'), m.get('a'), m.has('b')]; })()
+```
+
+**7.** Що повертає `delete`?
+
+```js
+(() => { const m = new Map([['a', 1]]); return [m.delete('a'), m.delete('a')]; })()
+```
+
+**8.** Що буде з `size` після `clear()`?
+
+```js
+(() => { const m = new Map([['a', 1]]); m.clear(); return m.size; })()
+```
+
+**9.** Чи відрізняє `Map` ключі `1` і `'1'`?
+
+```js
+(() => { const m = new Map(); m.set(1, 'num').set('1', 'str'); return [m.size, m.get(1), m.get('1')]; })()
+```
+
+**10.** Чи можна взяти значення за ключем-об'єктом із тим самим вмістом, але іншим посиланням?
+
+```js
+(() => { const k = { id: 1 }; const m = new Map([[k, 'x']]); return [m.get(k), m.get({ id: 1 })]; })()
+```
+
+**11.** Чи працює `NaN` як ключ?
+
+```js
+(() => { const m = new Map([[NaN, 'x']]); return [m.get(NaN), NaN === NaN]; })()
+```
+
+**12.** Що буде з ключами `0` і `-0`?
+
+```js
+new Map([[0, 'a'], [-0, 'b']]).size
+```
+
+### Рівень 2. Ітерація, порядок, конвертація
+
+**13.** Що дасть розгортання `Map` у масив?
+
+```js
+[...new Map([['a', 1], ['b', 2]])]
+```
+
+**14.** Що повернуть `keys()`, `values()` і `entries()`?
+
+```js
+(() => { const m = new Map([['a', 1], ['b', 2]]); return [[...m.keys()], [...m.values()], [...m.entries()]]; })()
+```
+
+**15.** Які аргументи отримує колбек `forEach` у `Map` і в якому порядку?
+
+```js
+(() => { const o = []; new Map([['a', 1]]).forEach((value, key, map) => o.push([value, key, map instanceof Map])); return o; })()
+```
+
+**16.** Що збере цикл `for (const [k, v] of map)`?
+
+```js
+(() => { const o = []; for (const [k, v] of new Map([['a', 1], ['b', 2]])) o.push(k + v); return o; })()
+```
+
+**17.** Перетворіть `Map` на об'єкт.
+
+```js
+Object.fromEntries(new Map([['a', 1], ['b', 2]]))
+```
+
+**18.** Перетворіть об'єкт на `Map`.
+
+```js
+new Map(Object.entries({ a: 1, b: 2 }))
+```
+
+**19.** Чи змінить оновлення існуючого ключа його позицію в порядку?
+
+```js
+(() => { const m = new Map([['a', 1], ['b', 2]]); m.set('a', 9); return [...m.keys()]; })()
+```
+
+**20.** Що буде з порядком після `delete` і повторного `set`?
+
+```js
+(() => { const m = new Map([['a', 1], ['b', 2]]); m.delete('a'); m.set('a', 1); return [...m.keys()]; })()
+```
+
+**21.** Які ключі відвідає цикл, якщо під час обходу додати `'c'`?
+
+```js
+(() => { const m = new Map([['a', 1], ['b', 2]]); const seen = []; for (const [k] of m) { seen.push(k); if (k === 'a') m.set('c', 3); } return seen; })()
+```
+
+**22.** Чи порожній ітератор `map.entries()` після повного обходу?
+
+```js
+(() => { const it = new Map([['a', 1]]).entries(); return [[...it], [...it]]; })()
+```
+
+**23.** Що поверне `next()` у `map.entries()`?
+
+```js
+(() => { const it = new Map([['a', 1]]).entries(); return [it.next(), it.next()]; })()
+```
+
+**24.** Що дасть `Array.from(map.values(), v => v * 2)`?
+
+```js
+Array.from(new Map([['a', 1], ['b', 2]]).values(), v => v * 2)
+```
+
+**25.** Який порядок ключів у звичайного об'єкта з ключами `'b'`, `'2'`, `'a'`, `'1'`, а який у `Map`?
+
+```js
+(() => { const o = { b: 1, 2: 1, a: 1, 1: 1 }; const m = new Map([['b', 1], [2, 1], ['a', 1], [1, 1]]); return [Object.keys(o), [...m.keys()]]; })()
+```
+
+**26.** Створіть копію `Map` і додайте елемент. Чи вплине це на оригінал?
+
+```js
+(() => { const a = new Map([['k', 1]]); const b = new Map(a); b.set('z', 2); return [a.size, b.size]; })()
+```
+
+### Рівень 3. groupBy, Map і Object, WeakMap, складені ключі, серіалізація
+
+**27.** Що дасть `Map.groupBy` для чисел за парністю?
+
+```js
+Map.groupBy([1, 2, 3, 4, 5], n => n % 2 === 0 ? 'even' : 'odd')
+```
+
+**28.** Скільки елементів у `Map.groupBy` після групування слів за довжиною?
+
+```js
+[...Map.groupBy(['a', 'bb', 'cc', 'd', 'eee'], w => w.length)].map(([k, v]) => [k, v.length])
+```
+
+**29.** Чим відрізняється результат `Object.groupBy` від `Map.groupBy` за типом і прототипом?
+
+```js
+(() => { const o = Object.groupBy([1, 2, 3], n => n % 2 ? 'odd' : 'even'); return [o, Object.getPrototypeOf(o), Map.groupBy([1], x => x) instanceof Map]; })()
+```
+
+**30.** Чи є в звичайного об'єкта ключ `'toString'` до додавання, а в `Map`?
+
+```js
+[('toString' in {}), new Map().has('toString')]
+```
+
+**31.** Чим відрізняється доступ до ключа `1` в об'єкта й `Map`?
+
+```js
+(() => { const o = {}; o[1] = 'a'; const m = new Map(); m.set(1, 'a'); return [o['1'], o[1], m.get('1'), m.get(1)]; })()
+```
+
+**32.** Що дасть `JSON.stringify(map)`?
+
+```js
+JSON.stringify(new Map([['a', 1]]))
+```
+
+**33.** Серіалізуйте `Map` у JSON і відновіть.
+
+```js
+(() => { const m = new Map([['a', 1], ['b', 2]]); const json = JSON.stringify([...m]); return [json, new Map(JSON.parse(json))]; })()
+```
+
+**34.** Що станеться при `new WeakMap().set('key', 1)`?
+
+```js
+new WeakMap().set('key', 1)
+```
+
+**35.** Чи має `WeakMap` `size` і чи можна його перебрати?
+
+```js
+(() => { const w = new WeakMap(); return [w.size, typeof w[Symbol.iterator]]; })()
+```
+
+**36.** Чи знайдеться значення за ключем-масивом `[1, 2]` без збереження посилання?
+
+```js
+(() => { const m = new Map([[[1, 2], 'x']]); return m.get([1, 2]); })()
+```
+
+**37.** Як зробити складений ключ із двох чисел через рядок?
+
+```js
+(() => { const m = new Map(); m.set(JSON.stringify([1, 2]), 'x'); return [m.get(JSON.stringify([1, 2])), m.get('1,2')]; })()
+```
+
+**38.** Що дасть вираз із ключем, що є функцією-ідентифікатором?
+
+```js
+(() => { const f = () => 1; const m = new Map([[f, 'fn']]); return [m.get(f), m.get(() => 1)]; })()
+```
+
+**39.** Що поверне `[...new Map([['a',1]]).keys()].length` і `Map` від `null`?
+
+```js
+[[...new Map([['a', 1]]).keys()].length, new Map(null).size]
+```
+
+**40.** Що дасть об'єднання двох `Map`, де ключ повторюється?
+
+```js
+new Map([...new Map([['a', 1], ['b', 2]]), ...new Map([['b', 20], ['c', 3]])])
+```
+
+### Рівень 4. Практичні функції
+
+**41.** Скільки разів виконається функція при мемоізації через `Map`?
+
+```js
+(() => { let calls = 0; const cache = new Map(); const sq = n => { if (cache.has(n)) return cache.get(n); calls++; const r = n * n; cache.set(n, r); return r; }; sq(4); sq(4); sq(5); return calls; })()
+```
+
+**42.** Напишіть `wordFreq(text)` — `Map` частот слів без урахування регістру.
+
+```js
+function wordFreq(text) {
+  const m = new Map()
+  for (const w of text.toLowerCase().match(/\p{L}+/gu) ?? []) m.set(w, (m.get(w) ?? 0) + 1)
+  return m
+}
+```
+
+**43.** Напишіть `groupBy(arr, fn)` через `Map`, що повертає `Map` ключ → масив.
+
+```js
+function groupBy(arr, fn) {
+  const m = new Map()
+  for (const x of arr) {
+    const k = fn(x)
+    if (!m.has(k)) m.set(k, [])
+    m.get(k).push(x)
+  }
+  return m
+}
+```
+
+**44.** Напишіть `invert(map)` — `Map`, де ключі й значення поміняно місцями.
+
+```js
+const invert = map => new Map([...map].map(([k, v]) => [v, k]))
+```
+
+**45.** Напишіть `twoSum(nums, target)` — індекси двох чисел із сумою `target` за один прохід із `Map`.
+
+```js
+function twoSum(nums, target) {
+  const seen = new Map()
+  for (let i = 0; i < nums.length; i++) {
+    const need = target - nums[i]
+    if (seen.has(need)) return [seen.get(need), i]
+    seen.set(nums[i], i)
+  }
+  return null
+}
+```
+
+**46.** Напишіть `firstUnique(str)` — перший символ, що не повторюється.
+
+```js
+function firstUnique(str) {
+  const c = new Map()
+  for (const ch of str) c.set(ch, (c.get(ch) ?? 0) + 1)
+  for (const [ch, n] of c) if (n === 1) return ch
+  return null
+}
+```
+
+**47.** Напишіть `anagrams(words)` — групи слів-анаграм.
+
+```js
+function anagrams(words) {
+  const m = new Map()
+  for (const w of words) {
+    const k = [...w].sort().join('')
+    m.set(k, [...(m.get(k) ?? []), w])
+  }
+  return [...m.values()]
+}
+```
+
+**48.** Напишіть `memo(fn)` — мемоізація для функції одного аргументу. Скільки викликів `fn` при чотирьох викликах з `2, 3, 2, 3`?
+
+```js
+function memo(fn) {
+  const cache = new Map()
+  return x => {
+    if (!cache.has(x)) cache.set(x, fn(x))
+    return cache.get(x)
+  }
+}
+```
+
+**49.** Напишіть клас `LRU` з ємністю: `get` освіжає ключ, `set` при переповненні видаляє найстаріший. Які ключі лишаться після послідовності?
+
+```js
+class LRU {
+  constructor(cap) { this.cap = cap; this.m = new Map() }
+  get(k) {
+    if (!this.m.has(k)) return undefined
+    const v = this.m.get(k)
+    this.m.delete(k)
+    this.m.set(k, v)
+    return v
+  }
+  set(k, v) {
+    this.m.delete(k)
+    this.m.set(k, v)
+    if (this.m.size > this.cap) this.m.delete(this.m.keys().next().value)
+  }
+}
+```
+
+**50.** Напишіть `getOrCreate(map, key, make)` — повертає значення, а якщо ключа немає, створює через `make`. Скільки викликів `make`?
+
+```js
+function getOrCreate(map, key, make) {
+  if (!map.has(key)) map.set(key, make())
+  return map.get(key)
+}
+```
+
+### Відповіді
+
+1. `2`
+2. `3`
+3. `[undefined, 0]`
+4. `[true, 2]`
+5. `[9, 1]`
+6. `[true, undefined, false]`
+7. `[true, false]`
+8. `0`
+9. `[2, 'num', 'str']`
+10. `['x', undefined]`
+11. `['x', false]`
+12. `1`
+13. `[['a', 1], ['b', 2]]`
+14. `[['a', 'b'], [1, 2], [['a', 1], ['b', 2]]]`
+15. `[[1, 'a', true]]`
+16. `['a1', 'b2']`
+17. `{ a: 1, b: 2 }`
+18. `Map(2) {'a' => 1, 'b' => 2}`
+19. `['a', 'b']`
+20. `['b', 'a']`
+21. `['a', 'b', 'c']`
+22. `[[['a', 1]], []]`
+23. `[{ value: ['a', 1], done: false }, { value: undefined, done: true }]`
+24. `[2, 4]`
+25. `[['1', '2', 'b', 'a'], ['b', 2, 'a', 1]]`
+26. `[1, 2]`
+27. `Map(2) {'odd' => [1, 3, 5], 'even' => [2, 4]}`
+28. `[[1, 2], [2, 2], [3, 1]]`
+29. `[{ odd: [1, 3], even: [2] }, null, true]`
+30. `[true, false]`
+31. `['a', 'a', undefined, 'a']`
+32. `'{}'`
+33. `['[["a",1],["b",2]]', Map(2) {'a' => 1, 'b' => 2}]`
+34. `TypeError: Invalid value used as weak map key`
+35. `[undefined, 'undefined']`
+36. `undefined`
+37. `['x', undefined]`
+38. `['fn', undefined]`
+39. `[1, 0]`
+40. `Map(3) {'a' => 1, 'b' => 20, 'c' => 3}`
+41. `2`
+42. Виклик `wordFreq('Cat cat DOG dog cat')` → `Map(2) {'cat' => 3, 'dog' => 2}`
+43. Виклик `groupBy(['one', 'two', 'three', 'four'], w => w.length)` → `Map(3) {3 => ['one', 'two'], 5 => ['three'], 4 => ['four']}`
+44. Виклик `invert(new Map([['a', 1], ['b', 2]]))` → `Map(2) {1 => 'a', 2 => 'b'}`
+45. Виклик `[twoSum([2, 7, 11, 15], 9), twoSum([1, 2], 10)]` → `[[0, 1], null]`
+46. Виклик `[firstUnique('swiss'), firstUnique('aabb')]` → `['w', null]`
+47. Виклик `anagrams(['eat', 'tea', 'tan', 'ate', 'nat', 'bat'])` → `[['eat', 'tea', 'ate'], ['tan', 'nat'], ['bat']]`
+48. Виклик `(() => { let calls = 0; const f = memo(x => { calls++; return x * 2; }); [2, 3, 2, 3].map(f); return calls; })()` → `2`
+49. Виклик `(() => { const c = new LRU(2); c.set('a', 1); c.set('b', 2); c.get('a'); c.set('c', 3); return [...c.m.keys()]; })()` → `['a', 'c']`
+50. Виклик `(() => { let n = 0; const m = new Map(); const make = () => { n++; return []; }; getOrCreate(m, 'a', make).push(1); getOrCreate(m, 'a', make).push(2); return [m.get('a'), n]; })()` → `[[1, 2], 1]`
