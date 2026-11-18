@@ -448,3 +448,635 @@ export default defineConfig({
 | не зроблено `mockRestore` / `useRealTimers` | вплив тесту на сусідні |
 | `test.only` у коміті | решта тестів не запускається |
 | знімок оновлено `-u` не дивлячись | зафіксовано баг як еталон |
+
+## Задачі для закріплення
+
+42 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — повний файл `*.test.ts`; запуск `npx vitest run`; у відповіді `✓` — тест пройдено, `✗` — провалено (з початком повідомлення), `○` — пропущено.
+
+### Рівень 1. Основи
+
+**1.** Який результат у двох простих тестів (`toBe`)?
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('додає', () => { expect(1 + 2).toBe(3); });
+it('віднімає', () => { expect(5 - 2).toBe(4); });
+```
+
+**2.** `toBe` проти `toEqual` для об'єктів.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('toBe', () => { expect({ a: 1 }).toBe({ a: 1 }); });
+it('toEqual', () => { expect({ a: 1 }).toEqual({ a: 1 }); });
+```
+
+**3.** `toEqual` ігнорує `undefined`-поля, `toStrictEqual` — ні.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('toEqual', () => { expect({ a: 1, b: undefined }).toEqual({ a: 1 }); });
+it('toStrictEqual', () => { expect({ a: 1, b: undefined }).toStrictEqual({ a: 1 }); });
+```
+
+**4.** Числа з плаваючою точкою: `toBe` проти `toBeCloseTo`.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('toBe', () => { expect(0.1 + 0.2).toBe(0.3); });
+it('toBeCloseTo', () => { expect(0.1 + 0.2).toBeCloseTo(0.3); });
+```
+
+**5.** Перевірки правдивості: `toBeTruthy`, `toBeFalsy`, `toBeNull`, `toBeUndefined`, `toBeDefined`.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('truthy', () => { expect('a').toBeTruthy(); expect(0).toBeFalsy(); });
+it('null', () => { expect(null).toBeNull(); expect(undefined).toBeNull(); });
+it('undefined', () => { expect(undefined).toBeUndefined(); expect(null).toBeDefined(); });
+```
+
+**6.** Рядки та регулярні вирази: `toMatch`, `toContain`.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('match', () => { expect('hello world').toMatch(/wor/); });
+it('contain', () => { expect('hello').toContain('ell'); });
+it('no match', () => { expect('hello').toMatch(/xyz/); });
+```
+
+**7.** Масиви: `toContain`, `toHaveLength`, `toContainEqual`.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('contain', () => { expect([1, 2, 3]).toContain(2); });
+it('length', () => { expect([1, 2, 3]).toHaveLength(2); });
+it('containEqual', () => { expect([{ a: 1 }]).toContainEqual({ a: 1 }); });
+```
+
+**8.** Об'єкти: `toHaveProperty` та `toMatchObject`.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('prop', () => { expect({ a: { b: 2 } }).toHaveProperty('a.b', 2); });
+it('matchObject', () => { expect({ a: 1, b: 2, c: 3 }).toMatchObject({ a: 1, b: 2 }); });
+it('matchObject fail', () => { expect({ a: 1 }).toMatchObject({ a: 2 }); });
+```
+
+**9.** Винятки: `toThrow` із повідомленням і без.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+const f = () => { throw new Error('boom'); };
+it('throws', () => { expect(f).toThrow(); });
+it('message', () => { expect(f).toThrow('boom'); });
+it('wrong', () => { expect(f).toThrow('bang'); });
+it('not called', () => { expect(f()).toThrow(); });
+```
+
+**10.** Заперечення `.not`.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('not', () => { expect(1).not.toBe(2); });
+it('not fail', () => { expect(1).not.toBe(1); });
+```
+
+**11.** Порівняння чисел: `toBeGreaterThan`, `toBeLessThanOrEqual`.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('gt', () => { expect(5).toBeGreaterThan(3); });
+it('lte', () => { expect(5).toBeLessThanOrEqual(4); });
+```
+
+### Рівень 2. Деталі й поведінка
+
+**12.** Порядок хуків: `beforeAll`, `beforeEach`, `afterEach`, `afterAll`.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+const log: string[] = [];
+beforeAll(() => log.push('beforeAll'));
+beforeEach(() => log.push('beforeEach'));
+afterEach(() => log.push('afterEach'));
+afterAll(() => { console.log(JSON.stringify(log)); });
+it('one', () => { log.push('one'); });
+it('two', () => { log.push('two'); expect(log).toEqual(['beforeAll', 'beforeEach', 'one', 'afterEach', 'beforeEach', 'two']); });
+```
+
+**13.** `describe` групує тести; повні назви в звіті.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+describe('Калькулятор', () => {
+  describe('додавання', () => {
+    it('рахує', () => { expect(1 + 1).toBe(2); });
+  });
+  it('ділить на нуль', () => { expect(1 / 0).toBe(Infinity); });
+});
+```
+
+**14.** Спільний стан між тестами без `beforeEach` (пастка залежності від порядку).
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+let n = 0;
+it('перший', () => { n++; expect(n).toBe(1); });
+it('другий', () => { n++; expect(n).toBe(1); });
+```
+
+**15.** Скидання стану через `beforeEach`.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+let n = 0;
+beforeEach(() => { n = 0; });
+it('перший', () => { n++; expect(n).toBe(1); });
+it('другий', () => { n++; expect(n).toBe(1); });
+```
+
+**16.** Асинхронний тест: `async/await` та `resolves`.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+const get = () => Promise.resolve(42);
+it('await', async () => { expect(await get()).toBe(42); });
+it('resolves', async () => { await expect(get()).resolves.toBe(42); });
+it('wrong', async () => { await expect(get()).resolves.toBe(0); });
+```
+
+**17.** Відхилений promise: `rejects`.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+const fail = () => Promise.reject(new Error('nope'));
+it('rejects', async () => { await expect(fail()).rejects.toThrow('nope'); });
+it('без await', async () => { expect(fail()).rejects.toThrow('nope'); });
+```
+
+**18.** Тест без `await` на `resolves` може «пройти» помилково?
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('забули await', () => { expect(Promise.resolve(1)).resolves.toBe(2); });
+```
+
+**19.** Тайм-аут тесту.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('повільний', async () => { await new Promise(r => setTimeout(r, 200)); }, 50);
+it('швидкий', async () => { await new Promise(r => setTimeout(r, 10)); }, 500);
+```
+
+**20.** `vi.fn()`: виклики та аргументи.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('mock', () => {
+  const fn = vi.fn();
+  fn(1, 'a');
+  fn(2);
+  expect(fn).toHaveBeenCalledTimes(2);
+  expect(fn).toHaveBeenCalledWith(1, 'a');
+  expect(fn).toHaveBeenLastCalledWith(2);
+  expect(fn.mock.calls).toEqual([[1, 'a'], [2]]);
+});
+```
+
+**21.** `mockReturnValue`, `mockImplementation`, `mockReturnValueOnce`.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('returns', () => {
+  const fn = vi.fn().mockReturnValueOnce('first').mockReturnValue('rest');
+  expect([fn(), fn(), fn()]).toEqual(['first', 'rest', 'rest']);
+});
+it('impl', () => {
+  const fn = vi.fn((a: number) => a * 2);
+  expect(fn(4)).toBe(8);
+  fn.mockImplementation((a: number) => a + 1);
+  expect(fn(4)).toBe(5);
+});
+```
+
+**22.** `vi.spyOn` та відновлення оригіналу.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+const obj = { greet: () => 'hello' };
+it('spy', () => {
+  const spy = vi.spyOn(obj, 'greet').mockReturnValue('mocked');
+  expect(obj.greet()).toBe('mocked');
+  spy.mockRestore();
+  expect(obj.greet()).toBe('hello');
+});
+```
+
+### Рівень 3. Нюанси та пастки
+
+**23.** Без `mockRestore` підміна переживає тест.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+const obj = { v: () => 1 };
+it('перший підміняє', () => { vi.spyOn(obj, 'v').mockReturnValue(99); expect(obj.v()).toBe(99); });
+it('другий бачить підміну', () => { expect(obj.v()).toBe(1); });
+```
+
+**24.** `vi.mock` підміняє модуль (мок `node:os`).
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+vi.mock('node:os', () => ({ default: { hostname: () => 'fake-host' }, hostname: () => 'fake-host' }));
+import { hostname } from 'node:os';
+it('mocked', () => { expect(hostname()).toBe('fake-host'); });
+```
+
+**25.** `vi.fn` як колбек: перевірка порядку викликів `mock.invocationCallOrder`.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('order', () => {
+  const a = vi.fn(), b = vi.fn();
+  b(); a(); b();
+  expect(a.mock.invocationCallOrder[0]).toBeGreaterThan(b.mock.invocationCallOrder[0]);
+  expect(b.mock.invocationCallOrder.length).toBe(2);
+});
+```
+
+**26.** Фейкові таймери: `vi.useFakeTimers` та `advanceTimersByTime`.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+afterEach(() => { vi.useRealTimers(); });
+it('timer', () => {
+  vi.useFakeTimers();
+  const cb = vi.fn();
+  setTimeout(cb, 1000);
+  vi.advanceTimersByTime(999);
+  expect(cb).not.toHaveBeenCalled();
+  vi.advanceTimersByTime(1);
+  expect(cb).toHaveBeenCalledTimes(1);
+});
+```
+
+**27.** Фейкові таймери: `setInterval` та `runOnlyPendingTimers`.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+afterEach(() => { vi.useRealTimers(); });
+it('interval', () => {
+  vi.useFakeTimers();
+  const cb = vi.fn();
+  setInterval(cb, 100);
+  vi.advanceTimersByTime(350);
+  expect(cb).toHaveBeenCalledTimes(3);
+});
+```
+
+**28.** `vi.setSystemTime`: фіксований час.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+afterEach(() => { vi.useRealTimers(); });
+it('date', () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2024-05-01T12:00:00Z'));
+  expect(new Date().toISOString()).toBe('2024-05-01T12:00:00.000Z');
+  expect(Date.now()).toBe(1714564800000);
+});
+```
+
+**29.** Інлайн-знімок `toMatchInlineSnapshot`.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('snapshot', () => {
+  expect({ a: 1, b: [1, 2] }).toMatchInlineSnapshot(`
+    {
+      "a": 1,
+      "b": [
+        1,
+        2,
+      ],
+    }
+  `);
+});
+it('snapshot fail', () => {
+  expect({ a: 2 }).toMatchInlineSnapshot(`
+    {
+      "a": 1,
+    }
+  `);
+});
+```
+
+**30.** `it.skip`, `it.todo`, `it.only`.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('виконується', () => { expect(1).toBe(1); });
+it.skip('пропущений', () => { expect(1).toBe(2); });
+it.todo('майбутній');
+```
+
+**31.** `it.each`: параметризовані тести.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it.each([[1, 1, 2], [2, 3, 5], [2, 2, 5]])('%i + %i = %i', (a, b, sum) => { expect(a + b).toBe(sum); });
+```
+
+**32.** `describe.each` з об'єктами.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+describe.each([{ n: 2, sq: 4 }, { n: 3, sq: 9 }])('квадрат $n', ({ n, sq }) => {
+  it('рахує', () => { expect(n * n).toBe(sq); });
+});
+```
+
+**33.** `expect.assertions` та перевірка, що колбек викликався.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('assertions', async () => {
+  expect.assertions(2);
+  await Promise.resolve();
+  expect(1).toBe(1);
+});
+```
+
+### Рівень 4. Практика
+
+**34.** `expect.any` та `expect.objectContaining`.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('asymmetric', () => {
+  expect({ id: 5, name: 'x', extra: true }).toEqual(expect.objectContaining({ id: expect.any(Number), name: 'x' }));
+  expect([1, 'a']).toEqual([expect.any(Number), expect.any(String)]);
+});
+```
+
+**35.** Помилка в `beforeEach` провалює тест.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+beforeEach(() => { throw new Error('setup failed'); });
+it('не виконується', () => { expect(1).toBe(1); });
+```
+
+**36.** Невикористана змінна й помилка типів не заважають запуску (Vitest не перевіряє типи).
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+it('types are not checked', () => {
+  const n: number = 'text' as any;
+  expect(typeof n).toBe('string');
+});
+```
+
+**37.** Тестування чистої функції: таблиця крайових випадків.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+const clamp = (x: number, lo: number, hi: number) => Math.min(Math.max(x, lo), hi);
+describe('clamp', () => {
+  it('усередині', () => { expect(clamp(5, 0, 10)).toBe(5); });
+  it('нижче', () => { expect(clamp(-5, 0, 10)).toBe(0); });
+  it('вище', () => { expect(clamp(50, 0, 10)).toBe(10); });
+  it('рівні межі', () => { expect(clamp(10, 0, 10)).toBe(10); });
+});
+```
+
+**38.** Тест класу з внутрішнім станом.
+
+```ts
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from 'vitest';
+class Counter { n = 0; inc() { this.n++; return this; } }
+it('ланцюжок', () => { expect(new Counter().inc().inc().n).toBe(2); });
+it('екземпляри незалежні', () => { const a = new Counter(), b = new Counter(); a.inc(); expect(b.n).toBe(0); });
+```
+
+**39.** Що таке unit-тест?
+
+**40.** Чим мок відрізняється від шпигуна (spy)?
+
+**41.** Чому тести мають бути незалежними?
+
+**42.** Що таке покриття коду і чи гарантує воно якість?
+
+### Відповіді
+
+1. Вивід:
+
+   ```text
+   ✓ додає
+   ✗ віднімає — expected 3 to be 4 // Object.is equality
+   ```
+
+2. Вивід:
+
+   ```text
+   ✗ toBe — expected { a: 1 } to be { a: 1 } // Object.is equality
+   ✓ toEqual
+   ```
+
+3. Вивід:
+
+   ```text
+   ✓ toEqual
+   ✗ toStrictEqual — expected { a: 1, b: undefined } to strictly equal { a: 1 }
+   ```
+
+4. Вивід:
+
+   ```text
+   ✗ toBe — expected 0.30000000000000004 to be 0.3 // Object.is equality
+   ✓ toBeCloseTo
+   ```
+
+5. Вивід:
+
+   ```text
+   ✓ truthy
+   ✗ null — expected undefined to be null
+   ✓ undefined
+   ```
+
+6. Вивід:
+
+   ```text
+   ✓ match
+   ✓ contain
+   ✗ no match — expected 'hello' to match /xyz/
+   ```
+
+7. Вивід:
+
+   ```text
+   ✓ contain
+   ✗ length — expected [ 1, 2, 3 ] to have a length of 2 but got 3
+   ✓ containEqual
+   ```
+
+8. Вивід:
+
+   ```text
+   ✓ prop
+   ✓ matchObject
+   ✗ matchObject fail — expected { a: 1 } to match object { a: 2 }
+   ```
+
+9. Вивід:
+
+   ```text
+   ✓ throws
+   ✓ message
+   ✗ wrong — expected [Function f] to throw error including 'bang' but got 'boom'
+   ✗ not called — boom
+   ```
+
+10. Вивід:
+
+   ```text
+   ✓ not
+   ✗ not fail — expected 1 not to be 1 // Object.is equality
+   ```
+
+11. Вивід:
+
+   ```text
+   ✓ gt
+   ✗ lte — expected 5 to be less than or equal to 4
+   ```
+
+12. Вивід:
+
+   ```text
+   ✓ one
+   ✓ two
+   ```
+
+13. Вивід:
+
+   ```text
+   ✓ Калькулятор додавання рахує
+   ✓ Калькулятор ділить на нуль
+   ```
+
+14. Вивід:
+
+   ```text
+   ✓ перший
+   ✗ другий — expected 2 to be 1 // Object.is equality
+   ```
+
+15. Вивід:
+
+   ```text
+   ✓ перший
+   ✓ другий
+   ```
+
+16. Вивід:
+
+   ```text
+   ✓ await
+   ✓ resolves
+   ✗ wrong — expected 42 to be +0 // Object.is equality
+   ```
+
+17. Вивід:
+
+   ```text
+   ✓ rejects
+   ✗ без await — Promise returned by `expect(actual).rejects.toThrow(expected)` was not awaited. This assertion is asynchronous
+   ```
+
+18. `✗ забули await — expected 1 to be 2 // Object.is equality`
+19. Вивід:
+
+   ```text
+   ✗ повільний — Test timed out in 50ms.
+   ✓ швидкий
+   ```
+
+20. `✓ mock`
+21. Вивід:
+
+   ```text
+   ✓ returns
+   ✓ impl
+   ```
+
+22. `✓ spy`
+23. Вивід:
+
+   ```text
+   ✓ перший підміняє
+   ✗ другий бачить підміну — expected 99 to be 1 // Object.is equality
+   ```
+
+24. `✓ mocked`
+25. `✓ order`
+26. `✓ timer`
+27. `✓ interval`
+28. `✓ date`
+29. Вивід:
+
+   ```text
+   ✓ snapshot
+   ✗ snapshot fail — Snapshot `snapshot fail 1` mismatched
+   ```
+
+30. Вивід:
+
+   ```text
+   ✓ виконується
+   ○ пропущений — skipped
+   ○ майбутній — todo
+   ```
+
+31. Вивід:
+
+   ```text
+   ✓ 1 + 1 = 2
+   ✓ 2 + 3 = 5
+   ✗ 2 + 2 = 5 — expected 4 to be 5 // Object.is equality
+   ```
+
+32. Вивід:
+
+   ```text
+   ✓ квадрат 2 рахує
+   ✓ квадрат 3 рахує
+   ```
+
+33. `✗ assertions — expected number of assertions to be 2, but got 1`
+34. `✓ asymmetric`
+35. `✗ не виконується — setup failed`
+36. `✓ types are not checked`
+37. Вивід:
+
+   ```text
+   ✓ clamp усередині
+   ✓ clamp нижче
+   ✓ clamp вище
+   ✓ clamp рівні межі
+   ```
+
+38. Вивід:
+
+   ```text
+   ✓ ланцюжок
+   ✓ екземпляри незалежні
+   ```
+
+39. Автоматична перевірка однієї невеликої одиниці коду (функції, класу) ізольовано від решти системи, з чітким очікуваним результатом
+40. Мок повністю замінює реалізацію контрольованою заглушкою; spy обгортає реальну функцію, записуючи виклики, і за потреби може викликати оригінал
+41. Залежність від порядку виконання або спільного стану робить збої нестабільними й складними для діагностики; кожен тест готує власні дані (`beforeEach`)
+42. Частка рядків/гілок, виконаних тестами; висока цифра не гарантує коректних перевірок — важливі осмислені твердження та крайові випадки

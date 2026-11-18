@@ -64,3 +64,82 @@ effect for a | connected a theme=light | cleanup a | effect for b | connected b 
 2. Винеси цю частину в `const onSomething = useEffectEvent(() => { ... })`.
 3. У ефекті викликай `onSomething()`.
 4. Залиш у `deps` лише те, що реально має запускати ефект заново.
+
+## Задачі для закріплення
+
+7 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(el)` монтує елемент через `act`, `press(r)` викликає `onClick` кнопки, `text(r)` повертає текст результату; `create` і `act` беруться з `react-test-renderer`, `renderToString` — з `react-dom/server`, хуки — з `react`.
+
+### Рівень 1. Основи
+
+**1.** Подія-ефект бачить актуальні значення без перезапуску ефекту.
+
+```jsx
+const log = [];
+function C({ url, theme }) { const onConnected = useEffectEvent(() => log.push(url + ':' + theme)); useEffect(() => { onConnected(); }, [url]); return <p>{url}</p>; }
+const t = await mount(<C url="a" theme="light" />);
+await act(async () => { t.update(<C url="a" theme="dark" />); });
+await act(async () => { t.update(<C url="b" theme="dark" />); });
+return log;
+```
+
+**2.** Скільки разів запуститься ефект при зміні лише `theme`?
+
+```jsx
+let runs = 0;
+function C({ url, theme }) { const e = useEffectEvent(() => theme); useEffect(() => { runs++; e(); }, [url]); return <p>{url}</p>; }
+const t = await mount(<C url="a" theme="1" />);
+await act(async () => { t.update(<C url="a" theme="2" />); });
+await act(async () => { t.update(<C url="a" theme="3" />); });
+return runs;
+```
+
+### Рівень 2. Деталі й поведінка
+
+**3.** Звичайний колбек у залежностях: скільки запусків?
+
+```jsx
+let runs = 0;
+function C({ url, theme }) { const f = () => theme; useEffect(() => { runs++; f(); }, [url, f]); return <p>{url}</p>; }
+const t = await mount(<C url="a" theme="1" />);
+await act(async () => { t.update(<C url="a" theme="2" />); });
+await act(async () => { t.update(<C url="a" theme="3" />); });
+return runs;
+```
+
+**4.** Чи стабільне посилання на функцію з `useEffectEvent` між рендерами?
+
+```jsx
+const seen = new Set();
+function C({ n }) { const e = useEffectEvent(() => n); seen.add(e); return <p>{n}</p>; }
+const t = await mount(<C n={1} />);
+await act(async () => { t.update(<C n={2} />); });
+return seen.size;
+```
+
+### Рівень 3. Нюанси та пастки
+
+**5.** Чи можна викликати подію-ефект під час рендеру?
+
+```jsx
+function C() { const e = useEffectEvent(() => 1); let r = 'ok'; try { e(); } catch (x) { r = x.message.slice(0, 40); } return <p>{r}</p>; }
+const orig = console.error; console.error = () => {};
+let out; try { out = renderToString(<C />); } catch (x) { out = 'throw'; }
+console.error = orig;
+return out;
+```
+
+**6.** Яку проблему вирішує `useEffectEvent`?
+
+### Рівень 4. Практика
+
+**7.** Яке обмеження має така функція?
+
+### Відповіді
+
+1. `['a:light', 'b:dark']`
+2. `1`
+3. `3`
+4. `2`
+5. `'<p>A function wrapped in useEffectEvent can</p>'`
+6. Дозволяє ефекту читати актуальні пропси/стан, не роблячи їх залежностями й не перезапускаючи ефект
+7. Її можна викликати лише з ефектів (і інших подій-ефектів), не під час рендеру й не передавати іншим компонентам чи хукам

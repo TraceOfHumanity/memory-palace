@@ -145,3 +145,119 @@ correctSequence();
 - `fs/promises` — рекомендований стиль для нового коду: не блокує, природно поєднується з `async`/`await`, без callback hell.
 - Класична пастка: забутий `await` для методу `fs/promises` — код продовжує виконуватися, не дочекавшись реального завершення операції з диском.
 - Порядок «спочатку синхронний код, потім callback» гарантований лише для однієї асинхронної операції відносно решти коду; між кількома незалежними асинхронними операціями порядок завершення не гарантований.
+
+## Задачі для закріплення
+
+15 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в Node.js 24; `fs` — `node:fs`, `fsp` — `node:fs/promises`, `dir` — порожня тимчасова директорія, `path`, `os`, `stream`, `events` — відповідні `node:`-модулі.
+
+### Рівень 1. Основи
+
+**1.** Які три стилі API має `fs`?
+
+**2.** Що поверне `fsp.writeFile` та `fsp.readFile` (рядок і буфер)?
+
+```node
+(async () => { const f = path.join(dir, 'a.txt'); const r = await fsp.writeFile(f, 'hello'); const s = await fsp.readFile(f, 'utf8'); const b = await fsp.readFile(f); return [r, s, b.constructor.name, b.length]; })()
+```
+
+**3.** Що станеться при читанні неіснуючого файлу (асинхронно)?
+
+```node
+(async () => { try { await fsp.readFile(path.join(dir, 'no.txt')); } catch (e) { return [e.code, e.syscall, e.errno]; } })()
+```
+
+**4.** А в синхронному стилі?
+
+```node
+(() => { try { fs.readFileSync(path.join(dir, 'no.txt')); } catch (e) { return [e.name, e.code]; } })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Callback-стиль: що отримає колбек і в якому порядку відпрацює код?
+
+```node
+(async () => { const L = []; await new Promise(res => { fs.readFile(path.join(dir, 'no.txt'), (err, data) => { L.push('cb ' + err.code); res(); }); L.push('after call'); }); return L; })()
+```
+
+**6.** Порядок виконання: sync-читання проти async у одному тіку?
+
+```node
+(async () => { const f = path.join(dir, 'a.txt'); fs.writeFileSync(f, 'x'); const L = []; const p = fsp.readFile(f, 'utf8').then(() => L.push('async done')); L.push('sync before'); fs.readFileSync(f); L.push('sync after'); await p; return L; })()
+```
+
+**7.** Чи блокує `readFileSync` таймер, поставлений раніше?
+
+```node
+(async () => { const L = []; setTimeout(() => L.push('timer'), 0); fs.writeFileSync(path.join(dir, 'b'), 'x'); L.push('sync done'); await new Promise(r => setTimeout(r, 10)); return L; })()
+```
+
+**8.** Що станеться, якщо забути `await` перед `fsp.readFile`?
+
+```node
+(async () => { const f = path.join(dir, 'a.txt'); await fsp.writeFile(f, 'data'); const r = fsp.readFile(f, 'utf8'); return [r instanceof Promise, typeof r.then, await r]; })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Що станеться, якщо змішати стилі: `fs.readFile` без колбека?
+
+```node
+(async () => { try { fs.readFile(path.join(dir, 'a')); } catch (e) { return [e.name, e.code]; } })()
+```
+
+**10.** Чи повертає `fs.writeFile` у callback-стилі значення?
+
+```node
+(async () => new Promise(res => fs.writeFile(path.join(dir, 'c'), 'x', (...a) => res(a))))()
+```
+
+**11.** Що поверне `fs.existsSync` та чому не варто використовувати його перед читанням?
+
+```node
+(() => { const f = path.join(dir, 'd'); const before = fs.existsSync(f); fs.writeFileSync(f, ''); return [before, fs.existsSync(f)]; })()
+```
+
+**12.** Як зчитати JSON-файл?
+
+```node
+(async () => { const f = path.join(dir, 'x.json'); await fsp.writeFile(f, JSON.stringify({ a: [1, 2], b: 'ок' })); return JSON.parse(await fsp.readFile(f, 'utf8')); })()
+```
+
+### Рівень 4. Практика
+
+**13.** Що дасть `util.promisify(fs.readFile)`?
+
+```node
+(async () => { const { promisify } = process.getBuiltinModule('node:util'); const f = path.join(dir, 'e'); fs.writeFileSync(f, 'p'); return await promisify(fs.readFile)(f, 'utf8'); })()
+```
+
+**14.** Як паралельно прочитати кілька файлів?
+
+```node
+(async () => { const names = ['1', '2', '3']; await Promise.all(names.map(n => fsp.writeFile(path.join(dir, n), 'file' + n))); return await Promise.all(names.map(n => fsp.readFile(path.join(dir, n), 'utf8'))); })()
+```
+
+**15.** Що поверне `fs.constants` та `fsp.constants`?
+
+```node
+(() => [typeof fs.constants.R_OK, fs.constants.F_OK, fs.constants.R_OK, fs.constants.W_OK, fsp.constants === fs.constants])()
+```
+
+### Відповіді
+
+1. Callback (`fs.readFile(path, cb)`), синхронний (`fs.readFileSync`), promise (`fs.promises.readFile` / `node:fs/promises`)
+2. `[undefined, 'hello', 'Buffer', 5]`
+3. `['ENOENT', 'open', -2]`
+4. `['Error', 'ENOENT']`
+5. `['after call', 'cb ENOENT']`
+6. `['sync before', 'sync after', 'async done']`
+7. `['sync done', 'timer']`
+8. `[true, 'function', 'data']`
+9. `['TypeError', 'ERR_INVALID_ARG_TYPE']`
+10. `[null]`
+11. `[false, true]`
+12. `{ a: [1, 2], b: 'ок' }`
+13. `'p'`
+14. `['file1', 'file2', 'file3']`
+15. `['number', 0, 4, 2, true]`

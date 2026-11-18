@@ -113,3 +113,108 @@ main().catch((err) => console.error("Demo failed:", err));
 - Чотири типи: Readable (джерело), Writable (приймач), Duplex (обидва напрямки незалежно), Transform (вхід перетворюється на вихід).
 - Chunk не відповідає логічним одиницям даних (рядкам тощо) — це просто шматок байтів розміром до `highWaterMark` (пастка з «розрізаними» рядками — [02-readable-streams.md](02-readable-streams.md), розділ 3).
 - Подію `"error"` ніколи не можна лишати без обробника: необроблена `"error"` завершує весь процес.
+
+## Задачі для закріплення
+
+14 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в Node.js 24; `fs` — `node:fs`, `fsp` — `node:fs/promises`, `dir` — порожня тимчасова директорія, `path`, `os`, `stream`, `events` — відповідні `node:`-модулі.
+
+### Рівень 1. Основи
+
+**1.** Які чотири типи потоків є в Node.js?
+
+**2.** Яку проблему вирішують потоки порівняно з `readFile`?
+
+**3.** Чи є потік `EventEmitter`?
+
+```node
+(() => { const r = new Readable({ read() {} }); return [r instanceof events.EventEmitter, typeof r.on, typeof r.pipe]; })()
+```
+
+**4.** Які події має Readable: порядок `data`, `end`, `close`?
+
+```node
+(async () => { const L = []; const r = Readable.from(['a', 'b']); r.on('data', (c) => L.push('data ' + c)); r.on('end', () => L.push('end')); r.on('close', () => L.push('close')); await events.once(r, 'close'); return L; })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Що станеться з помилкою без обробника `error`?
+
+```node
+(async () => { const r = new Readable({ read() { this.destroy(new Error('boom')); } }); try { await events.once(r.resume(), 'end'); } catch (e) { return ['rejected', e.message]; } })()
+```
+
+**6.** Читання файлу як потоку: скільки чанків і розмір кожного для 150 КБ?
+
+```node
+(async () => { const f = path.join(dir, 'f.bin'); fs.writeFileSync(f, Buffer.alloc(150 * 1024)); const sizes = []; for await (const c of fs.createReadStream(f)) sizes.push(c.length); return sizes; })()
+```
+
+**7.** Як змінити розмір чанка через `highWaterMark`?
+
+```node
+(async () => { const f = path.join(dir, 'f.bin'); fs.writeFileSync(f, Buffer.alloc(10)); const sizes = []; for await (const c of fs.createReadStream(f, { highWaterMark: 4 })) sizes.push(c.length); return sizes; })()
+```
+
+**8.** Що поверне `readable.read()` на порожньому потоці?
+
+```node
+(() => { const r = new Readable({ read() {} }); return r.read(); })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Скільки пам'яті економить потік? Порахуйте кількість рядків файлу 1000 рядків через потік.
+
+```node
+(async () => { const f = path.join(dir, 'l.txt'); fs.writeFileSync(f, Array.from({ length: 1000 }, (_, i) => 'line ' + i).join('\n')); const rl = process.getBuiltinModule('node:readline').createInterface({ input: fs.createReadStream(f) }); let n = 0; for await (const l of rl) n++; return n; })()
+```
+
+**10.** Чи можна підписатися на `end` після завершення потоку?
+
+```node
+(async () => { const r = Readable.from(['x']); r.resume(); await events.once(r, 'end'); let called = false; r.on('end', () => (called = true)); await new Promise(res => setTimeout(res, 20)); return called; })()
+```
+
+**11.** Що поверне `stream.readableEnded`, `readableFlowing`, `destroyed`?
+
+```node
+(async () => { const r = Readable.from(['a']); const before = [r.readableFlowing, r.readableEnded, r.destroyed]; r.resume(); await events.once(r, 'close'); return [before, [r.readableEnded, r.destroyed]]; })()
+```
+
+**12.** Що відбувається при `destroy()` потоку?
+
+```node
+(async () => { const r = new Readable({ read() {} }); const L = []; r.on('close', () => L.push('close')); r.destroy(); await new Promise(res => setTimeout(res, 10)); return [r.destroyed, L]; })()
+```
+
+### Рівень 4. Практика
+
+**13.** Що станеться при записі у завершений Writable?
+
+```node
+(async () => { const w = new Writable({ write(c, e, cb) { cb(); } }); w.end(); try { await new Promise((res, rej) => { w.on('error', rej); w.write('x'); }); } catch (e) { return e.code; } })()
+```
+
+**14.** Чим потік відрізняється від масиву: ліниве споживання (скільки чанків прочитано до `break`)?
+
+```node
+(async () => { let produced = 0; const r = new Readable({ highWaterMark: 1, objectMode: true, read() { this.push(++produced); } }); let seen = 0; for await (const x of r) { seen++; if (seen === 3) break; } return [seen, produced <= 6]; })()
+```
+
+### Відповіді
+
+1. Readable (джерело), Writable (приймач), Duplex (обидва напрямки незалежно), Transform (Duplex, де вихід залежить від входу)
+2. Дані обробляються частинами, тож пам'ять не залежить від розміру файлу, а обробка починається до завершення читання
+3. `[true, 'function', 'function']`
+4. `['data a', 'data b', 'end', 'close']`
+5. `['rejected', 'boom']`
+6. `[65536, 65536, 22528]`
+7. `[4, 4, 2]`
+8. `null`
+9. `1000`
+10. `false`
+11. `[[null, false, false], [true, true]]`
+12. `[true, ['close']]`
+13. `'ERR_STREAM_WRITE_AFTER_END'`
+14. `[3, true]`

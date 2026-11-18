@@ -215,3 +215,104 @@ console.log(ResettableRegistry.getInstance().items); // []
 - Недоліки: прихована глобальна залежність (не видно в сигнатурі), важке тестування (стан переживає тести, потрібен `reset`), змішування відповідальностей; тому явна передача залежності (DI) зазвичай краща.
 - «Єдиний» означає єдиний на процес: `worker_threads`, cluster і serverless дають кілька екземплярів — для спільного стану потрібне зовнішнє сховище.
 - У Nest роль singleton виконує DI-контейнер (`Scope.DEFAULT`) — без `getInstance()` і з поверненням контролю над тестуванням.
+
+## Задачі для закріплення
+
+14 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Реалізуйте Singleton через клас зі статичним екземпляром.
+
+```js
+class S { static #i; constructor() { if (S.#i) return S.#i; S.#i = this; this.t = 1; } }
+```
+
+**2.** Singleton через модульне замикання.
+
+```js
+const single = (() => { let i; return { get: () => i ??= { id: Math.random() } }; })()
+```
+
+**3.** Ліниве створення: фабрика викликається один раз.
+
+```js
+const lazy = (f) => { let v, d = false; return () => d ? v : (d = true, v = f()); }
+```
+
+**4.** Singleton із `Object.freeze`.
+
+```js
+const Config = Object.freeze({ env: 'prod', get: (k) => Config[k] })
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Singleton з реєстром за ключем (multiton).
+
+```js
+class Multi { static #m = new Map(); static get(k) { if (!Multi.#m.has(k)) Multi.#m.set(k, new Multi(k)); return Multi.#m.get(k); } constructor(k) { this.k = k; } }
+```
+
+**6.** Скидання singleton для тестів.
+
+```js
+class S { static #i = null; static get() { return S.#i ??= new S(); } static reset() { S.#i = null; } }
+```
+
+**7.** Чи є ES-модулі природними singleton? (глобальний кеш модулів)
+
+```js
+(async () => { const m1 = await import('data:text/javascript,export const o = {}'); const m2 = await import('data:text/javascript,export const o = {}'); return [m1 === m2, m1.o === m2.o]; })()
+```
+
+**8.** Що станеться з одиночкою при `Object.create` або підміні прототипу?
+
+```js
+(() => { class S { static #i; constructor() { if (S.#i) return S.#i; S.#i = this; } } const a = new S(); const b = Object.create(S.prototype); return [a === b, b instanceof S]; })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Глобальний Symbol-реєстр як singleton ключ.
+
+```js
+[Symbol.for('app.key') === Symbol.for('app.key'), Symbol('k') === Symbol('k'), Symbol.keyFor(Symbol.for('app.key'))]
+```
+
+**10.** `globalThis` як сховище: що станеться при колізії імені?
+
+```js
+(() => { globalThis.__cfg = { a: 1 }; const r = globalThis.__cfg; delete globalThis.__cfg; return [r, typeof globalThis.__cfg]; })()
+```
+
+**11.** Singleton логер із лічильником повідомлень.
+
+```js
+const Logger = (() => { let inst; class L { n = 0; log(m) { this.n++; return `#${this.n} ${m}`; } } return { get: () => inst ??= new L() }; })()
+```
+
+**12.** Яку проблему вирішує Singleton?
+
+### Рівень 4. Практика
+
+**13.** Чому Singleton вважають антипатерном?
+
+**14.** Чим модуль відрізняється від класичного Singleton?
+
+### Відповіді
+
+1. Виклик `[new S() === new S(), new S().t]` → `[true, 1]`
+2. Виклик `single.get() === single.get()` → `true`
+3. Виклик `(() => { let n = 0; const g = lazy(() => ++n); return [g(), g(), n]; })()` → `[1, 1, 1]`
+4. Виклик `(() => { Config.env = 'dev'; return [Config.env, Object.isFrozen(Config)]; })()` → `['prod', true]`
+5. Виклик `[Multi.get('a') === Multi.get('a'), Multi.get('a') === Multi.get('b')]` → `[true, false]`
+6. Виклик `(() => { const a = S.get(); S.reset(); const b = S.get(); return [a === b]; })()` → `[false]`
+7. `[true, true]`
+8. `[false, true]`
+9. `[true, false, 'app.key']`
+10. `[{ a: 1 }, 'undefined']`
+11. Виклик `[Logger.get().log('a'), Logger.get().log('b'), Logger.get() === Logger.get()]` → `['#1 a', '#2 b', true]`
+12. Гарантує єдиний екземпляр і глобальну точку доступу до нього (конфіг, логер, пул з'єднань)
+13. Створює прихований глобальний стан, ускладнює тестування, порушує SRP та приховує залежності; краще передавати єдиний екземпляр через DI
+14. ES-модуль виконується один раз і кешується, тож експортований об'єкт є єдиним у межах реєстру модулів без додаткового коду

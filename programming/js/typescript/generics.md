@@ -258,3 +258,169 @@ console.log(keepNonEmpty(["a", "", "b", ""])); // [ 'a', 'b' ]
 - Generic interface/type/class — той самий принцип параметризації, застосований до опису форми даних чи структури класу.
 - Default type parameters (`<T = string>`) — тип «за замовчуванням», якщо конкретний не вказано й нема звідки вивести.
 - Головна практична вигода: одна функція/клас/тип замінює багато майже ідентичних — без втрати перевірки типів, яку дав би `any`.
+
+## Задачі для закріплення
+
+Двадцять задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в TypeScript Playground чи через tsc.
+
+### Рівень 1. Основи
+
+**1.** Тип результату `identity` для числа.
+
+```ts
+function id<T>(x: T): T { return x; }
+const r = id(5);
+```
+
+**2.** А для рядка з явним аргументом?
+
+```ts
+function id<T>(x: T): T { return x; }
+const r = id<string>('a');
+```
+
+**3.** Тип `first` для масиву чисел.
+
+```ts
+function first<T>(a: T[]): T | undefined { return a[0]; }
+const r = first([1, 2]);
+```
+
+**4.** Тип `pair` із двома generic-параметрами.
+
+```ts
+function pair<A, B>(a: A, b: B): [A, B] { return [a, b]; }
+const r = pair('x', 1);
+```
+
+**5.** Що буде без обмеження, якщо звернутись до `.length`?
+
+```ts
+function len<T>(x: T) { return x.length; }
+```
+
+### Рівень 2. Деталі й поведінка
+
+**6.** З обмеженням `extends { length: number }`.
+
+```ts
+function len<T extends { length: number }>(x: T) { return x.length; }
+len('abc'); len([1]);
+```
+
+**7.** Чи підходить число під обмеження `{ length: number }`?
+
+```ts
+function len<T extends { length: number }>(x: T) { return x.length; }
+len(5);
+```
+
+**8.** `keyof` обмеження: тип значення за ключем.
+
+```ts
+function get<T, K extends keyof T>(o: T, k: K): T[K] { return o[k]; }
+const r = get({ a: 1, b: 'x' }, 'b');
+```
+
+**9.** Неіснуючий ключ у `get`.
+
+```ts
+function get<T, K extends keyof T>(o: T, k: K): T[K] { return o[k]; }
+get({ a: 1 }, 'z');
+```
+
+**10.** Generic-інтерфейс `Box<T>`.
+
+```ts
+interface Box<T> { value: T }
+const b: Box<number> = { value: 1 };
+```
+
+### Рівень 3. Нюанси та пастки
+
+**11.** Generic-клас `Stack<T>`: тип `pop`.
+
+```ts
+class Stack<T> { items: T[] = []; pop(): T | undefined { return this.items.pop(); } }
+const s = new Stack<string>();
+const r = s.pop();
+```
+
+**12.** Параметр за замовчуванням generic.
+
+```ts
+interface R<T = string> { v: T }
+const r: R = { v: 'a' };
+```
+
+**13.** Generic-тип `Maybe<T>`.
+
+```ts
+type Maybe<T> = T | null;
+type M = Maybe<number>;
+```
+
+**14.** Generic-функція стрілкою в `.ts`.
+
+```ts
+const wrap = <T,>(x: T) => [x];
+const r = wrap(1);
+```
+
+**15.** Умовний тип у generic.
+
+```ts
+type IsStr<T> = T extends string ? 'yes' : 'no';
+type A = IsStr<string>;
+type B = IsStr<number>;
+```
+
+### Рівень 4. Практика
+
+**16.** Розподіл умовного типу по union.
+
+```ts
+type ToArr<T> = T extends any ? T[] : never;
+type R = ToArr<string | number>;
+```
+
+**17.** Виведення `T` із масиву через `T[number]`.
+
+```ts
+type El<T extends readonly unknown[]> = T[number];
+type R = El<['a', 'b']>;
+```
+
+**18.** Generic-функція з обмеженням-union.
+
+```ts
+function f<T extends string | number>(x: T): T { return x; }
+const r = f('lit');
+```
+
+**19.** Яку проблему вирішують generics?
+
+**20.** Що означає `T extends U` у параметрі типу?
+
+### Відповіді
+
+1. `5`
+2. `string`
+3. `number | undefined`
+4. `[string, number]`
+5. Помилка: `TS2339: Property 'length' does not exist on type 'T'.`
+6. Компілюється без помилок
+7. Помилка: `TS2345: Argument of type 'number' is not assignable to parameter of type '{ length: number; }'.`
+8. `string`
+9. Помилка: `TS2345: Argument of type '"z"' is not assignable to parameter of type '"a"'.`
+10. `Box<number>`
+11. `string | undefined`
+12. `R<string>`
+13. `number | null`
+14. `number[]`
+15. `"yes"`
+16. `string[] | number[]`
+17. `"a" | "b"`
+18. `"lit"`
+19. Дозволяють писати типобезпечний код для різних типів без `any` і дублювання: тип параметра пов'язується з типом результату
+20. Обмеження: аргумент типу має бути сумісним із `U`; усередині функції доступні члени `U`

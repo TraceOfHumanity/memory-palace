@@ -238,3 +238,104 @@ console.log([...root].filter((n) => n instanceof FileNode).reduce((s, f) => s + 
 - Пастки: цикли (вузол усередині себе → `RangeError`), глибока рекурсія (переповнення стеку), надто широкий інтерфейс `Component`, повторне обчислення агрегатів без кешу.
 - Вибір: `add`/`remove` лише в `Composite` — безпечніше; в `Component` — прозоріше, але `Leaf` мусить кидати помилку.
 - Реальні приклади: DOM, компонентні дерева React/Vue, AST, файлові системи, меню, ієрархії модулів Nest.
+
+## Задачі для закріплення
+
+14 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Реалізуйте Composite: `File` і `Dir` із спільним методом `size()`.
+
+```js
+class File { constructor(n, s) { this.n = n; this.s = s; } size() { return this.s; } } class Dir { constructor(n, c = []) { this.n = n; this.c = c; } add(x) { this.c.push(x); return this; } size() { return this.c.reduce((a, x) => a + x.size(), 0); } }
+```
+
+**2.** Додайте `print(depth)` із відступами для дерева.
+
+```js
+class N { constructor(n, c = []) { this.n = n; this.c = c; } print(d = 0) { return ['  '.repeat(d) + this.n, ...this.c.flatMap(x => x.print(d + 1))]; } }
+```
+
+**3.** Підрахуйте кількість листків.
+
+```js
+class N { constructor(n, c = []) { this.n = n; this.c = c; } leaves() { return this.c.length ? this.c.reduce((a, x) => a + x.leaves(), 0) : 1; } }
+```
+
+**4.** Знайдіть вузол за ім'ям.
+
+```js
+class N { constructor(n, c = []) { this.n = n; this.c = c; } find(n) { if (this.n === n) return this; for (const x of this.c) { const r = x.find(n); if (r) return r; } return null; } }
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Обчисліть глибину дерева.
+
+```js
+class N { constructor(n, c = []) { this.n = n; this.c = c; } depth() { return 1 + Math.max(0, ...this.c.map(x => x.depth())); } }
+```
+
+**6.** Реалізуйте меню з підменю: `total()` рахує ціни страв.
+
+```js
+class Item { constructor(p) { this.p = p; } price() { return this.p; } } class Menu { constructor(items) { this.i = items; } price() { return this.i.reduce((a, x) => a + x.price(), 0); } }
+```
+
+**7.** Додайте `remove(child)`.
+
+```js
+class N { constructor(n) { this.n = n; this.c = []; } add(x) { this.c.push(x); return this; } remove(x) { this.c = this.c.filter(y => y !== x); return this; } }
+```
+
+**8.** Реалізуйте ітератор по дереву (генератор, обхід у глибину).
+
+```js
+class N { constructor(n, c = []) { this.n = n; this.c = c; } *[Symbol.iterator]() { yield this.n; for (const x of this.c) yield* x; } }
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Обхід у ширину.
+
+```js
+class N { constructor(n, c = []) { this.n = n; this.c = c; } bfs() { const q = [this], r = []; while (q.length) { const x = q.shift(); r.push(x.n); q.push(...x.c); } return r; } }
+```
+
+**10.** Реалізуйте композит команд: `Macro.run()` виконує вкладені команди по черзі.
+
+```js
+class Cmd { constructor(f) { this.f = f; } run(log) { log.push(this.f); } } class Macro { constructor(c) { this.c = c; } run(log) { this.c.forEach(x => x.run(log)); } }
+```
+
+**11.** Побудуйте дерево з плоского списку `{id, parent}`.
+
+```js
+const tree = (rows) => { const m = new Map(rows.map(r => [r.id, { ...r, children: [] }])); const roots = []; for (const n of m.values()) (n.parent == null ? roots : m.get(n.parent).children).push(n); return roots; }
+```
+
+**12.** Яку проблему вирішує Composite?
+
+### Рівень 4. Практика
+
+**13.** Що таке листок і композит?
+
+**14.** Чи потрібні в листка методи `add/remove`?
+
+### Відповіді
+
+1. Виклик `new Dir('root', [new File('a', 10), new Dir('d', [new File('b', 5), new File('c', 7)])]).size()` → `22`
+2. Виклик `new N('root', [new N('a', [new N('a1')]), new N('b')]).print()` → `['root', '  a', '    a1', '  b']`
+3. Виклик `new N('r', [new N('a', [new N('x'), new N('y')]), new N('b')]).leaves()` → `3`
+4. Виклик `(() => { const t = new N('r', [new N('a', [new N('x')]), new N('b')]); return [t.find('x')?.n, t.find('zzz')]; })()` → `['x', null]`
+5. Виклик `new N('r', [new N('a', [new N('x', [new N('y')])]), new N('b')]).depth()` → `4`
+6. Виклик `new Menu([new Item(5), new Menu([new Item(3), new Item(4)]), new Item(1)]).price()` → `13`
+7. Виклик `(() => { const a = new N('a'), b = new N('b'); const r = new N('r').add(a).add(b); r.remove(a); return r.c.map(x => x.n); })()` → `['b']`
+8. Виклик `[...new N('r', [new N('a', [new N('a1')]), new N('b')])]` → `['r', 'a', 'a1', 'b']`
+9. Виклик `new N('r', [new N('a', [new N('a1')]), new N('b', [new N('b1')])]).bfs()` → `['r', 'a', 'b', 'a1', 'b1']`
+10. Виклик `(() => { const log = []; new Macro([new Cmd('a'), new Macro([new Cmd('b'), new Cmd('c')]), new Cmd('d')]).run(log); return log; })()` → `['a', 'b', 'c', 'd']`
+11. Виклик `JSON.stringify(tree([{ id: 1 }, { id: 2, parent: 1 }, { id: 3, parent: 1 }, { id: 4, parent: 2 }]))` → `'[{"id":1,"children":[{"id":2,"parent":1,"children":[{"id":4,"parent":2,"children":[]}]},{"id":3,"parent":1,"children":[]}]}]'`
+12. Дає змогу однаково працювати з окремим об'єктом і з групою (деревом) об'єктів через спільний інтерфейс
+13. Листок — елемент без нащадків, який виконує роботу сам; композит містить нащадків і делегує їм виклики
+14. Залежить від варіанта: «прозорий» — інтерфейс однаковий і в листка кидає виняток; «безпечний» — `add/remove` лише в композита

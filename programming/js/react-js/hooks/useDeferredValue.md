@@ -71,3 +71,76 @@ const stale = query !== deferredQuery;
 3. Обгорни важкий компонент у `React.memo`.
 4. Покажи індикацію `value !== d`.
 5. Для запитів до мережі додатково debounce.
+
+## Задачі для закріплення
+
+7 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(el)` монтує елемент через `act`, `press(r)` викликає `onClick` кнопки, `text(r)` повертає текст результату; `create` і `act` беруться з `react-test-renderer`, `renderToString` — з `react-dom/server`, хуки — з `react`.
+
+### Рівень 1. Основи
+
+**1.** Що поверне `useDeferredValue` при першому рендері?
+
+```jsx
+function C({ v }) { const d = useDeferredValue(v); return <p>{d}</p>; }
+return renderToString(<C v="a" />);
+```
+
+**2.** Другий аргумент (початкове значення) у React 19: який текст після завершення всіх рендерів?
+
+```jsx
+function C({ v }) { const d = useDeferredValue(v, 'init'); return <p>{d}</p>; }
+const t = await mount(<C v="a" />);
+return text(t);
+```
+
+### Рівень 2. Деталі й поведінка
+
+**3.** Після оновлення значення: чи з'являється нове в підсумку?
+
+```jsx
+function C({ v }) { const d = useDeferredValue(v); return <p>{d}</p>; }
+const t = await mount(<C v="a" />);
+await act(async () => { t.update(<C v="b" />); });
+return text(t);
+```
+
+**4.** Скільки рендерів компонента при зміні значення (одразу та відкладений)?
+
+```jsx
+let renders = 0;
+function C({ v }) { renders++; const d = useDeferredValue(v); return <p>{d}</p>; }
+const t = await mount(<C v="a" />);
+const b = renders;
+await act(async () => { t.update(<C v="b" />); });
+return [b, renders - b];
+```
+
+### Рівень 3. Нюанси та пастки
+
+**5.** Відкладене значення для важкого списку з `memo`.
+
+```jsx
+let heavy = 0;
+const List = React.memo(function List({ q }) { heavy++; return <p>{q}</p>; });
+function C({ q }) { const d = useDeferredValue(q); return <div><i>{q}</i><List q={d} /></div>; }
+const t = await mount(<C q="a" />);
+await act(async () => { t.update(<C q="ab" />); });
+await act(async () => { t.update(<C q="abc" />); });
+return heavy >= 2;
+```
+
+**6.** Для чого `useDeferredValue`?
+
+### Рівень 4. Практика
+
+**7.** Чим він відрізняється від debounce?
+
+### Відповіді
+
+1. `'<p>a</p>'`
+2. `'a'`
+3. `'b'`
+4. `[1, 2]`
+5. `true`
+6. Дає «відкладену копію» значення: інтерфейс спершу оновлюється зі старою копією, а важкий рендер із новим значенням виконується у фоні
+7. Не має фіксованої затримки та не скасовує оновлень; затримка адаптується до швидкості пристрою, а рендер можна перервати

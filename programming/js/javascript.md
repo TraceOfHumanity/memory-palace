@@ -78,3 +78,174 @@ console.log([] + {});     // "[object Object]" — наслідок неявно
 - Simpson K. *You Don't Know JS Yet* (серія, відкритий доступ).
 - Flanagan D. *JavaScript: The Definitive Guide*. O'Reilly.
 - Специфікація ECMA-262 та довідник MDN Web Docs.
+
+## Задачі для закріплення
+
+24 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Типи значень JavaScript: `typeof` для кожного.
+
+```js
+[typeof 1, typeof 'a', typeof true, typeof undefined, typeof null, typeof Symbol(), typeof 1n, typeof {}, typeof [], typeof (() => 1)]
+```
+
+**2.** Слабка типізація: результат змішаних операцій.
+
+```js
+['5' + 1, '5' - 1, '5' * '2', true + 1, [] + {}, null + 1, undefined + 1]
+```
+
+**3.** Динамічна типізація: змінна змінює тип.
+
+```js
+(() => { let x = 1; const a = typeof x; x = 'text'; const b = typeof x; x = [1]; return [a, b, typeof x, Array.isArray(x)]; })()
+```
+
+**4.** Числа: єдиний тип `number` (IEEE 754) та межі.
+
+```js
+[Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, 2 ** 53 === 2 ** 53 + 1, 0.1 + 0.2, 1 / 0, -1 / 0, 0 / 0]
+```
+
+**5.** BigInt для великих цілих.
+
+```js
+[2n ** 64n, 9007199254740993n, typeof 5n, 5n + 3n, BigInt(2 ** 53) + 1n]
+```
+
+**6.** Об'єкти — посилання; примітиви — значення.
+
+```js
+(() => { const a = { n: 1 }; const b = a; b.n = 2; let x = 1; let y = x; y = 2; return [a.n, x, y, a === b, { n: 1 } === { n: 1 }]; })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**7.** Функції — об'єкти першого класу.
+
+```js
+(() => { const f = (x) => x * 2; f.tag = 'double'; const apply = (g, v) => g(v); return [apply(f, 4), f.tag, typeof f, f instanceof Object]; })()
+```
+
+**8.** Замикання зберігають змінні.
+
+```js
+(() => { const make = () => { let n = 0; return () => ++n; }; const a = make(), b = make(); a(); a(); return [a(), b()]; })()
+```
+
+**9.** Прототипне успадкування: ланцюжок прототипів.
+
+```js
+(() => { const animal = { speak() { return 'sound'; } }; const dog = Object.create(animal); dog.bark = () => 'woof'; return [dog.speak(), dog.bark(), Object.getPrototypeOf(dog) === animal, Object.hasOwn(dog, 'speak')]; })()
+```
+
+**10.** `class` — синтаксичний цукор над прототипами.
+
+```js
+(() => { class A { m() { return 1; } } return [typeof A, Object.getOwnPropertyNames(A.prototype), new A().m === A.prototype.m]; })()
+```
+
+**11.** Однопотоковість та цикл подій: порядок виконання.
+
+```js
+new Promise(res => { const log = []; setTimeout(() => { log.push('timeout'); res(log); }, 0); Promise.resolve().then(() => log.push('microtask')); log.push('sync'); })
+```
+
+**12.** Рушії та специфікація: версія ECMAScript у Node (наявність нових можливостей).
+
+```js
+[typeof Array.prototype.at, typeof Object.hasOwn, typeof structuredClone, typeof Array.prototype.toSorted, typeof Promise.withResolvers]
+```
+
+### Рівень 3. Нюанси та пастки
+
+**13.** Строгий режим змінює поведінку.
+
+```js
+(() => { const sloppy = (function () { return typeof this; })(); const strict = (function () { 'use strict'; return typeof this; })(); return [sloppy, strict]; })()
+```
+
+**14.** Динамічний `import()` повертає promise модуля.
+
+```js
+(async () => { const m = await import('node:path'); return [typeof m.join, typeof m.default.join, Object.keys(m).includes('sep')]; })()
+```
+
+**15.** `var`, `let`, `const`: область видимості та підняття.
+
+```js
+(() => { const r = []; { var a = 1; let b = 2; const c = 3; } r.push(typeof a, typeof b, typeof c); return r; })()
+```
+
+**16.** Деструктуризація, spread та значення за замовчуванням.
+
+```js
+(() => { const { a, b = 5, ...rest } = { a: 1, c: 3, d: 4 }; const [x, , z = 9, ...tail] = [1, 2, undefined, 4, 5]; return [a, b, rest, x, z, tail]; })()
+```
+
+**17.** Оператори `?.`, `??`, `||`, `&&=`.
+
+```js
+(() => { const o = null; let a = 0; let b = ''; let c; c ??= 'def'; a ||= 7; b &&= 'x'; return [o?.x, o?.[0], 0 ?? 'd', 0 || 'd', a, b, c]; })()
+```
+
+**18.** Ітератори та генератори.
+
+```js
+(() => { function* g() { yield 1; yield 2; return 3; } const it = g(); return [it.next(), it.next(), it.next(), it.next(), [...g()]]; })()
+```
+
+### Рівень 4. Практика
+
+**19.** Map та Set зберігають будь-які ключі й унікальні значення.
+
+```js
+(() => { const m = new Map([[1, 'a'], ['1', 'b'], [{}, 'c']]); const s = new Set([1, 1, '1', NaN, NaN]); return [m.size, m.get(1), m.get('1'), s.size]; })()
+```
+
+**20.** JSON: серіалізація й втрата типів.
+
+```js
+JSON.parse(JSON.stringify({ d: new Date(0), u: undefined, f: () => 1, n: NaN, s: new Set([1]), a: [undefined] }))
+```
+
+**21.** Збирач сміття: `WeakRef` та `FinalizationRegistry` існують.
+
+```js
+[typeof WeakRef, typeof FinalizationRegistry, typeof WeakMap, new WeakRef({}).deref() !== undefined]
+```
+
+**22.** Скільки основних рушіїв JavaScript і які?
+
+**23.** Що таке ECMAScript і TC39?
+
+**24.** Чому JavaScript називають мультипарадигмальною мовою?
+
+### Відповіді
+
+1. `['number', 'string', 'boolean', 'undefined', 'object', 'symbol', 'bigint', 'object', 'object', 'function']`
+2. `['51', 4, 10, 2, '[object Object]', 1, NaN]`
+3. `['number', 'string', 'object', true]`
+4. `[9007199254740991, -9007199254740991, true, 0.30000000000000004, Infinity, -Infinity, NaN]`
+5. `[18446744073709551616n, 9007199254740993n, 'bigint', 8n, 9007199254740993n]`
+6. `[2, 1, 2, true, false]`
+7. `[8, 'double', 'function', true]`
+8. `[3, 1]`
+9. `['sound', 'woof', true, false]`
+10. `['function', ['constructor', 'm'], true]`
+11. `['sync', 'microtask', 'timeout']`
+12. `['function', 'function', 'function', 'function', 'function']`
+13. `['object', 'undefined']`
+14. `['function', 'function', true]`
+15. `['number', 'undefined', 'undefined']`
+16. `[1, 5, { c: 3, d: 4 }, 1, 9, [4, 5]]`
+17. `[undefined, undefined, 0, 'd', 7, '', 'def']`
+18. `[{ value: 1, done: false }, { value: 2, done: false }, { value: 3, done: true }, { value: undefined, done: true }, [1, 2]]`
+19. `[3, 'a', 'b', 3]`
+20. `{ d: '1970-01-01T00:00:00.000Z', n: null, s: {}, a: [null] }`
+21. `['function', 'function', 'function', true]`
+22. Три: V8 (Chrome, Node.js, Deno), SpiderMonkey (Firefox), JavaScriptCore (Safari, Bun)
+23. ECMAScript — стандарт мови (ECMA-262); TC39 — технічний комітет, який розвиває його через етапи пропозицій (stage 0–4)
+24. Підтримує імперативний, функціональний (функції першого класу, замикання) та прототипно-об'єктний стилі, а також подійно-кероване програмування

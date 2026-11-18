@@ -336,3 +336,118 @@ console.log(`Unstable: ${(performance.now() - t0).toFixed(0)}ms`);
 - TypeScript перевіряє типи лише на етапі компіляції й не захищає від нестабільності типів у рантаймі (зовнішні дані, `as any`).
 
 Ключовий принцип: функція повинна завжди отримувати один і той самий тип даних. Якщо це неможливо — явно конвертуй тип на вході, щоб внутрішня логіка функції працювала з одним типом. Але перш ніж оптимізувати заради цього конкретний гарячий шлях, виміряйте реальний ефект на своєму рушії (розділ 7) — інтуїція з застарілих матеріалів може вводити в оману.
+
+## Задачі для закріплення
+
+16 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код із `%…` виконуйте через `node --allow-natives-syntax`.
+
+### Рівень 1. Основи
+
+**1.** Який вид елементів має масив малих цілих?
+
+```js
+(() => [%HasSmiElements([1, 2, 3]), %HasDoubleElements([1, 2, 3])])()
+```
+
+**2.** А масив із дробовими?
+
+```js
+(() => [%HasSmiElements([1.5, 2]), %HasDoubleElements([1.5, 2])])()
+```
+
+**3.** Масив із рядком усередині?
+
+```js
+(() => [%HasSmiElements([1, 'a']), %HasDoubleElements([1, 'a']), %HasObjectElements([1, 'a'])])()
+```
+
+**4.** Чи повертається вид елементів назад, якщо прибрати «ширший» елемент?
+
+```js
+(() => { const a = [1, 2, 3]; a.push(1.5); const d = %HasDoubleElements(a); a.pop(); return [d, %HasDoubleElements(a), %HasSmiElements(a)]; })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Що робить створення «дірки» (holey) у масиві?
+
+```js
+(() => { const a = [1, 2, 3]; const before = %HasHoleyElements(a); a[10] = 1; return [before, %HasHoleyElements(a), a.length]; })()
+```
+
+**6.** `new Array(5)` — чи holey?
+
+```js
+(() => [%HasHoleyElements(new Array(5)), %HasHoleyElements(Array(5).fill(0)), %HasHoleyElements([0, 0, 0, 0, 0])])()
+```
+
+**7.** Чи змінює `Array.from({length: 3}, ...)` на packed?
+
+```js
+(() => [%HasHoleyElements(Array.from({ length: 3 }, (_, i) => i)), %HasSmiElements(Array.from({ length: 3 }, (_, i) => i))])()
+```
+
+**8.** Чи змінює `delete arr[i]` вид елементів?
+
+```js
+(() => { const a = [1, 2, 3]; delete a[1]; return [%HasHoleyElements(a), a.length, 1 in a]; })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Що станеться з числами `NaN`/`-0`/`2**31` в масиві Smi?
+
+```js
+(() => [%HasSmiElements([NaN]), %HasSmiElements([-0]), %HasSmiElements([2 ** 30]), %HasSmiElements([2 ** 31])])()
+```
+
+**10.** Поліморфізм: скільки різних видів аргументів бачить функція?
+
+```js
+(() => { const f = (x) => typeof x; return [1, 'a', 1.5, {}, null].map(f); })()
+```
+
+**11.** Чи однакові «смі» та double для цілого значення у змінній (`5` та `5.0`)?
+
+```js
+(() => [5 === 5.0, Object.is(5, 5.0), %HasSmiElements([5.0])])()
+```
+
+**12.** Скільки байтів займає елемент у `Float64Array`, `Int32Array`, `Uint8Array`?
+
+```js
+[Float64Array.BYTES_PER_ELEMENT, Int32Array.BYTES_PER_ELEMENT, Uint8Array.BYTES_PER_ELEMENT]
+```
+
+### Рівень 4. Практика
+
+**13.** Чи зберігає `Array(3).fill(1.5)` double-елементи?
+
+```js
+(() => [%HasDoubleElements(Array(3).fill(1.5)), %HasHoleyElements(Array(3).fill(1.5))])()
+```
+
+**14.** Що таке stable types (type stability)?
+
+**15.** Які три рівні поліморфізму розрізняють у V8?
+
+**16.** Що таке деоптимізація?
+
+### Відповіді
+
+1. `[true, false]`
+2. `[false, true]`
+3. `[false, false, true]`
+4. `[true, true, false]`
+5. `[false, true, 11]`
+6. `[true, false, false]`
+7. `[false, true]`
+8. `[true, 3, false]`
+9. `[false, false, true, false]`
+10. `['number', 'string', 'number', 'object', 'object']`
+11. `[true, true, true]`
+12. `[8, 4, 1]`
+13. `[true, false]`
+14. Кожна змінна/властивість/аргумент протягом виконання містить значення того самого типу, тому V8 спеціалізує код під цей тип і не деоптимізує
+15. Мономорфний (одна форма), поліморфний (2–4 форми), мегаморфний (більше — швидкий шлях вимкнено)
+16. Відкат оптимізованого коду до інтерпретатора, коли припущення про типи порушилось; повторні деоптимізації дорогі

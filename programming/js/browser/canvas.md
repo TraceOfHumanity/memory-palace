@@ -726,3 +726,641 @@ onmessage = ({ data }) => {
 - Інтерактив: власний hit-testing (`isPointInPath`, геометрія, кольоровий буфер), `pointer*` події, доступність окремо.
 - Продуктивність: кеш у `OffscreenCanvas`, мінімум змін стану, один шлях на багато фігур, цілі координати, `willReadFrequently`.
 - Для 3D й масових спрайтів — WebGL/WebGPU та бібліотеки (PixiJS, Three.js).
+
+## Задачі для закріплення
+
+48 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Фрагменти з `return` — тіла функцій, відповідь — повернене значення. У прикладах `createCanvas(w, h)` замінює `document.createElement('canvas')`, а `px(ctx, x, y)` повертає `[r, g, b, a]` піксела.
+
+### Рівень 1. Основи
+
+**1.** Розмір canvas за замовчуванням та зміна розміру.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+const d = createCanvas(300, 150);
+const a = [d.width, d.height];
+d.width = 50;
+return [a, d.width, d.height];
+})()
+```
+
+**2.** Що відбувається з малюнком при зміні `width`?
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.fillStyle = 'red';
+ctx.fillRect(0, 0, 100, 100);
+const before = px(ctx, 5, 5);
+canvas.width = 100;
+return [before, px(canvas.getContext('2d'), 5, 5)];
+})()
+```
+
+**3.** Піксель після `fillRect`: колір усередині й поза прямокутником.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.fillStyle = '#ff8800';
+ctx.fillRect(10, 10, 20, 20);
+return [px(ctx, 15, 15), px(ctx, 5, 5), px(ctx, 29, 29), px(ctx, 30, 30)];
+})()
+```
+
+**4.** Система координат: початок угорі зліва, вісь Y вниз.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.fillStyle = 'blue';
+ctx.fillRect(0, 90, 10, 10);
+return [px(ctx, 5, 95), px(ctx, 5, 5)];
+})()
+```
+
+**5.** `clearRect` робить пікселі прозорими.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.fillStyle = 'green';
+ctx.fillRect(0, 0, 100, 100);
+ctx.clearRect(20, 20, 10, 10);
+return [px(ctx, 25, 25), px(ctx, 5, 5)];
+})()
+```
+
+**6.** `strokeRect` та ширина лінії: які пікселі зафарбовані?
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.strokeStyle = 'black';
+ctx.lineWidth = 4;
+ctx.strokeRect(20, 20, 40, 40);
+return [px(ctx, 20, 40)[3], px(ctx, 18, 40)[3], px(ctx, 22, 40)[3], px(ctx, 40, 40)[3]];
+})()
+```
+
+**7.** Піксельна «пастка» 0.5: тонка лінія на цілих і половинних координатах.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.lineWidth = 1;
+ctx.beginPath(); ctx.moveTo(10, 20); ctx.lineTo(50, 20); ctx.stroke();
+ctx.beginPath(); ctx.moveTo(10, 40.5); ctx.lineTo(50, 40.5); ctx.stroke();
+return [px(ctx, 30, 19)[3], px(ctx, 30, 20)[3], px(ctx, 30, 40)[3], px(ctx, 30, 39)[3]];
+})()
+```
+
+**8.** Шлях: заливка трикутника та перевірка `isPointInPath`.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.beginPath();
+ctx.moveTo(10, 10); ctx.lineTo(90, 10); ctx.lineTo(50, 80); ctx.closePath();
+ctx.fillStyle = 'red';
+ctx.fill();
+return [px(ctx, 50, 30), px(ctx, 10, 80)[3], ctx.isPointInPath(50, 30), ctx.isPointInPath(5, 5)];
+})()
+```
+
+**9.** `arc` — коло: центр і зовні.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.beginPath();
+ctx.arc(50, 50, 20, 0, Math.PI * 2);
+ctx.fillStyle = 'purple';
+ctx.fill();
+return [px(ctx, 50, 50), px(ctx, 50, 75)[3], ctx.isPointInPath(50, 65), ctx.isPointInPath(50, 75)];
+})()
+```
+
+**10.** Правило заливки `evenodd` проти `nonzero` для вкладеного квадрата.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+const p = new Path2D();
+p.rect(10, 10, 80, 80);
+p.rect(30, 30, 40, 40);
+ctx.fillStyle = 'black';
+ctx.fill(p, 'evenodd');
+const a = px(ctx, 50, 50)[3];
+ctx.clearRect(0, 0, 100, 100);
+ctx.fill(p, 'nonzero');
+return [a, px(ctx, 50, 50)[3]];
+})()
+```
+
+**11.** `isPointInStroke`.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.lineWidth = 10;
+ctx.beginPath(); ctx.moveTo(10, 50); ctx.lineTo(90, 50);
+return [ctx.isPointInStroke(50, 52), ctx.isPointInStroke(50, 60)];
+})()
+```
+
+**12.** Градієнт: колір на початку, в середині й в кінці.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+const g = ctx.createLinearGradient(0, 0, 100, 0);
+g.addColorStop(0, 'black');
+g.addColorStop(1, 'white');
+ctx.fillStyle = g;
+ctx.fillRect(0, 0, 100, 100);
+return [px(ctx, 0, 5)[0], px(ctx, 50, 5)[0], px(ctx, 99, 5)[0]];
+})()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**13.** `globalAlpha`: змішування червоного на білому.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.fillStyle = 'white';
+ctx.fillRect(0, 0, 100, 100);
+ctx.globalAlpha = 0.5;
+ctx.fillStyle = 'red';
+ctx.fillRect(0, 0, 50, 50);
+return px(ctx, 10, 10);
+})()
+```
+
+**14.** `rgba()` напівпрозорість: альфа-канал пікселя.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
+ctx.fillRect(0, 0, 10, 10);
+return px(ctx, 5, 5);
+})()
+```
+
+**15.** `globalCompositeOperation = 'destination-out'` стирає.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.fillStyle = 'red';
+ctx.fillRect(0, 0, 100, 100);
+ctx.globalCompositeOperation = 'destination-out';
+ctx.fillRect(0, 0, 50, 50);
+return [px(ctx, 10, 10)[3], px(ctx, 80, 80)[3]];
+})()
+```
+
+**16.** `source-over` проти `lighter`: сума каналів.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.fillStyle = 'rgb(100, 0, 0)';
+ctx.fillRect(0, 0, 10, 10);
+ctx.globalCompositeOperation = 'lighter';
+ctx.fillStyle = 'rgb(0, 150, 0)';
+ctx.fillRect(0, 0, 10, 10);
+return px(ctx, 5, 5);
+})()
+```
+
+**17.** Трансформації: `translate` зсуває початок координат.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.translate(50, 50);
+ctx.fillStyle = 'red';
+ctx.fillRect(0, 0, 10, 10);
+return [px(ctx, 55, 55)[3], px(ctx, 5, 5)[3]];
+})()
+```
+
+**18.** `scale` множить розміри та координати.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.scale(2, 2);
+ctx.fillStyle = 'red';
+ctx.fillRect(10, 10, 10, 10);
+return [px(ctx, 25, 25)[3], px(ctx, 15, 15)[3], px(ctx, 19, 19)[3], px(ctx, 41, 41)[3]];
+})()
+```
+
+**19.** `rotate` на 90° навколо центру: куди потрапляє прямокутник?
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.translate(50, 50);
+ctx.rotate(Math.PI / 2);
+ctx.fillStyle = 'red';
+ctx.fillRect(0, -5, 30, 10);
+return [px(ctx, 50, 70)[3], px(ctx, 70, 50)[3]];
+})()
+```
+
+**20.** Матриця перетворення `getTransform`.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.translate(10, 20);
+ctx.scale(2, 3);
+const m = ctx.getTransform();
+return [m.a, m.d, m.e, m.f];
+})()
+```
+
+**21.** Порядок трансформацій: translate→scale проти scale→translate.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+const a = createCanvas(10, 10).getContext('2d');
+a.translate(10, 10); a.scale(2, 2);
+const b = createCanvas(10, 10).getContext('2d');
+b.scale(2, 2); b.translate(10, 10);
+return [[a.getTransform().e, a.getTransform().f], [b.getTransform().e, b.getTransform().f]];
+})()
+```
+
+**22.** `save`/`restore` повертає стиль і трансформацію.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.fillStyle = 'red';
+ctx.save();
+ctx.fillStyle = 'blue';
+ctx.translate(5, 5);
+ctx.restore();
+return [ctx.fillStyle, ctx.getTransform().e];
+})()
+```
+
+**23.** Що поверне `fillStyle` після присвоєння різних форматів?
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+const r = [];
+for (const c of ['red', '#f00', 'rgb(255, 0, 0)', 'rgba(255,0,0,0.5)', 'hsl(0, 100%, 50%)']) { ctx.fillStyle = c; r.push(ctx.fillStyle); }
+return r;
+})()
+```
+
+**24.** Неправильний колір ігнорується (стиль не змінюється).
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.fillStyle = 'red';
+ctx.fillStyle = 'not-a-color';
+return ctx.fillStyle;
+})()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**25.** `clip`: малювання лише всередині області.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.beginPath();
+ctx.rect(20, 20, 30, 30);
+ctx.clip();
+ctx.fillStyle = 'red';
+ctx.fillRect(0, 0, 100, 100);
+return [px(ctx, 30, 30)[3], px(ctx, 10, 10)[3], px(ctx, 60, 60)[3]];
+})()
+```
+
+**26.** `ImageData`: розмір буфера = ширина × висота × 4.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+const id = ctx.createImageData(10, 5);
+return [id.width, id.height, id.data.length, id.data.constructor.name];
+})()
+```
+
+**27.** Запис пікселів напряму та `putImageData`.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+const id = ctx.createImageData(2, 1);
+id.data.set([255, 0, 0, 255, 0, 255, 0, 255]);
+ctx.putImageData(id, 10, 10);
+return [px(ctx, 10, 10), px(ctx, 11, 10)];
+})()
+```
+
+**28.** Інверсія кольорів через `getImageData`.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.fillStyle = 'rgb(10, 20, 30)';
+ctx.fillRect(0, 0, 100, 100);
+const id = ctx.getImageData(0, 0, 1, 1);
+for (let i = 0; i < 3; i++) id.data[i] = 255 - id.data[i];
+ctx.putImageData(id, 0, 0);
+return px(ctx, 0, 0);
+})()
+```
+
+**29.** Індекс піксела `(x, y)` в масиві `data`.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+const w = 10;
+const id = ctx.createImageData(w, 10);
+const idx = (x, y) => (y * w + x) * 4;
+id.data[idx(3, 2)] = 99;
+return [idx(0, 0), idx(3, 2), idx(9, 9), id.data[122]];
+})()
+```
+
+**30.** `ImageData` поза межами canvas: прозорі нулі.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+const id = ctx.getImageData(95, 95, 10, 10);
+return [id.data.length, id.data[0], id.data[(9 * 10 + 9) * 4 + 3]];
+})()
+```
+
+**31.** Експорт: початок `toDataURL` та тип.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+const u = canvas.toDataURL('image/png');
+return [u.slice(0, 22), canvas.toDataURL('image/jpeg').slice(0, 23)];
+})()
+```
+
+**32.** Експорт у буфер PNG: сигнатура файла.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+const b = canvas.toBuffer('image/png');
+return [[...b.subarray(0, 8)], b.subarray(1, 4).toString()];
+})()
+```
+
+**33.** Точка, ліній на HiDPI: фізичний розмір при `devicePixelRatio` 2.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+const dpr = 2, w = 300, h = 150;
+const c = createCanvas(w * dpr, h * dpr);
+return [c.width, c.height, w * dpr * h * dpr * 4];
+})()
+```
+
+**34.** `lineCap` та `lineJoin`: значення за замовчуванням.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+return [ctx.lineCap, ctx.lineJoin, ctx.lineWidth, ctx.miterLimit, ctx.globalAlpha, ctx.globalCompositeOperation];
+})()
+```
+
+**35.** `setLineDash` та `getLineDash`.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.setLineDash([5, 3]);
+const a = ctx.getLineDash();
+ctx.setLineDash([4, 2, 1]);
+return [a, ctx.getLineDash()];
+})()
+```
+
+**36.** `measureText`: ширина тексту пропорційна кількості символів моноширинного шрифту? (порівняння рядків)
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.font = '20px sans-serif';
+const a = ctx.measureText('i').width, b = ctx.measureText('iiiiiiiiii').width;
+return [b > a, Math.abs(b - a * 10) < 0.5];
+})()
+```
+
+### Рівень 4. Практика
+
+**37.** `textAlign` та `textBaseline`: значення за замовчуванням.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+return [ctx.textAlign, ctx.textBaseline, ctx.font];
+})()
+```
+
+**38.** `shadowBlur`, `shadowColor` за замовчуванням.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+return [ctx.shadowBlur, ctx.shadowColor, ctx.shadowOffsetX];
+})()
+```
+
+**39.** `Path2D` із SVG-рядка: перевірка точки.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+const p = new Path2D('M10 10 H 90 V 90 H 10 Z');
+return [ctx.isPointInPath(p, 50, 50), ctx.isPointInPath(p, 95, 50)];
+})()
+```
+
+**40.** `quadraticCurveTo` та `bezierCurveTo`: кінцева точка шляху заповнена.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.beginPath();
+ctx.moveTo(10, 90);
+ctx.quadraticCurveTo(50, 0, 90, 90);
+ctx.closePath();
+ctx.fillStyle = 'black';
+ctx.fill();
+return [px(ctx, 50, 80)[3], px(ctx, 50, 20)[3], px(ctx, 50, 5)[3]];
+})()
+```
+
+**41.** `createPattern` із маленького canvas.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+const t = createCanvas(2, 1);
+const tc = t.getContext('2d');
+tc.fillStyle = 'red'; tc.fillRect(0, 0, 1, 1);
+tc.fillStyle = 'blue'; tc.fillRect(1, 0, 1, 1);
+ctx.fillStyle = ctx.createPattern(t, 'repeat');
+ctx.fillRect(0, 0, 100, 100);
+return [px(ctx, 0, 0), px(ctx, 1, 0), px(ctx, 50, 0), px(ctx, 51, 0)];
+})()
+```
+
+**42.** `drawImage`: копіювання одного canvas на інший зі зміною масштабу.
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+const src = createCanvas(2, 2);
+const sc = src.getContext('2d');
+sc.fillStyle = 'red'; sc.fillRect(0, 0, 2, 2);
+ctx.imageSmoothingEnabled = false;
+ctx.drawImage(src, 10, 10, 20, 20);
+return [px(ctx, 15, 15), px(ctx, 29, 29), px(ctx, 31, 31)[3]];
+})()
+```
+
+**43.** `reset()` скидає стан та вміст (якщо підтримується).
+
+```js
+(() => {
+const canvas = createCanvas(100, 100);
+const ctx = canvas.getContext('2d');
+ctx.fillStyle = 'red';
+ctx.fillRect(0, 0, 100, 100);
+const has = typeof ctx.reset === 'function';
+if (has) ctx.reset();
+return [has, has ? px(ctx, 5, 5)[3] : null, has ? ctx.fillStyle : null];
+})()
+```
+
+**44.** Чим розмір canvas (атрибути) відрізняється від розміру CSS?
+
+**45.** Для чого `save()` та `restore()`?
+
+**46.** Чому `beginPath()` потрібен перед кожною новою фігурою?
+
+**47.** Як виправити розмиття на екранах HiDPI?
+
+**48.** Що швидше: багато дрібних `fillRect` чи один шлях?
+
+### Відповіді
+
+1. `[[300, 150], 50, 150]`
+2. `[[255, 0, 0, 255], [0, 0, 0, 0]]`
+3. `[[255, 136, 0, 255], [0, 0, 0, 0], [255, 136, 0, 255], [0, 0, 0, 0]]`
+4. `[[0, 0, 255, 255], [0, 0, 0, 0]]`
+5. `[[0, 0, 0, 0], [0, 128, 0, 255]]`
+6. `[255, 255, 0, 0]`
+7. `[127, 128, 255, 0]`
+8. `[[255, 0, 0, 255], 0, true, false]`
+9. `[[128, 0, 128, 255], 0, true, false]`
+10. `[0, 255]`
+11. `[true, false]`
+12. `[1, 129, 254]`
+13. `[255, 127, 127, 255]`
+14. `[0, 0, 255, 128]`
+15. `[0, 255]`
+16. `[100, 150, 0, 255]`
+17. `[255, 0]`
+18. `[255, 0, 0, 0]`
+19. `[255, 0]`
+20. `[2, 3, 10, 20]`
+21. `[[10, 10], [20, 20]]`
+22. `['#ff0000', 0]`
+23. `['#ff0000', '#ff0000', '#ff0000', 'rgba(255, 0, 0, 0.5)', '#ff0000']`
+24. `'#ff0000'`
+25. `[255, 0, 0]`
+26. `[10, 5, 200, 'Uint8ClampedArray']`
+27. `[[255, 0, 0, 255], [0, 255, 0, 255]]`
+28. `[245, 235, 225, 255]`
+29. `[0, 92, 396, 0]`
+30. `[400, 0, 0]`
+31. `['data:image/png;base64,', 'data:image/jpeg;base64,']`
+32. `[[137, 80, 78, 71, 13, 10, 26, 10], 'PNG']`
+33. `[600, 300, 720000]`
+34. `['butt', 'miter', 1, 10, 1, 'source-over']`
+35. `[[5, 3], [4, 2, 1, 4, 2, 1]]`
+36. `[true, true]`
+37. `['start', 'alphabetic', '10px sans-serif']`
+38. `[0, 'rgba(0, 0, 0, 0)', 0]`
+39. `[true, false]`
+40. `[255, 0, 0]`
+41. `[[255, 0, 0, 255], [0, 0, 255, 255], [255, 0, 0, 255], [0, 0, 255, 255]]`
+42. `[[255, 0, 0, 255], [255, 0, 0, 255], 0]`
+43. `[true, 0, '#000000']`
+44. Атрибути `width`/`height` задають розмір пікселного буфера; CSS лише масштабує вже намальоване зображення, тому невідповідність розмітить картинку розмитою
+45. Зберігають і відновлюють стан контексту (стилі, трансформації, область обрізання), щоб тимчасові зміни не впливали на подальше малювання
+46. Без нього нові сегменти додаються до попереднього шляху, і наступний `fill`/`stroke` перемальовує старі фігури разом із новими
+47. Збільшити розмір буфера до `css-розмір × devicePixelRatio`, зафіксувати CSS-розмір і застосувати `ctx.scale(dpr, dpr)`
+48. Один шлях із багатьма фігурами і одним `fill()` зазвичай швидший, ніж багато окремих викликів з частою зміною стану

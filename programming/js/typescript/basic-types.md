@@ -274,3 +274,171 @@ console.log(calculateTotal(100, 5, 20)); // 520
 - `void` — функція не повертає корисного значення; `never` — функція взагалі ніколи не завершується нормально.
 - `object` / `{}` / `Object` — три різні речі: `object` = не-примітив, `{}` = «усе, крім `null`/`undefined`» (часта пастка), `Object` = тип з методами `Object.prototype` (рідко потрібен).
 - Головна практична вигода: помилки типів виявляються до запуску коду, а не десь посеред виконання в продакшені.
+
+## Задачі для закріплення
+
+22 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в TypeScript Playground чи через tsc.
+
+### Рівень 1. Основи
+
+**1.** Який тип виведе TS для `const a = 5`?
+
+```ts
+const a = 5;
+```
+
+**2.** А для `let a = 5`?
+
+```ts
+let a = 5;
+```
+
+**3.** Тип змінної, ініціалізованої масивом чисел?
+
+```ts
+const xs = [1, 2, 3];
+```
+
+**4.** Тип змінної, ініціалізованої масивом різних типів?
+
+```ts
+const xs = [1, 'a', true];
+```
+
+**5.** Тип кортежу `[string, number]`, а не масиву?
+
+```ts
+const t: [string, number] = ['a', 1];
+```
+
+**6.** Що скаже TS, якщо присвоїти рядок числу?
+
+```ts
+let n: number = 5;
+n = 'five';
+```
+
+### Рівень 2. Деталі й поведінка
+
+**7.** Що скаже TS про виклик функції з надлишковим аргументом?
+
+```ts
+function f(a: number) { return a; }
+f(1, 2);
+```
+
+**8.** Що скаже TS про звернення до неіснуючої властивості?
+
+```ts
+const o = { a: 1 };
+o.b;
+```
+
+**9.** Чи можна присвоїти `null` змінній типу `string` у strict режимі?
+
+```ts
+const s: string = null;
+```
+
+**10.** Який тип має `let x;` без ініціалізатора?
+
+```ts
+let x;
+```
+
+**11.** Який тип у функції без анотації повернення?
+
+```ts
+function f(a: number, b: number) { return a > b ? a : 'less'; }
+```
+
+**12.** Тип `readonly` масиву.
+
+```ts
+const xs: readonly number[] = [1, 2];
+```
+
+### Рівень 3. Нюанси та пастки
+
+**13.** Чи можна змінити `readonly`-масив?
+
+```ts
+const xs: readonly number[] = [1, 2];
+xs.push(3);
+```
+
+**14.** Тип `unknown` проти `any`: який тип має результат `JSON.parse`?
+
+```ts
+const j = JSON.parse('{}');
+```
+
+**15.** Що скаже TS при використанні `unknown` без звуження?
+
+```ts
+const u: unknown = 'abc';
+u.toUpperCase();
+```
+
+**16.** А з перевіркою `typeof`?
+
+```ts
+const u: unknown = 'abc';
+if (typeof u === 'string') u.toUpperCase();
+```
+
+**17.** Який тип поверне функція, що завжди кидає?
+
+```ts
+function fail(): never { throw new Error('x'); }
+const r = () => { throw new Error('y'); };
+```
+
+**18.** Тип `void` у функції без return.
+
+```ts
+function log(m: string) { console.log(m); }
+```
+
+### Рівень 4. Практика
+
+**19.** Чи сумісні `number` та `bigint`?
+
+```ts
+const a: bigint = 1;
+```
+
+**20.** Тип літерала в `const` об'єкта.
+
+```ts
+const o = { kind: 'a', n: 1 };
+```
+
+**21.** Чим `any` відрізняється від `unknown`?
+
+**22.** Коли TS виводить тип сам, а коли анотація потрібна?
+
+### Відповіді
+
+1. `5`
+2. `number`
+3. `number[]`
+4. `(string | number | boolean)[]`
+5. `[string, number]`
+6. Помилка: `TS2322: Type 'string' is not assignable to type 'number'.`
+7. Помилка: `TS2554: Expected 1 arguments, but got 2.`
+8. Помилка: `TS2339: Property 'b' does not exist on type '{ a: number; }'.`
+9. Помилка: `TS2322: Type 'null' is not assignable to type 'string'.`
+10. `any`
+11. `(a: number, b: number) => number | "less"`
+12. `readonly number[]`
+13. Помилка: `TS2339: Property 'push' does not exist on type 'readonly number[]'.`
+14. `any`
+15. Помилка: `TS18046: 'u' is of type 'unknown'.`
+16. Компілюється без помилок
+17. `() => never`
+18. `(m: string) => void`
+19. Помилка: `TS2322: Type 'number' is not assignable to type 'bigint'.`
+20. `{ kind: string; n: number; }`
+21. `any` вимикає перевірку типів; `unknown` безпечний: перед використанням значення потрібно звузити тип
+22. Анотації потрібні для параметрів функцій, публічних API, змінних без ініціалізатора й порожніх колекцій; решту TS виводить сам

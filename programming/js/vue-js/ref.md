@@ -70,3 +70,115 @@ count.value++;          // у JS-коді — через .value
 3. Передаєш у `watch` — сам ref (`watch(x, …)`) або геттер.
 4. Великі нереактивні дані → `shallowRef`.
 5. Повертаєш з композабла — повертай **ref**, а не розгорнуте значення.
+
+## Задачі для закріплення
+
+15 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(Component)` монтує компонент у тестове дерево без DOM, `html(r)` серіалізує його, `click(node)` викликає `onClick`, `tick()` — це `nextTick`, `sleep(ms)` — пауза; API Vue (`ref`, `watch`, `h` та інші) імпортуються з `vue`.
+
+### Рівень 1. Основи
+
+**1.** Що поверне `ref(0)` і як читати значення?
+
+```js
+const n = ref(0); n.value++; return [n.value, isRef(n), typeof n];
+```
+
+**2.** Чи реагує `watch` на зміну `ref`?
+
+```js
+const n = ref(1); const log = []; watch(n, (v, o) => log.push([o, v])); n.value = 2; n.value = 3; await tick(); return log;
+```
+
+**3.** Глибока реактивність `ref` з об'єктом.
+
+```js
+const o = ref({ a: { b: 1 } }); const log = []; watch(() => o.value.a.b, v => log.push(v)); o.value.a.b = 5; await tick(); return [log, isReactive(o.value)];
+```
+
+**4.** Заміна всього об'єкта в `ref`.
+
+```js
+const o = ref({ n: 1 }); const log = []; watchEffect(() => log.push(o.value.n)); o.value = { n: 2 }; await tick(); return log;
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Розгортання `ref` усередині `reactive`.
+
+```js
+const n = ref(1); const s = reactive({ n }); s.n++; return [n.value, s.n, isRef(s.n)];
+```
+
+**6.** Масив із `ref` усередині `reactive` не розгортається.
+
+```js
+const n = ref(1); const arr = reactive([n]); return [isRef(arr[0]), arr[0].value];
+```
+
+**7.** `unref` та `isRef`.
+
+```js
+const n = ref(3); return [unref(n), unref(4), isRef(n), isRef(4)];
+```
+
+**8.** `ref` у шаблоні (render-функція): оновлення DOM після зміни.
+
+```js
+const n = ref('a'); const C = defineComponent({ setup() { return () => h('p', n.value); } }); const r = mount(C); const a = html(r); n.value = 'b'; await tick(); return [a, html(r)];
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Скільки разів спрацює ефект при кількох змінах поспіль (батчинг)?
+
+```js
+const n = ref(0); let runs = 0; watchEffect(() => { n.value; runs++; }); n.value = 1; n.value = 2; n.value = 3; await tick(); return runs;
+```
+
+**10.** Чи тригерить присвоєння того ж значення ефект?
+
+```js
+const n = ref(1); let runs = 0; watchEffect(() => { n.value; runs++; }); n.value = 1; await tick(); return runs;
+```
+
+**11.** `ref` з `NaN` та `Object.is`.
+
+```js
+const n = ref(NaN); let runs = 0; watchEffect(() => { n.value; runs++; }); n.value = NaN; await tick(); return runs;
+```
+
+**12.** Поверхнева альтернатива: `shallowRef` не відстежує вкладене.
+
+```js
+const o = shallowRef({ n: 1 }); let runs = 0; watchEffect(() => { o.value.n; runs++; }); o.value.n = 2; await tick(); const a = runs; o.value = { n: 3 }; await tick(); return [a, runs];
+```
+
+### Рівень 4. Практика
+
+**13.** `toRaw` та `markRaw`.
+
+```js
+const o = { a: 1 }; const r = ref(o); const raw = toRaw(r.value); return [raw === o, r.value === o, isProxy(r.value)];
+```
+
+**14.** Чому для `ref` потрібен `.value`?
+
+**15.** Коли використовувати `ref`, а коли `reactive`?
+
+### Відповіді
+
+1. `[1, true, 'object']`
+2. `[[1, 3]]`
+3. `[[5], true]`
+4. `[1, 2]`
+5. `[2, 2, false]`
+6. `[true, 1]`
+7. `[3, 4, true, false]`
+8. `['<p>a</p>', '<p>b</p>']`
+9. `2`
+10. `1`
+11. `1`
+12. `[1, 2]`
+13. `[true, false, true]`
+14. Примітиви не можна відстежувати напряму; `ref` — це об'єкт-обгортка з геттером/сеттером `.value`, де Vue збирає залежності й сповіщає про зміни
+15. `ref` — для примітивів і значень, які можна замінювати цілком; `reactive` — для об'єктів, коли доступ без `.value` зручніший (але не можна заміняти весь об'єкт)

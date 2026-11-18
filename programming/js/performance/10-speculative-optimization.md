@@ -336,3 +336,90 @@ node --trace-ic myfile.js         # IC-стани (monomorphic/polymorphic/megam
 node --prof myfile.js             # повний профіль для аналізу
 node --prof-process isolate-*.log > profile.txt
 ```
+
+## Задачі для закріплення
+
+12 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код із `%…` виконуйте через `node --allow-natives-syntax`.
+
+### Рівень 1. Основи
+
+**1.** Чи може функція одночасно бути оптимізована для чисел і для рядків?
+
+```js
+(() => { const add = (a, b) => a + b; return [add(1, 2), add('a', 'b'), add(1.5, 2)]; })()
+```
+
+**2.** Деоптимізація: чи працює функція коректно після зміни типів аргументів?
+
+```js
+(() => { function f(x) { return x * 2; } %PrepareFunctionForOptimization(f); f(1); f(2); %OptimizeFunctionOnNextCall(f); const a = f(3); const b = f('4'); const c = f({ valueOf: () => 5 }); return [a, b, c]; })()
+```
+
+**3.** Чи оптимізована функція після прогріву?
+
+```js
+(() => { function f(x) { return x + 1; } %PrepareFunctionForOptimization(f); f(1); f(2); %OptimizeFunctionOnNextCall(f); f(3); const opt = (%GetOptimizationStatus(f) & 16) !== 0; return opt; })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**4.** Чи залишається оптимізованою після виклику з іншим типом?
+
+```js
+(() => { function f(x) { return x + 1; } %PrepareFunctionForOptimization(f); f(1); f(2); %OptimizeFunctionOnNextCall(f); f(3); f('s'); return (%GetOptimizationStatus(f) & 16) !== 0; })()
+```
+
+**5.** Прогрів: скільки викликів потрібно в прикладі для `%OptimizeFunctionOnNextCall`?
+
+```js
+(() => { let calls = 0; function f(x) { calls++; return x; } %PrepareFunctionForOptimization(f); f(1); f(2); %OptimizeFunctionOnNextCall(f); f(3); return calls; })()
+```
+
+**6.** `Smi` перетворення: що буде при додаванні, що виходить за межі 31/32 біт?
+
+```js
+(() => [2 ** 30 + 2 ** 30, (2 ** 31 - 1) + 1, Number.isInteger(2 ** 31)])()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**7.** Скільки різних типів аргументів у «розігрітого» та «неоднорідного» виклику?
+
+```js
+(() => { const seen = (args) => new Set(args.map(a => typeof a)).size; return [seen([1, 2, 3, 4]), seen([1, 'a', null, {}, 1.5])]; })()
+```
+
+**8.** Чи змінює форму об'єкта додавання властивості в гарячому коді після оптимізації?
+
+```js
+(() => { function f(o) { return o.x; } %PrepareFunctionForOptimization(f); f({ x: 1 }); f({ x: 2 }); %OptimizeFunctionOnNextCall(f); f({ x: 3 }); const before = (%GetOptimizationStatus(f) & 16) !== 0; f({ x: 1, y: 2 }); return [before, (%GetOptimizationStatus(f) & 16) !== 0]; })()
+```
+
+**9.** Як виявити деоптимізацію: прапорець `--trace-deopt` вмикається під час запуску; чи доступний він із `process.execArgv`?
+
+```js
+Array.isArray(process.execArgv)
+```
+
+### Рівень 4. Практика
+
+**10.** Що таке спекулятивна оптимізація?
+
+**11.** Які два типи деоптимізації розрізняють?
+
+**12.** Як зробити код стійким до деоптимізації?
+
+### Відповіді
+
+1. `[3, 'ab', 3.5]`
+2. `[6, 8, 10]`
+3. `true`
+4. `false`
+5. `3`
+6. `[2147483648, 2147483648, true]`
+7. `[1, 3]`
+8. `[true, false]`
+9. `true`
+10. TurboFan припускає, що типи й форми, які бачив інтерпретатор, збережуться, і генерує швидкий код із перевірками (guards); якщо припущення хибне — деоптимізація
+11. Eager (деоптимізація відразу при невдалій перевірці) і lazy (позначення коду недійсним, відкат при наступному поверненні в нього)
+12. Прогрівати з реалістичними типами, тримати типи й форми стабільними, не змінювати прототипи в гарячому шляху, виносити рідкісні шляхи

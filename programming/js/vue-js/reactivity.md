@@ -330,3 +330,108 @@ Promise.resolve().then(() => console.log(batchRuns)); // 2 — після мік
 - «Голий» `effect` виконується синхронно після кожної зміни; у застосунку Vue оновлення групуються планувальником і виконуються в мікрозавданні (`nextTick`).
 - `watch` — для побічних ефектів у відповідь на зміну конкретного джерела; він дає старе й нове значення.
 - Порівняння цієї моделі з моделлю React, де стан незмінний, а компонент перерендерюється цілком, — у нотатці `programming/js/react-js/reactivity.md`.
+
+## Задачі для закріплення
+
+14 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(Component)` монтує компонент у тестове дерево без DOM, `html(r)` серіалізує його, `click(node)` викликає `onClick`, `tick()` — це `nextTick`, `sleep(ms)` — пауза; API Vue (`ref`, `watch`, `h` та інші) імпортуються з `vue`.
+
+### Рівень 1. Основи
+
+**1.** Мінімальний ефект: `watchEffect` відстежує `ref`.
+
+```js
+const a = ref(2), b = ref(3); let sum; watchEffect(() => { sum = a.value + b.value; }); a.value = 10; await tick(); return sum;
+```
+
+**2.** `reactive` + `computed`: ланцюжок залежностей.
+
+```js
+const s = reactive({ price: 10, qty: 2 }); const total = computed(() => s.price * s.qty); const log = []; watchEffect(() => log.push(total.value)); s.qty = 5; await tick(); return log;
+```
+
+**3.** Втрата реактивності при присвоєнні властивості у змінну.
+
+```js
+const s = reactive({ n: 1 }); let n = s.n; s.n = 2; return [n, s.n];
+```
+
+**4.** Реактивність і Map.
+
+```js
+const m = reactive(new Map([['a', 1]])); const log = []; watchEffect(() => log.push(m.get('a'))); m.set('a', 5); await tick(); return log;
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Реактивність масиву: зміна довжини.
+
+```js
+const a = reactive([1, 2, 3]); const log = []; watchEffect(() => log.push(a.length)); a.length = 1; await tick(); return log;
+```
+
+**6.** Оновлення лише залежного компонента.
+
+```js
+const a = ref(0), b = ref(0); let ra = 0, rb = 0; const A = defineComponent({ setup() { return () => { ra++; return h('i', a.value); }; } }); const B = defineComponent({ setup() { return () => { rb++; return h('b', b.value); }; } }); const P = defineComponent({ setup() { return () => h('div', [h(A), h(B)]); } }); mount(P); a.value = 1; await tick(); return [ra, rb];
+```
+
+**7.** Зміна невикористаного в шаблоні стану не рендерить.
+
+```js
+const used = ref(0), unused = ref(0); let renders = 0; mount(defineComponent({ setup() { return () => { renders++; return h('p', used.value); }; } })); const b = renders; unused.value = 5; await tick(); return renders - b;
+```
+
+**8.** Глибока реактивність: вкладена зміна оновлює DOM.
+
+```js
+const s = reactive({ a: { b: { c: 1 } } }); const r = mount(defineComponent({ setup() { return () => h('p', s.a.b.c); } })); s.a.b.c = 9; await tick(); return html(r);
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Присвоєння нового об'єкта вкладеній властивості зберігає реактивність.
+
+```js
+const s = reactive({ a: { n: 1 } }); const log = []; watchEffect(() => log.push(s.a.n)); s.a = { n: 2 }; await tick(); s.a.n = 3; await tick(); return log;
+```
+
+**10.** `toRaw` не запускає залежності.
+
+```js
+const s = reactive({ n: 1 }); let runs = 0; watchEffect(() => { s.n; runs++; }); toRaw(s).n = 2; await tick(); return [runs, s.n];
+```
+
+**11.** Спостереження за ключами, що додаються пізніше.
+
+```js
+const s = reactive({}); const log = []; watchEffect(() => log.push(Object.keys(s).join(','))); s.a = 1; s.b = 2; await tick(); return log;
+```
+
+**12.** Ефект змінює власну залежність.
+
+```js
+const n = ref(0); let runs = 0; watchEffect(() => { runs++; if (n.value < 3) n.value++; }); await tick(); await tick(); return [n.value, runs];
+```
+
+### Рівень 4. Практика
+
+**13.** Як Vue відстежує залежності?
+
+**14.** Чим реактивність Vue відрізняється від React?
+
+### Відповіді
+
+1. `13`
+2. `[20, 50]`
+3. `[1, 2]`
+4. `[1, 5]`
+5. `[3, 1]`
+6. `[2, 1]`
+7. `0`
+8. `'<p>9</p>'`
+9. `[1, 2, 3]`
+10. `[1, 2]`
+11. `['', 'a,b']`
+12. `[1, 1]`
+13. Під час виконання ефекту (`track` у геттерах Proxy/ref) він реєструється як підписник властивості; при зміні (`trigger`) підписники планують повторний запуск
+14. Vue знає, які саме властивості прочитано, тож оновлює мінімальний набір ефектів; React перерендерює компонент і порівнює результат

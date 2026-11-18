@@ -265,3 +265,97 @@ class Bad { run() { container.resolve("db").find(1); } }
 - DI-контейнер автоматизує створення графа: реєструє рецепти, рекурсивно резолвить залежності, кешує singleton, виявляє цикли — так працює Nest (`@Injectable`, providers, scopes).
 - Циклічні залежності — сигнал поганого дизайну; Service Locator — це не DI (залежності знову приховані).
 - Ін'єктуйте те, що треба підміняти (I/O, час, випадковість), але не перетворюйте DI на абстракцію заради абстракції.
+
+## Задачі для закріплення
+
+13 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Реалізуйте DI через конструктор: `Service(logger)`.
+
+```js
+class Service { constructor(l) { this.l = l; } run() { return this.l.log('run'); } }
+```
+
+**2.** Реалізуйте простий контейнер із `register`, `resolve`, singletons.
+
+```js
+class C { f = new Map(); s = new Map(); register(n, fn) { this.f.set(n, fn); return this; } resolve(n) { if (!this.s.has(n)) this.s.set(n, this.f.get(n)(this)); return this.s.get(n); } }
+```
+
+**3.** Додайте виявлення циклічних залежностей.
+
+```js
+class C { f = new Map(); s = new Map(); stack = []; reg(n, fn) { this.f.set(n, fn); return this; } get(n) { if (this.s.has(n)) return this.s.get(n); if (this.stack.includes(n)) throw new Error('cycle: ' + [...this.stack, n].join(' -> ')); this.stack.push(n); const v = this.f.get(n)(this); this.stack.pop(); this.s.set(n, v); return v; } }
+```
+
+**4.** Реалізуйте transient-залежності (новий екземпляр щоразу).
+
+```js
+class C { f = new Map(); reg(n, fn) { this.f.set(n, fn); return this; } get(n) { return this.f.get(n)(this); } }
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** DI через параметр за замовчуванням.
+
+```js
+const getUser = (id, http = { get: (u) => 'real ' + u }) => http.get('/u/' + id)
+```
+
+**6.** DI через замикання (фабрика сервісу).
+
+```js
+const makeSvc = ({ db, log }) => ({ get: (id) => (log('get ' + id), db[id]) })
+```
+
+**7.** Тест із fake-залежністю: перевірка викликів.
+
+```js
+const mkSpy = () => { const calls = []; return { calls, send: (m) => (calls.push(m), true) }; }; const notify = (m, s) => s.send(m)
+```
+
+**8.** Реалізуйте autowiring за іменами параметрів конструктора.
+
+```js
+class C { f = new Map(); reg(n, v) { this.f.set(n, v); return this; } create(K) { const names = /constructor\s*\(([^)]*)\)/.exec(K.toString())?.[1].split(',').map(s => s.trim()).filter(Boolean) ?? []; return new K(...names.map(n => this.f.get(n))); } }
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Реєстр залежностей через `Symbol` токени.
+
+```js
+const T = { Log: Symbol('Log') }; const reg = new Map([[T.Log, { log: m => 'L:' + m }]]); const inject = (t) => reg.get(t)
+```
+
+**10.** Підмініть залежність в контейнері для тесту.
+
+```js
+class C { m = new Map(); set(n, v) { this.m.set(n, v); return this; } get(n) { return this.m.get(n); } }
+```
+
+**11.** Чим Dependency Injection відрізняється від Service Locator?
+
+**12.** Які є способи DI?
+
+### Рівень 4. Практика
+
+**13.** Чому DI полегшує тестування?
+
+### Відповіді
+
+1. Виклик `[new Service({ log: m => 'A:' + m }).run(), new Service({ log: m => 'B:' + m }).run()]` → `['A:run', 'B:run']`
+2. Виклик `(() => { let n = 0; const c = new C().register('db', () => ({ id: ++n })); return [c.resolve('db') === c.resolve('db'), n]; })()` → `[true, 1]`
+3. Виклик `(() => { const c = new C().reg('a', k => k.get('b')).reg('b', k => k.get('a')); try { c.get('a'); } catch (e) { return e.message; } })()` → `'cycle: a -> b -> a'`
+4. Виклик `(() => { let n = 0; const c = new C().reg('x', () => ({ id: ++n })); return [c.get('x').id, c.get('x').id]; })()` → `[1, 2]`
+5. Виклик `[getUser(1), getUser(1, { get: u => 'fake ' + u })]` → `['real /u/1', 'fake /u/1']`
+6. Виклик `(() => { const logs = []; const s = makeSvc({ db: { 1: 'a' }, log: m => logs.push(m) }); return [s.get(1), logs]; })()` → `['a', ['get 1']]`
+7. Виклик `(() => { const s = mkSpy(); notify('hi', s); notify('yo', s); return s.calls; })()` → `['hi', 'yo']`
+8. Виклик `(() => { class A { constructor(db, log) { this.db = db; this.log = log; } } return new C().reg('db', 'DB').reg('log', 'LOG').create(A); })()` → `{ db: 'DB', log: 'LOG' }`
+9. Виклик `inject(T.Log).log('x')` → `'L:x'`
+10. Виклик `(() => { const c = new C().set('mail', { send: () => 'real' }); const a = c.get('mail').send(); c.set('mail', { send: () => 'mock' }); return [a, c.get('mail').send()]; })()` → `['real', 'mock']`
+11. У DI залежності передаються об'єкту ззовні; у Service Locator об'єкт сам звертається до реєстру, приховуючи свої залежності
+12. Через конструктор, через сеттер/властивість і через параметри методу
+13. Залежності можна підмінити заглушками без зміни коду сервісу

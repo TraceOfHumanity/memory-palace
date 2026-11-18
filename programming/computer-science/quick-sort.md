@@ -132,3 +132,185 @@ Quick sort ≈ вдвічі швидший за нашу merge-версію (н�
 4. Постав pivot на позицію `i`.
 5. Рекурсивно відсортуй `[lo, i − 1]` і `[i + 1, hi]`.
 6. Складність: середній `O(n log n)`, найгірший `O(n²)`, пам'ять `O(log n)`, нестабільне.
+
+## Задачі для закріплення
+
+25 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Що поверне алгоритм для `[5, 2, 9, 1, 5, 6]`?
+
+```js
+(() => { const S = (a) => { let cmp = 0, calls = 0; const q = (lo, hi) => { calls++; if (lo >= hi) return; const p = a[hi]; let i = lo; for (let j = lo; j < hi; j++) { cmp++; if (a[j] < p) { [a[i], a[j]] = [a[j], a[i]]; i++; } } [a[i], a[hi]] = [a[hi], a[i]]; q(lo, i - 1); q(i + 1, hi); }; q(0, a.length - 1); return { a, cmp, calls }; }; return S([5, 2, 9, 1, 5, 6]).a; })()
+```
+
+**2.** Що поверне сортування порожнього та одноелементного масивів?
+
+```js
+(() => { const S = (a) => { let cmp = 0, calls = 0; const q = (lo, hi) => { calls++; if (lo >= hi) return; const p = a[hi]; let i = lo; for (let j = lo; j < hi; j++) { cmp++; if (a[j] < p) { [a[i], a[j]] = [a[j], a[i]]; i++; } } [a[i], a[hi]] = [a[hi], a[i]]; q(lo, i - 1); q(i + 1, hi); }; q(0, a.length - 1); return { a, cmp, calls }; }; return [S([]).a, S([7]).a]; })()
+```
+
+**3.** Скільки порівнянь на відсортованому `[1, 2, 3, 4, 5, 6, 7, 8]`?
+
+```js
+(() => { const S = (a) => { let cmp = 0, calls = 0; const q = (lo, hi) => { calls++; if (lo >= hi) return; const p = a[hi]; let i = lo; for (let j = lo; j < hi; j++) { cmp++; if (a[j] < p) { [a[i], a[j]] = [a[j], a[i]]; i++; } } [a[i], a[hi]] = [a[hi], a[i]]; q(lo, i - 1); q(i + 1, hi); }; q(0, a.length - 1); return { a, cmp, calls }; }; return S([1, 2, 3, 4, 5, 6, 7, 8]).cmp; })()
+```
+
+**4.** Скільки порівнянь на зворотному `[8, 7, 6, 5, 4, 3, 2, 1]`?
+
+```js
+(() => { const S = (a) => { let cmp = 0, calls = 0; const q = (lo, hi) => { calls++; if (lo >= hi) return; const p = a[hi]; let i = lo; for (let j = lo; j < hi; j++) { cmp++; if (a[j] < p) { [a[i], a[j]] = [a[j], a[i]]; i++; } } [a[i], a[hi]] = [a[hi], a[i]]; q(lo, i - 1); q(i + 1, hi); }; q(0, a.length - 1); return { a, cmp, calls }; }; return S([8, 7, 6, 5, 4, 3, 2, 1]).cmp; })()
+```
+
+**5.** Скільки порівнянь на `[5, 2, 9, 1, 5, 6]`?
+
+```js
+(() => { const S = (a) => { let cmp = 0, calls = 0; const q = (lo, hi) => { calls++; if (lo >= hi) return; const p = a[hi]; let i = lo; for (let j = lo; j < hi; j++) { cmp++; if (a[j] < p) { [a[i], a[j]] = [a[j], a[i]]; i++; } } [a[i], a[hi]] = [a[hi], a[i]]; q(lo, i - 1); q(i + 1, hi); }; q(0, a.length - 1); return { a, cmp, calls }; }; return S([5, 2, 9, 1, 5, 6]).cmp; })()
+```
+
+**6.** Що поверне сортування масиву з дублікатами `[3, 1, 3, 2, 1, 3]`?
+
+```js
+(() => { const S = (a) => { let cmp = 0, calls = 0; const q = (lo, hi) => { calls++; if (lo >= hi) return; const p = a[hi]; let i = lo; for (let j = lo; j < hi; j++) { cmp++; if (a[j] < p) { [a[i], a[j]] = [a[j], a[i]]; i++; } } [a[i], a[hi]] = [a[hi], a[i]]; q(lo, i - 1); q(i + 1, hi); }; q(0, a.length - 1); return { a, cmp, calls }; }; return S([3, 1, 3, 2, 1, 3]).a; })()
+```
+
+**7.** Що поверне сортування від'ємних і дробових?
+
+```js
+(() => { const S = (a) => { let cmp = 0, calls = 0; const q = (lo, hi) => { calls++; if (lo >= hi) return; const p = a[hi]; let i = lo; for (let j = lo; j < hi; j++) { cmp++; if (a[j] < p) { [a[i], a[j]] = [a[j], a[i]]; i++; } } [a[i], a[hi]] = [a[hi], a[i]]; q(lo, i - 1); q(i + 1, hi); }; q(0, a.length - 1); return { a, cmp, calls }; }; return S([0.5, -3, 2, -0.5, 0, -3]).a; })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**8.** Скільки порівнянь для n = 4, 8, 16, 32 на зворотному вході?
+
+```js
+(() => { const S = (a) => { let cmp = 0, calls = 0; const q = (lo, hi) => { calls++; if (lo >= hi) return; const p = a[hi]; let i = lo; for (let j = lo; j < hi; j++) { cmp++; if (a[j] < p) { [a[i], a[j]] = [a[j], a[i]]; i++; } } [a[i], a[hi]] = [a[hi], a[i]]; q(lo, i - 1); q(i + 1, hi); }; q(0, a.length - 1); return { a, cmp, calls }; }; return [4, 8, 16, 32].map(n => S(Array.from({ length: n }, (_, i) => n - i)).cmp); })()
+```
+
+**9.** Скільки порівнянь для n = 4, 8, 16, 32 на відсортованому вході?
+
+```js
+(() => { const S = (a) => { let cmp = 0, calls = 0; const q = (lo, hi) => { calls++; if (lo >= hi) return; const p = a[hi]; let i = lo; for (let j = lo; j < hi; j++) { cmp++; if (a[j] < p) { [a[i], a[j]] = [a[j], a[i]]; i++; } } [a[i], a[hi]] = [a[hi], a[i]]; q(lo, i - 1); q(i + 1, hi); }; q(0, a.length - 1); return { a, cmp, calls }; }; return [4, 8, 16, 32].map(n => S(Array.from({ length: n }, (_, i) => i)).cmp); })()
+```
+
+**10.** Чому `[10, 9, 1, 100].sort()` дає неправильний порядок?
+
+```js
+[[10, 9, 1, 100].sort(), [10, 9, 1, 100].sort((a, b) => a - b)]
+```
+
+**11.** Який масив після першого розбиття Ломуто для `[5, 2, 9, 1, 5, 6]` (опорний — останній) і де pivot?
+
+```js
+(() => { const a = [5, 2, 9, 1, 5, 6]; const p = a[a.length - 1]; let i = 0; for (let j = 0; j < a.length - 1; j++) if (a[j] < p) { [a[i], a[j]] = [a[j], a[i]]; i++; } [a[i], a[a.length - 1]] = [a[a.length - 1], a[i]]; return [a, i]; })()
+```
+
+**12.** Скільки викликів рекурсії на відсортованому `[1..8]` та на «середній» перестановці?
+
+```js
+(() => { const S = (a) => { let calls = 0; const q = (lo, hi) => { calls++; if (lo >= hi) return; const p = a[hi]; let i = lo; for (let j = lo; j < hi; j++) if (a[j] < p) { [a[i], a[j]] = [a[j], a[i]]; i++; } [a[i], a[hi]] = [a[hi], a[i]]; q(lo, i - 1); q(i + 1, hi); }; q(0, a.length - 1); return calls; }; return [S([1, 2, 3, 4, 5, 6, 7, 8]), S([4, 2, 6, 1, 3, 5, 7, 8])]; })()
+```
+
+**13.** Глибина рекурсії на відсортованому вході проти збалансованого?
+
+```js
+(() => { const depth = (a) => { let m = 0; const q = (lo, hi, d) => { m = Math.max(m, d); if (lo >= hi) return; const p = a[hi]; let i = lo; for (let j = lo; j < hi; j++) if (a[j] < p) { [a[i], a[j]] = [a[j], a[i]]; i++; } [a[i], a[hi]] = [a[hi], a[i]]; q(lo, i - 1, d + 1); q(i + 1, hi, d + 1); }; q(0, a.length - 1, 1); return m; }; return [depth([1, 2, 3, 4, 5, 6, 7]), depth([4, 2, 6, 1, 3, 5, 7])]; })()
+```
+
+**14.** Чи стабільний quick sort (Ломуто)?
+
+```js
+(() => { const a = [{ k: 1, n: 'a' }, { k: 1, n: 'b' }, { k: 0, n: 'c' }, { k: 1, n: 'd' }]; const q = (lo, hi) => { if (lo >= hi) return; const p = a[hi].k; let i = lo; for (let j = lo; j < hi; j++) if (a[j].k < p) { [a[i], a[j]] = [a[j], a[i]]; i++; } [a[i], a[hi]] = [a[hi], a[i]]; q(lo, i - 1); q(i + 1, hi); }; q(0, a.length - 1); return a.map(x => x.k + x.n); })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**15.** Що станеться з Ломуто на масиві з однакових елементів: порівняння для n = 8?
+
+```js
+(() => { const S = (a) => { let cmp = 0; const q = (lo, hi) => { if (lo >= hi) return; const p = a[hi]; let i = lo; for (let j = lo; j < hi; j++) { cmp++; if (a[j] < p) { [a[i], a[j]] = [a[j], a[i]]; i++; } } [a[i], a[hi]] = [a[hi], a[i]]; q(lo, i - 1); q(i + 1, hi); }; q(0, a.length - 1); return cmp; }; return S(Array(8).fill(1)); })()
+```
+
+**16.** Чи рятує вибір середнього як опорного на відсортованому вході (порівняння n = 16)?
+
+```js
+(() => { const S = (a, mid) => { let cmp = 0; const q = (lo, hi) => { if (lo >= hi) return; if (mid) { const m = (lo + hi) >> 1; [a[m], a[hi]] = [a[hi], a[m]]; } const p = a[hi]; let i = lo; for (let j = lo; j < hi; j++) { cmp++; if (a[j] < p) { [a[i], a[j]] = [a[j], a[i]]; i++; } } [a[i], a[hi]] = [a[hi], a[i]]; q(lo, i - 1); q(i + 1, hi); }; q(0, a.length - 1); return cmp; }; const arr = () => Array.from({ length: 16 }, (_, i) => i); return [S(arr(), false), S(arr(), true)]; })()
+```
+
+**17.** Напишіть `quickSort(arr)` (функціональний, без мутації).
+
+```js
+const quickSort = (a) => a.length < 2 ? [...a] : (() => { const [p, ...r] = a; return [...quickSort(r.filter(x => x < p)), p, ...quickSort(r.filter(x => x >= p))]; })()
+```
+
+**18.** Напишіть схему Хоара (на місці).
+
+```js
+const hoare = (a, lo = 0, hi = a.length - 1) => { if (lo >= hi) return a; const p = a[(lo + hi) >> 1]; let i = lo, j = hi; while (i <= j) { while (a[i] < p) i++; while (a[j] > p) j--; if (i <= j) { [a[i], a[j]] = [a[j], a[i]]; i++; j--; } } hoare(a, lo, j); hoare(a, i, hi); return a; }
+```
+
+**19.** Напишіть 3-way quicksort (для багатьох дублікатів) та порівняйте кількість порівнянь.
+
+```js
+const q3 = (arr) => { let cmp = 0; const q = (a) => { if (a.length < 2) return a; const p = a[a.length >> 1]; const l = [], e = [], g = []; for (const x of a) { cmp++; (x < p ? l : x > p ? g : e).push(x); } return [...q(l), ...e, ...q(g)]; }; return [q(arr), cmp]; }
+```
+
+**20.** Напишіть quickselect: k-й за величиною (від 0) без повного сортування.
+
+```js
+const qs = (arr, k) => { const a = [...arr]; let lo = 0, hi = a.length - 1; while (lo <= hi) { const p = a[hi]; let i = lo; for (let j = lo; j < hi; j++) if (a[j] < p) { [a[i], a[j]] = [a[j], a[i]]; i++; } [a[i], a[hi]] = [a[hi], a[i]]; if (i === k) return a[i]; if (i < k) lo = i + 1; else hi = i - 1; } }
+```
+
+**21.** Напишіть quick sort без рекурсії (явний стек).
+
+```js
+const iter = (a) => { const st = [[0, a.length - 1]]; while (st.length) { const [lo, hi] = st.pop(); if (lo >= hi) continue; const p = a[hi]; let i = lo; for (let j = lo; j < hi; j++) if (a[j] < p) { [a[i], a[j]] = [a[j], a[i]]; i++; } [a[i], a[hi]] = [a[hi], a[i]]; st.push([lo, i - 1], [i + 1, hi]); } return a; }
+```
+
+### Рівень 4. Практика
+
+**22.** Розбиття на три групи: `partition3(arr, p)` повертає [менші, рівні, більші].
+
+```js
+const partition3 = (a, p) => [a.filter(x => x < p), a.filter(x => x === p), a.filter(x => x > p)]
+```
+
+**23.** Визначте медіану трьох для вибору опорного: `medianOf3(a, b, c)`.
+
+```js
+const med3 = (a, b, c) => [a, b, c].sort((x, y) => x - y)[1]
+```
+
+**24.** Які складності у quick sort?
+
+**25.** Як уникнути найгіршого випадку?
+
+### Відповіді
+
+1. `[1, 2, 5, 5, 6, 9]`
+2. `[[], [7]]`
+3. `28`
+4. `28`
+5. `9`
+6. `[1, 1, 2, 3, 3, 3]`
+7. `[-3, -3, -0.5, 0, 0.5, 2]`
+8. `[6, 28, 120, 496]`
+9. `[6, 28, 120, 496]`
+10. `[[1, 10, 100, 9], [1, 9, 10, 100]]`
+11. `[[5, 2, 1, 5, 6, 9], 4]`
+12. `[15, 11]`
+13. `[7, 5]`
+14. `['0c', '1d', '1b', '1a']`
+15. `28`
+16. `[120, 38]`
+17. Виклик `[quickSort([5, 2, 9, 1, 5, 6]), quickSort([]), quickSort([3, 3, 3])]` → `[[1, 2, 5, 5, 6, 9], [], [3, 3, 3]]`
+18. Виклик `hoare([5, 2, 9, 1, 5, 6, 3, 8])` → `[1, 2, 3, 5, 5, 6, 8, 9]`
+19. Виклик `q3([2, 1, 2, 1, 2, 1, 2, 1])` → `[[1, 1, 1, 1, 2, 2, 2, 2], 12]`
+20. Виклик `[qs([7, 3, 9, 1, 5, 2], 0), qs([7, 3, 9, 1, 5, 2], 2), qs([7, 3, 9, 1, 5, 2], 5)]` → `[1, 3, 9]`
+21. Виклик `iter([5, 2, 9, 1, 5, 6, 0])` → `[0, 1, 2, 5, 5, 6, 9]`
+22. Виклик `partition3([4, 7, 4, 1, 9, 4, 2], 4)` → `[[1, 2], [4, 4, 4], [7, 9]]`
+23. Виклик `[med3(1, 5, 3), med3(9, 2, 4), med3(7, 7, 1)]` → `[3, 4, 7]`
+24. Середній випадок O(n log n), найгірший O(n²) (поганий вибір опорного, наприклад відсортований вхід із останнім опорним), пам'ять O(log n) стеку; нестабільний
+25. Вибирати опорний випадково, медіану трьох або використовувати introsort (перехід на heapsort при надмірній глибині)

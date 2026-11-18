@@ -192,3 +192,129 @@ main().catch((err) => console.error("Demo failed:", err));
 - `_flush(callback)` викликається один раз наприкінці — місце доопрацювати залишок (та сама проблема розрізаних chunk'ів, що й у Readable).
 - `callback()` у `_transform` обов'язковий: без нього потік не падає, а тихо зависає; помилку передають як `callback(err)`.
 - Transform природно вставляється в середину `pipeline()` — тому це найпоширеніший на практиці тип власного потоку.
+
+## Задачі для закріплення
+
+17 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в Node.js 24; `fs` — `node:fs`, `fsp` — `node:fs/promises`, `dir` — порожня тимчасова директорія, `path`, `os`, `stream`, `events` — відповідні `node:`-модулі.
+
+### Рівень 1. Основи
+
+**1.** Простий `Transform`: верхній регістр.
+
+```node
+(async () => { const up = new Transform({ transform(c, e, cb) { cb(null, c.toString().toUpperCase()); } }); const out = []; for await (const c of Readable.from(['ab', 'cd']).pipe(up)) out.push(c.toString()); return out; })()
+```
+
+**2.** Що станеться, якщо не викликати `callback()` у `_transform`?
+
+```node
+(async () => { let calls = 0; const t = new Transform({ transform(c, e, cb) { calls++; } }); t.write('a'); t.write('b'); t.end(); await new Promise(r => setTimeout(r, 30)); return [calls, t.writableFinished]; })()
+```
+
+**3.** Що дає `this.push` у `transform` для розбиття одного чанка на кілька?
+
+```node
+(async () => { const split = new Transform({ transform(c, e, cb) { for (const ch of c.toString()) this.push(ch); cb(); } }); const out = []; for await (const c of Readable.from(['abc']).pipe(split)) out.push(c.toString()); return out; })()
+```
+
+**4.** Що робить `flush` (завершальний чанк)?
+
+```node
+(async () => { const t = new Transform({ transform(c, e, cb) { cb(null, c); }, flush(cb) { this.push('!END'); cb(); } }); const out = []; for await (const c of Readable.from(['a']).pipe(t)) out.push(c.toString()); return out; })()
+```
+
+**5.** Лічильник рядків через Transform із flush.
+
+```node
+(async () => { let rest = '', n = 0; const t = new Transform({ transform(c, e, cb) { rest += c; const p = rest.split('\n'); rest = p.pop(); n += p.length; cb(); }, flush(cb) { if (rest) n++; cb(null, String(n)); } }); const out = []; for await (const c of Readable.from(['a\nb', '\nc\nd']).pipe(t)) out.push(c.toString()); return out; })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**6.** Transform в `objectMode`: парсинг JSON-рядків.
+
+```node
+(async () => { const t = new Transform({ readableObjectMode: true, transform(c, e, cb) { try { cb(null, JSON.parse(c)); } catch (err) { cb(err); } } }); const out = []; for await (const o of Readable.from(['{"a":1}', '{"a":2}']).pipe(t)) out.push(o.a); return out; })()
+```
+
+**7.** Що станеться, якщо `callback(err)` у `transform`?
+
+```node
+(async () => { const t = new Transform({ transform(c, e, cb) { cb(new Error('bad')); } }); const p = events.once(t, 'error'); t.write('x'); const [e] = await p; return [e.message, t.destroyed]; })()
+```
+
+**8.** `PassThrough`: передає дані без змін.
+
+```node
+(async () => { const p = new PassThrough(); p.end('same'); let s = ''; for await (const c of p) s += c; return s; })()
+```
+
+**9.** Duplex: незалежні вхід і вихід.
+
+```node
+(async () => { const log = []; const d = new Duplex({ read() { this.push('from-read'); this.push(null); }, write(c, e, cb) { log.push(c.toString()); cb(); } }); d.write('to-write'); d.end(); let out = ''; for await (const c of d) out += c; await new Promise(r => setTimeout(r, 10)); return [out, log]; })()
+```
+
+**10.** Чи залежить вихід Duplex від входу?
+
+```node
+(async () => { const d = new Duplex({ read() { this.push('A'); this.push(null); }, write(c, e, cb) { cb(); } }); d.end('ignored'); let o = ''; for await (const c of d) o += c; return o; })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**11.** Сокет TCP — приклад Duplex: ехо-сервер через `pipe`.
+
+```node
+(async () => { const net = process.getBuiltinModule('node:net'); const srv = net.createServer((s) => s.pipe(s)); await new Promise(r => srv.listen(0, r)); const c = net.connect(srv.address().port); c.end('ping'); let out = ''; for await (const d of c) out += d; srv.close(); return out; })()
+```
+
+**12.** Transform, що фільтрує рядки за підрядком.
+
+```node
+(async () => { const f = new Transform({ objectMode: true, transform(c, e, cb) { const s = c.toString(); cb(null, s.includes('err') ? s : null); } }); const out = []; for await (const c of Readable.from(['info a', 'err b', 'ok', 'err c']).pipe(f)) out.push(c.toString()); return out; })()
+```
+
+**13.** Transform: накопичення суми чисел потоку та видача у `flush`.
+
+```node
+(async () => { let sum = 0; const t = new Transform({ readableObjectMode: true, writableObjectMode: true, transform(n, e, cb) { sum += n; cb(); }, flush(cb) { cb(null, sum); } }); const out = []; for await (const s of Readable.from([1, 2, 3, 4]).pipe(t)) out.push(s); return out; })()
+```
+
+**14.** Ланцюжок двох Transform у `pipeline` із гз-стисненням та розпакуванням — чи збігаються дані?
+
+```node
+(async () => { const zlib = process.getBuiltinModule('node:zlib'); const chunks = []; await sp.pipeline(Readable.from(['hello ', 'world']), zlib.createGzip(), zlib.createGunzip(), new Writable({ write(c, e, cb) { chunks.push(c.toString()); cb(); } })); return chunks.join(''); })()
+```
+
+**15.** Transform із затримкою та backpressure: чи зберігається порядок?
+
+```node
+(async () => { const t = new Transform({ transform(c, e, cb) { setTimeout(() => cb(null, c), Math.random() * 5); } }); const out = []; for await (const c of Readable.from(['1', '2', '3', '4']).pipe(t)) out.push(c.toString()); return out; })()
+```
+
+### Рівень 4. Практика
+
+**16.** Які методи реалізують для кожного типу потоку?
+
+**17.** Чому `callback()` у `_transform` обов'язковий?
+
+### Відповіді
+
+1. `['ABCD']`
+2. `[1, false]`
+3. `['abc']`
+4. `['a!END']`
+5. `['4']`
+6. `[1, 2]`
+7. `['bad', true]`
+8. `'same'`
+9. `['from-read', ['to-write']]`
+10. `'A'`
+11. `'ping'`
+12. `['err b', 'err c']`
+13. `[10]`
+14. `'hello world'`
+15. `['1', '2', '3', '4']`
+16. Readable — `_read` (або `read` в опціях); Writable — `_write` (`_writev`, `_final`); Duplex — обидва; Transform — `_transform` (і `_flush`)
+17. Він сигналізує, що поточний чанк оброблено; без нього потік не візьме наступний чанк і зависне

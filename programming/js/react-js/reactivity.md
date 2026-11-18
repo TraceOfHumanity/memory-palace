@@ -257,3 +257,163 @@ console.log("calcs with new array:", memoCalcs, totalTree.toJSON().children);
 - `useRef` — змінне значення поза реактивністю: його зміна не рендерить; обробники замикають стан свого рендеру.
 - Похідні дані обчислюють під час рендеру або через `useMemo` з ручним масивом залежностей; `useEffect` для цього не призначений.
 - Порівняно з Vue: React переносить дисципліну на розробника (незмінність, мемоізація, залежності), а Vue — автоматизує відстеження, але має власні пастки (втрата реактивності, ідентичність проксі).
+
+## Задачі для закріплення
+
+15 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(el)` монтує елемент через `act`, `press(r)` викликає `onClick` кнопки, `text(r)` повертає текст результату; `create` і `act` беруться з `react-test-renderer`, `renderToString` — з `react-dom/server`, хуки — з `react`.
+
+### Рівень 1. Основи
+
+**1.** Знімок стану: що побачить обробник після `setN(n + 1)` двічі?
+
+```jsx
+function C() { const [n, setN] = useState(0); return <button onClick={() => { setN(n + 1); setN(n + 1); }}>{n}</button>; }
+const t = await mount(<C />);
+await press(t);
+return text(t);
+```
+
+**2.** Пакетне оновлення: скільки рендерів при трьох `setState` в одному обробнику?
+
+```jsx
+let renders = 0;
+function C() { renders++; const [a, setA] = useState(0); const [b, setB] = useState(0); const [c, setC] = useState(0); return <button onClick={() => { setA(1); setB(1); setC(1); }}>{a + b + c}</button>; }
+const t = await mount(<C />);
+const before = renders;
+await press(t);
+return [text(t), renders - before];
+```
+
+**3.** Пакетування в асинхронному колбеку (React 18+).
+
+```jsx
+let renders = 0;
+function C() { renders++; const [a, setA] = useState(0); const [b, setB] = useState(0); return <button onClick={() => setTimeout(() => { setA(1); setB(1); }, 0)}>{a + b}</button>; }
+const t = await mount(<C />);
+const before = renders;
+await press(t);
+await act(async () => { await new Promise(r => setTimeout(r, 10)); });
+return [text(t), renders - before];
+```
+
+**4.** Мутація об'єкта в стані не оновлює інтерфейс.
+
+```jsx
+function C() { const [o, setO] = useState({ v: 1 }); return <button onClick={() => { o.v = 2; }}>{o.v}</button>; }
+const t = await mount(<C />);
+await press(t);
+return text(t);
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Каскад: дитина перерендерюється разом з батьком.
+
+```jsx
+let kid = 0;
+function Kid() { kid++; return <i>k</i>; }
+function P() { const [n, setN] = useState(0); return <div><button onClick={() => setN(n + 1)}>{n}</button><Kid /></div>; }
+const t = await mount(<P />);
+await press(t); await press(t);
+return kid;
+```
+
+**6.** `React.memo` зупиняє каскад.
+
+```jsx
+let kid = 0;
+const Kid = React.memo(function Kid() { kid++; return <i>k</i>; });
+function P() { const [n, setN] = useState(0); return <div><button onClick={() => setN(n + 1)}>{n}</button><Kid /></div>; }
+const t = await mount(<P />);
+await press(t); await press(t);
+return kid;
+```
+
+**7.** Похідні дані без стану: обчислення в рендері.
+
+```jsx
+function C() { const [items, setItems] = useState([1, 2, 3]); const total = items.reduce((a, b) => a + b, 0); return <button onClick={() => setItems([...items, 4])}>{total}</button>; }
+const t = await mount(<C />);
+await press(t);
+return text(t);
+```
+
+**8.** Антипатерн: дублювання похідного значення в стані (розсинхронізація).
+
+```jsx
+function C() { const [items, setItems] = useState([1, 2]); const [total, setTotal] = useState(3); return <button onClick={() => setItems([...items, 10])}>{items.length}-{total}</button>; }
+const t = await mount(<C />);
+await press(t);
+return text(t);
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** `useRef` не реактивний: чи змінить інтерфейс?
+
+```jsx
+function C() { const r = useRef(0); return <button onClick={() => { r.current++; }}>{r.current}</button>; }
+const t = await mount(<C />);
+await press(t); await press(t);
+return text(t);
+```
+
+**10.** Однакове значення: відмова від оновлення.
+
+```jsx
+let renders = 0;
+function C() { renders++; const [n, setN] = useState(1); return <button onClick={() => setN(1)}>{n}</button>; }
+const t = await mount(<C />);
+await press(t);
+await press(t);
+return renders <= 2;
+```
+
+**11.** Скидання стану через `key`.
+
+```jsx
+function Form() { const [t, setT] = useState(''); return <button onClick={() => setT(t + 'x')}>{t}</button>; }
+function P({ id }) { return <Form key={id} />; }
+const t = await mount(<P id="1" />);
+await press(t); await press(t);
+const a = text(t);
+await act(async () => { t.update(<P id="2" />); });
+return [a, text(t)];
+```
+
+**12.** Стан зберігається, якщо компонент у тому самому місці дерева (без `key`).
+
+```jsx
+function Form() { const [t, setT] = useState(''); return <button onClick={() => setT(t + 'x')}>{t}</button>; }
+function P({ id }) { return <Form />; }
+const t = await mount(<P id="1" />);
+await press(t);
+await act(async () => { t.update(<P id="2" />); });
+return text(t);
+```
+
+### Рівень 4. Практика
+
+**13.** Чим реактивність React відрізняється від Vue?
+
+**14.** Чому в React стан потрібно оновлювати незмінно?
+
+**15.** Які інструменти оптимізують перерендери?
+
+### Відповіді
+
+1. `'1'`
+2. `['3', 1]`
+3. `['2', 1]`
+4. `'1'`
+5. `3`
+6. `1`
+7. `'10'`
+8. `'3-3'`
+9. `'0'`
+10. `true`
+11. `['xx', '']`
+12. `'x'`
+13. React перерендерює компонент (і дітей) при зміні стану й порівнює дерева; Vue відстежує залежності на рівні властивостей і оновлює лише ті ефекти/шаблони, що їх використовують
+14. React порівнює посилання (`Object.is`); мутація не змінює посилання, тож оновлення не планується або `memo` пропускає перерендер
+15. `React.memo`, `useMemo`, `useCallback`, розділення стану, підняття вмісту (children), React Compiler (автоматична мемоізація)

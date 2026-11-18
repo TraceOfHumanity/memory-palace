@@ -438,3 +438,305 @@ openssl s_client -connect example.com:443   # TLS-сесія й сертифік
 7. Знай CDN, балансувальники, проксі (§14).
 8. Підготуй відповідь про діагностику (§22, п. 28).
 9. Пройди запитання §22 уголос.
+
+## Задачі для закріплення
+
+Сорок задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Фрагменти з `return` — тіла функцій, відповідь — повернене значення. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Переведіть IPv4-адресу в 32-бітне число та назад.
+
+```js
+const toInt = (ip) => ip.split('.').reduce((a, o) => a * 256 + Number(o), 0);
+const toIp = (n) => [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+const mask = (p) => p === 0 ? 0 : (0xffffffff << (32 - p)) >>> 0;
+return [toInt('192.168.1.10'), toIp(3232235786), toInt('255.255.255.255'), toInt('0.0.0.1')];
+```
+
+**2.** Двійкове подання октетів адреси.
+
+```js
+const toInt = (ip) => ip.split('.').reduce((a, o) => a * 256 + Number(o), 0);
+const toIp = (n) => [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+const mask = (p) => p === 0 ? 0 : (0xffffffff << (32 - p)) >>> 0;
+return '10.0.1.255'.split('.').map(o => Number(o).toString(2).padStart(8, '0')).join('.');
+```
+
+**3.** Маска підмережі з префікса `/24`, `/20`, `/30`.
+
+```js
+const toInt = (ip) => ip.split('.').reduce((a, o) => a * 256 + Number(o), 0);
+const toIp = (n) => [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+const mask = (p) => p === 0 ? 0 : (0xffffffff << (32 - p)) >>> 0;
+return [24, 20, 30, 8, 0].map(p => toIp(mask(p)));
+```
+
+**4.** Адреса мережі та broadcast для `192.168.10.77/26`.
+
+```js
+const toInt = (ip) => ip.split('.').reduce((a, o) => a * 256 + Number(o), 0);
+const toIp = (n) => [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+const mask = (p) => p === 0 ? 0 : (0xffffffff << (32 - p)) >>> 0;
+const ip = toInt('192.168.10.77'), m = mask(26);
+return [toIp((ip & m) >>> 0), toIp(((ip & m) | ~m) >>> 0)];
+```
+
+**5.** Кількість хостів у підмережі `/24`, `/26`, `/30`, `/31`.
+
+```js
+const toInt = (ip) => ip.split('.').reduce((a, o) => a * 256 + Number(o), 0);
+const toIp = (n) => [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+const mask = (p) => p === 0 ? 0 : (0xffffffff << (32 - p)) >>> 0;
+return [24, 26, 30, 31].map(p => 2 ** (32 - p) - 2);
+```
+
+**6.** Перший і останній придатні адреси хостів для `10.1.2.130/25`.
+
+```js
+const toInt = (ip) => ip.split('.').reduce((a, o) => a * 256 + Number(o), 0);
+const toIp = (n) => [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+const mask = (p) => p === 0 ? 0 : (0xffffffff << (32 - p)) >>> 0;
+const ip = toInt('10.1.2.130'), m = mask(25), n = (ip & m) >>> 0, b = (n | ~m) >>> 0;
+return [toIp(n + 1), toIp(b - 1)];
+```
+
+**7.** Чи належить адреса підмережі? (`172.16.5.9` ∈ `172.16.0.0/12`)
+
+```js
+const toInt = (ip) => ip.split('.').reduce((a, o) => a * 256 + Number(o), 0);
+const toIp = (n) => [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+const mask = (p) => p === 0 ? 0 : (0xffffffff << (32 - p)) >>> 0;
+const inNet = (ip, net, p) => ((toInt(ip) & mask(p)) >>> 0) === ((toInt(net) & mask(p)) >>> 0);
+return [inNet('172.16.5.9', '172.16.0.0', 12), inNet('172.32.0.1', '172.16.0.0', 12), inNet('8.8.8.8', '0.0.0.0', 0)];
+```
+
+**8.** Приватні діапазони RFC 1918: класифікуйте адреси.
+
+```js
+const toInt = (ip) => ip.split('.').reduce((a, o) => a * 256 + Number(o), 0);
+const toIp = (n) => [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+const mask = (p) => p === 0 ? 0 : (0xffffffff << (32 - p)) >>> 0;
+const priv = (ip) => { const n = toInt(ip); return [['10.0.0.0', 8], ['172.16.0.0', 12], ['192.168.0.0', 16]].some(([a, p]) => ((n & mask(p)) >>> 0) === toInt(a)); };
+return ['10.5.5.5', '172.20.1.1', '172.32.1.1', '192.168.100.2', '8.8.8.8', '100.64.0.1'].map(priv);
+```
+
+**9.** Спеціальні адреси: loopback, link-local, multicast.
+
+```js
+const toInt = (ip) => ip.split('.').reduce((a, o) => a * 256 + Number(o), 0);
+const toIp = (n) => [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+const mask = (p) => p === 0 ? 0 : (0xffffffff << (32 - p)) >>> 0;
+const kind = (ip) => { const f = Number(ip.split('.')[0]), s = Number(ip.split('.')[1]); if (f === 127) return 'loopback'; if (f === 169 && s === 254) return 'link-local'; if (f >= 224 && f <= 239) return 'multicast'; if (ip === '255.255.255.255') return 'broadcast'; return 'other'; };
+return ['127.0.0.1', '169.254.3.4', '224.0.0.251', '255.255.255.255', '1.1.1.1'].map(kind);
+```
+
+**10.** Скільки адрес у блоках `/8`, `/16`, `/24`, а у IPv6 `/64`?
+
+```js
+const toInt = (ip) => ip.split('.').reduce((a, o) => a * 256 + Number(o), 0);
+const toIp = (n) => [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+const mask = (p) => p === 0 ? 0 : (0xffffffff << (32 - p)) >>> 0;
+return [2 ** 24, 2 ** 16, 2 ** 8, 2n ** 64n];
+```
+
+### Рівень 2. Деталі й поведінка
+
+**11.** Формат IPv6: скорочення нулів (`node:net`) та перевірка типу адреси.
+
+```js
+(() => { const net = process.getBuiltinModule('node:net'); return [net.isIP('192.168.0.1'), net.isIP('::1'), net.isIP('2001:db8::1'), net.isIP('999.1.1.1'), net.isIPv4('10.0.0.1'), net.isIPv6('10.0.0.1')]; })()
+```
+
+**12.** Розгорніть `2001:db8::1` до повного запису.
+
+```js
+(() => { const parts = '2001:db8::1'.split('::'); const l = parts[0].split(':').filter(Boolean), r = parts[1].split(':').filter(Boolean); const mid = Array(8 - l.length - r.length).fill('0'); return [...l, ...mid, ...r].map(x => x.padStart(4, '0')).join(':'); })()
+```
+
+**13.** MAC-адреса: нормалізація та перевірка біта multicast.
+
+```js
+(() => { const mac = 'A4-83-E7-0F-1B-C2'; const bytes = mac.split(/[-:]/).map(h => parseInt(h, 16)); return [bytes.map(b => b.toString(16).padStart(2, '0')).join(':'), (bytes[0] & 1) === 1, (bytes[0] & 2) === 2]; })()
+```
+
+**14.** Порт: діапазони (системні, зареєстровані, динамічні).
+
+```js
+[22, 80, 443, 3306, 8080, 49152, 65535].map(p => p < 1024 ? 'system' : p < 49152 ? 'registered' : 'dynamic')
+```
+
+**15.** Скільки портів у 16-бітному просторі?
+
+```js
+2 ** 16
+```
+
+**16.** Затримка: час проходження сигналу у волокні на 3000 км (≈ 200 000 км/с) та RTT.
+
+```js
+(() => { const one = 3000 / 200000 * 1000; return [one, one * 2]; })()
+```
+
+**17.** Час передачі файлу 100 МБ на каналі 100 Мбіт/с (без накладних витрат).
+
+```js
+(100 * 8) / 100
+```
+
+**18.** Добуток «смуга × затримка» для 1 Гбіт/с і RTT 20 мс (байтів у польоті).
+
+```js
+(1e9 * 0.02) / 8
+```
+
+**19.** Скільки сегментів TCP (MSS 1460 байтів) потрібно для 1 МБ?
+
+```js
+Math.ceil(1_000_000 / 1460)
+```
+
+**20.** Фрагментація: MTU 1500 та IP-заголовок 20 байтів — розмір корисного навантаження і скільки фрагментів для 4000 байтів.
+
+```js
+(() => { const payload = 1500 - 20; const per = Math.floor(payload / 8) * 8; return [payload, per, Math.ceil(4000 / per)]; })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**21.** Контрольна сума Інтернету (RFC 1071) для коротких даних.
+
+```js
+(() => { const data = [0x4500, 0x0073, 0x0000, 0x4000, 0x4011, 0x0000, 0xc0a8, 0x0001, 0xc0a8, 0x00c7]; let s = data.reduce((a, b) => a + b, 0); while (s > 0xffff) s = (s & 0xffff) + (s >>> 16); return (~s & 0xffff).toString(16); })()
+```
+
+**22.** TTL: скільки маршрутизаторів пройде пакет із TTL 64, якщо кожен зменшує на 1 і шлях має 12 вузлів?
+
+```js
+[64 - 12, 12 <= 64]
+```
+
+**23.** Типові записи DNS та їх призначення (мапа).
+
+```js
+({ A: 'IPv4', AAAA: 'IPv6', CNAME: 'псевдонім', MX: 'пошта', NS: 'сервери імен', TXT: 'текст', PTR: 'зворотний запис' })
+```
+
+**24.** Зворотний DNS-запис для IPv4 `192.0.2.5`.
+
+```js
+'192.0.2.5'.split('.').reverse().join('.') + '.in-addr.arpa'
+```
+
+**25.** Розбір доменного імені: TLD, домен другого рівня й піддомен.
+
+```js
+(() => { const p = 'api.dev.example.com'.split('.'); return [p.at(-1), p.at(-2), p.slice(0, -2).join('.'), p.length]; })()
+```
+
+**26.** Довжина мітки DNS та імені: обмеження (63 і 253 символи).
+
+```js
+[63, 253, 'a'.repeat(63).length <= 63, ('a'.repeat(64)).length <= 63]
+```
+
+**27.** Локальний DNS-резолвінг `localhost` через `dns.lookup`.
+
+```js
+(async () => { const dns = process.getBuiltinModule('node:dns').promises; const r = await dns.lookup('localhost', { all: true }); return r.map(x => x.address).sort(); })()
+```
+
+**28.** TCP-рукостискання: сервер приймає з'єднання, клієнт надсилає дані (локально).
+
+```js
+(async () => { const net = process.getBuiltinModule('node:net'); const log = []; const srv = net.createServer(s => { log.push('server: connected'); s.on('data', d => { log.push('server got ' + d); s.end('pong'); }); }); await new Promise(r => srv.listen(0, '127.0.0.1', r)); const c = net.connect(srv.address().port, '127.0.0.1'); await new Promise(r => c.on('connect', r)); log.push('client: connected'); c.write('ping'); let got = ''; for await (const d of c) got += d; srv.close(); log.push('client got ' + got); return log; })()
+```
+
+**29.** UDP-датаграма: відправлення й отримання без з'єднання.
+
+```js
+(async () => { const dgram = process.getBuiltinModule('node:dgram'); const srv = dgram.createSocket('udp4'); await new Promise(r => srv.bind(0, '127.0.0.1', r)); const got = new Promise(r => srv.on('message', (m, i) => r([m.toString(), i.address]))); const cl = dgram.createSocket('udp4'); cl.send('hello', srv.address().port, '127.0.0.1'); const r = await got; cl.close(); srv.close(); return r; })()
+```
+
+**30.** Порт 0: ОС призначає вільний ефемерний порт.
+
+```js
+(async () => { const net = process.getBuiltinModule('node:net'); const s = net.createServer(); await new Promise(r => s.listen(0, '127.0.0.1', r)); const p = s.address().port; s.close(); return [p >= 1024, p <= 65535]; })()
+```
+
+### Рівень 4. Практика
+
+**31.** Зайнятий порт: помилка `EADDRINUSE`.
+
+```js
+(async () => { const net = process.getBuiltinModule('node:net'); const a = net.createServer(); await new Promise(r => a.listen(0, '127.0.0.1', r)); const b = net.createServer(); try { await new Promise((res, rej) => { b.on('error', rej); b.listen(a.address().port, '127.0.0.1', res); }); } catch (e) { a.close(); return e.code; } })()
+```
+
+**32.** Відмова з'єднання на закритому порту: `ECONNREFUSED`.
+
+```js
+(async () => { const net = process.getBuiltinModule('node:net'); const s = net.createServer(); await new Promise(r => s.listen(0, '127.0.0.1', r)); const p = s.address().port; s.close(); await new Promise(r => setTimeout(r, 20)); try { await new Promise((res, rej) => { const c = net.connect(p, '127.0.0.1', res); c.on('error', rej); }); } catch (e) { return e.code; } })()
+```
+
+**33.** Інтерфейси хоста: чи є loopback з адресою `127.0.0.1`?
+
+```js
+(async () => { const ifs = process.getBuiltinModule('node:os').networkInterfaces(); const all = Object.values(ifs).flat(); return all.some(i => i.address === '127.0.0.1' && i.internal); })()
+```
+
+**34.** Скільки рівнів у моделі OSI і TCP/IP?
+
+**35.** Чим TCP відрізняється від UDP?
+
+**36.** Що таке NAT?
+
+**37.** Для чого DHCP?
+
+**38.** Що робить ARP?
+
+**39.** Що таке BGP?
+
+**40.** Скільки кроків у TCP-рукостисканні й яких?
+
+### Відповіді
+
+1. `[3232235786, '192.168.1.10', 4294967295, 1]`
+2. `'00001010.00000000.00000001.11111111'`
+3. `['255.255.255.0', '255.255.240.0', '255.255.255.252', '255.0.0.0', '0.0.0.0']`
+4. `['192.168.10.64', '192.168.10.127']`
+5. `[254, 62, 2, 0]`
+6. `['10.1.2.129', '10.1.2.254']`
+7. `[true, false, true]`
+8. `[true, true, false, true, false, false]`
+9. `['loopback', 'link-local', 'multicast', 'broadcast', 'other']`
+10. `[16777216, 65536, 256, 18446744073709551616n]`
+11. `[4, 6, 6, 0, true, false]`
+12. `'2001:0db8:0000:0000:0000:0000:0000:0001'`
+13. `['a4:83:e7:0f:1b:c2', false, false]`
+14. `['system', 'system', 'system', 'registered', 'registered', 'dynamic', 'dynamic']`
+15. `65536`
+16. `[15, 30]`
+17. `8`
+18. `2500000`
+19. `685`
+20. `[1480, 1480, 3]`
+21. `'b861'`
+22. `[52, true]`
+23. `{ A: 'IPv4', AAAA: 'IPv6', CNAME: 'псевдонім', MX: 'пошта', NS: 'сервери імен', TXT: 'текст', PTR: 'зворотний запис' }`
+24. `'5.2.0.192.in-addr.arpa'`
+25. `['com', 'example', 'api.dev', 4]`
+26. `[63, 253, true, false]`
+27. `['127.0.0.1', '::1']`
+28. `['server: connected', 'client: connected', 'server got ping', 'client got pong']`
+29. `['hello', '127.0.0.1']`
+30. `[true, true]`
+31. `'EADDRINUSE'`
+32. `'ECONNREFUSED'`
+33. `true`
+34. OSI має 7 рівнів (фізичний, канальний, мережевий, транспортний, сеансовий, представлення, прикладний); модель TCP/IP — 4 (канальний, інтернет, транспортний, прикладний)
+35. TCP — з'єднання, гарантована доставка, порядок, контроль потоку й перевантаження; UDP — без з'єднання й гарантій, малі накладні витрати (DNS, відео, ігри, QUIC)
+36. Підміна приватних адрес і портів внутрішньої мережі на публічну адресу роутера; дозволяє багатьом пристроям ділити одну зовнішню IPv4-адресу
+37. Автоматично видає пристрою IP-адресу, маску, шлюз і DNS-сервери на певний термін оренди
+38. Визначає MAC-адресу пристрою в локальній мережі за його IPv4-адресою широкомовним запитом
+39. Протокол маршрутизації між автономними системами; визначає, якими шляхами префікси IP-адрес досяжні в глобальному інтернеті
+40. Три: SYN → SYN-ACK → ACK; завершення з'єднання зазвичай чотирма сегментами (FIN/ACK у кожному напрямку)

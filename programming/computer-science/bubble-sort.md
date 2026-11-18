@@ -109,3 +109,185 @@ function bubbleSort(a) {
    3. Якщо `swapped == false` — **зупинись** (відсортовано).
 2. Результат — відсортований масив.
 3. Складність: час `O(n²)` (у кращому `O(n)`), пам'ять `O(1)`, стабільне.
+
+## Задачі для закріплення
+
+25 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Що поверне алгоритм для `[5, 2, 9, 1, 5, 6]`?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; const n = a.length; for (let i = 0; i < n - 1; i++) { let swapped = false; for (let j = 0; j < n - 1 - i; j++) { cmp++; if (a[j] > a[j + 1]) { [a[j], a[j + 1]] = [a[j + 1], a[j]]; sw++; swapped = true; } } if (!swapped) break; } return { a, cmp, sw }; }; return S([5, 2, 9, 1, 5, 6]).a; })()
+```
+
+**2.** Що поверне сортування порожнього та одноелементного масивів?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; const n = a.length; for (let i = 0; i < n - 1; i++) { let swapped = false; for (let j = 0; j < n - 1 - i; j++) { cmp++; if (a[j] > a[j + 1]) { [a[j], a[j + 1]] = [a[j + 1], a[j]]; sw++; swapped = true; } } if (!swapped) break; } return { a, cmp, sw }; }; return [S([]).a, S([7]).a]; })()
+```
+
+**3.** Скільки порівнянь і обмінів/записів на вже відсортованому `[1, 2, 3, 4, 5]`?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; const n = a.length; for (let i = 0; i < n - 1; i++) { let swapped = false; for (let j = 0; j < n - 1 - i; j++) { cmp++; if (a[j] > a[j + 1]) { [a[j], a[j + 1]] = [a[j + 1], a[j]]; sw++; swapped = true; } } if (!swapped) break; } return { a, cmp, sw }; }; const r = S([1, 2, 3, 4, 5]); return [r.cmp, r.sw]; })()
+```
+
+**4.** Скільки порівнянь і обмінів/записів на зворотному `[5, 4, 3, 2, 1]`?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; const n = a.length; for (let i = 0; i < n - 1; i++) { let swapped = false; for (let j = 0; j < n - 1 - i; j++) { cmp++; if (a[j] > a[j + 1]) { [a[j], a[j + 1]] = [a[j + 1], a[j]]; sw++; swapped = true; } } if (!swapped) break; } return { a, cmp, sw }; }; const r = S([5, 4, 3, 2, 1]); return [r.cmp, r.sw]; })()
+```
+
+**5.** А на масиві з однакових елементів `[3, 3, 3, 3]`?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; const n = a.length; for (let i = 0; i < n - 1; i++) { let swapped = false; for (let j = 0; j < n - 1 - i; j++) { cmp++; if (a[j] > a[j + 1]) { [a[j], a[j + 1]] = [a[j + 1], a[j]]; sw++; swapped = true; } } if (!swapped) break; } return { a, cmp, sw }; }; const r = S([3, 3, 3, 3]); return [r.a, r.cmp, r.sw]; })()
+```
+
+**6.** Скільки порівнянь і обмінів на `[5, 2, 9, 1, 5, 6]`?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; const n = a.length; for (let i = 0; i < n - 1; i++) { let swapped = false; for (let j = 0; j < n - 1 - i; j++) { cmp++; if (a[j] > a[j + 1]) { [a[j], a[j + 1]] = [a[j + 1], a[j]]; sw++; swapped = true; } } if (!swapped) break; } return { a, cmp, sw }; }; const r = S([5, 2, 9, 1, 5, 6]); return [r.cmp, r.sw]; })()
+```
+
+**7.** Чи змінює алгоритм вхідний масив?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; const n = a.length; for (let i = 0; i < n - 1; i++) { let swapped = false; for (let j = 0; j < n - 1 - i; j++) { cmp++; if (a[j] > a[j + 1]) { [a[j], a[j + 1]] = [a[j + 1], a[j]]; sw++; swapped = true; } } if (!swapped) break; } return { a, cmp, sw }; }; const a = [3, 1, 2]; const r = S(a); return [a, r.a === a]; })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**8.** Що поверне сортування від'ємних і дробових чисел?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; const n = a.length; for (let i = 0; i < n - 1; i++) { let swapped = false; for (let j = 0; j < n - 1 - i; j++) { cmp++; if (a[j] > a[j + 1]) { [a[j], a[j + 1]] = [a[j + 1], a[j]]; sw++; swapped = true; } } if (!swapped) break; } return { a, cmp, sw }; }; return S([0.5, -3, 2, -0.5, 0, -3]).a; })()
+```
+
+**9.** Сортування рядків (лексикографічно)?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; const n = a.length; for (let i = 0; i < n - 1; i++) { let swapped = false; for (let j = 0; j < n - 1 - i; j++) { cmp++; if (a[j] > a[j + 1]) { [a[j], a[j + 1]] = [a[j + 1], a[j]]; sw++; swapped = true; } } if (!swapped) break; } return { a, cmp, sw }; }; return S(['pear', 'apple', 'fig', 'banana']).a; })()
+```
+
+**10.** Яка проблема числового сортування за допомогою `Array.prototype.sort()` без компаратора?
+
+```js
+[[10, 9, 1, 100].sort(), [10, 9, 1, 100].sort((a, b) => a - b)]
+```
+
+**11.** Скільки порівнянь для n = 4, 8, 16 зворотно відсортованих масивів?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; const n = a.length; for (let i = 0; i < n - 1; i++) { let swapped = false; for (let j = 0; j < n - 1 - i; j++) { cmp++; if (a[j] > a[j + 1]) { [a[j], a[j + 1]] = [a[j + 1], a[j]]; sw++; swapped = true; } } if (!swapped) break; } return { a, cmp, sw }; }; return [4, 8, 16].map(n => S(Array.from({ length: n }, (_, i) => n - i)).cmp); })()
+```
+
+**12.** Скільки порівнянь на відсортованому масиві для n = 4, 8, 16?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; const n = a.length; for (let i = 0; i < n - 1; i++) { let swapped = false; for (let j = 0; j < n - 1 - i; j++) { cmp++; if (a[j] > a[j + 1]) { [a[j], a[j + 1]] = [a[j + 1], a[j]]; sw++; swapped = true; } } if (!swapped) break; } return { a, cmp, sw }; }; return [4, 8, 16].map(n => S(Array.from({ length: n }, (_, i) => i)).cmp); })()
+```
+
+**13.** Який стан масиву після кожного проходу для `[5, 2, 9, 1, 5, 6]`?
+
+```js
+(() => { const a = [5, 2, 9, 1, 5, 6]; const s = []; for (let i = 0; i < a.length - 1; i++) { for (let j = 0; j < a.length - 1 - i; j++) if (a[j] > a[j + 1]) [a[j], a[j + 1]] = [a[j + 1], a[j]]; s.push(a.join(' ')); } return s; })()
+```
+
+**14.** Який елемент гарантовано стає на місце після першого проходу?
+
+```js
+(() => { const a = [3, 9, 1, 7, 2]; for (let j = 0; j < a.length - 1; j++) if (a[j] > a[j + 1]) [a[j], a[j + 1]] = [a[j + 1], a[j]]; return [a, a.at(-1) === Math.max(...a)]; })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**15.** Скільки проходів потрібно без прапорця `swapped` та з ним для майже відсортованого `[1, 2, 4, 3, 5]`?
+
+```js
+(() => { const run = (a, early) => { let p = 0; for (let i = 0; i < a.length - 1; i++) { let sw = false; p++; for (let j = 0; j < a.length - 1 - i; j++) if (a[j] > a[j + 1]) { [a[j], a[j + 1]] = [a[j + 1], a[j]]; sw = true; } if (early && !sw) break; } return p; }; return [run([1, 2, 4, 3, 5], false), run([1, 2, 4, 3, 5], true)]; })()
+```
+
+**16.** Чи стабільний bubble sort?
+
+```js
+(() => { const a = [{ k: 2, n: 'a' }, { k: 1, n: 'b' }, { k: 2, n: 'c' }, { k: 1, n: 'd' }]; for (let i = 0; i < a.length - 1; i++) for (let j = 0; j < a.length - 1 - i; j++) if (a[j].k > a[j + 1].k) [a[j], a[j + 1]] = [a[j + 1], a[j]]; return a.map(x => x.k + x.n); })()
+```
+
+**17.** Кількість обмінів дорівнює кількості інверсій: порахуйте інверсії в `[3, 1, 2, 5, 4]`.
+
+```js
+(() => { const a = [3, 1, 2, 5, 4]; let inv = 0; for (let i = 0; i < a.length; i++) for (let j = i + 1; j < a.length; j++) if (a[i] > a[j]) inv++; return inv; })()
+```
+
+**18.** Напишіть `bubbleSort(arr, cmp)` із компаратором, що не мутує вхід.
+
+```js
+const bubbleSort = (arr, cmp = (a, b) => a - b) => { const a = [...arr]; for (let i = 0; i < a.length - 1; i++) { let s = false; for (let j = 0; j < a.length - 1 - i; j++) if (cmp(a[j], a[j + 1]) > 0) { [a[j], a[j + 1]] = [a[j + 1], a[j]]; s = true; } if (!s) break; } return a; }
+```
+
+**19.** Напишіть варіант «cocktail shaker» (двосторонній).
+
+```js
+const cocktail = (a) => { a = [...a]; let lo = 0, hi = a.length - 1, sw = true; while (sw) { sw = false; for (let i = lo; i < hi; i++) if (a[i] > a[i + 1]) { [a[i], a[i + 1]] = [a[i + 1], a[i]]; sw = true; } hi--; if (!sw) break; sw = false; for (let i = hi; i > lo; i--) if (a[i - 1] > a[i]) { [a[i - 1], a[i]] = [a[i], a[i - 1]]; sw = true; } lo++; } return a; }
+```
+
+**20.** Напишіть сортування за спаданням без компаратора (змінивши умову).
+
+```js
+const desc = (arr) => { const a = [...arr]; for (let i = 0; i < a.length - 1; i++) for (let j = 0; j < a.length - 1 - i; j++) if (a[j] < a[j + 1]) [a[j], a[j + 1]] = [a[j + 1], a[j]]; return a; }
+```
+
+**21.** Напишіть сортування об'єктів за полем `age`, а за рівності — за `name`.
+
+```js
+const byAgeName = (arr) => { const a = [...arr]; const gt = (x, y) => x.age > y.age || (x.age === y.age && x.name > y.name); for (let i = 0; i < a.length - 1; i++) for (let j = 0; j < a.length - 1 - i; j++) if (gt(a[j], a[j + 1])) [a[j], a[j + 1]] = [a[j + 1], a[j]]; return a; }
+```
+
+### Рівень 4. Практика
+
+**22.** Напишіть `isSorted(arr)` та перевірте на результатах.
+
+```js
+const isSorted = (a) => a.every((x, i) => i === 0 || a[i - 1] <= x)
+```
+
+**23.** Напишіть функцію, що повертає кількість проходів до відсортованості.
+
+```js
+const passes = (arr) => { const a = [...arr]; let p = 0, s = true; while (s) { s = false; for (let j = 0; j < a.length - 1; j++) if (a[j] > a[j + 1]) { [a[j], a[j + 1]] = [a[j + 1], a[j]]; s = true; } if (s) p++; } return p; }
+```
+
+**24.** Яка складність bubble sort у найгіршому, середньому та найкращому випадках?
+
+**25.** Коли bubble sort доречний?
+
+### Відповіді
+
+1. `[1, 2, 5, 5, 6, 9]`
+2. `[[], [7]]`
+3. `[4, 0]`
+4. `[10, 10]`
+5. `[[3, 3, 3, 3], 3, 0]`
+6. `[14, 6]`
+7. `[[1, 2, 3], true]`
+8. `[-3, -3, -0.5, 0, 0.5, 2]`
+9. `['apple', 'banana', 'fig', 'pear']`
+10. `[[1, 10, 100, 9], [1, 9, 10, 100]]`
+11. `[6, 28, 120]`
+12. `[3, 7, 15]`
+13. `['2 5 1 5 6 9', '2 1 5 5 6 9', '1 2 5 5 6 9', '1 2 5 5 6 9', '1 2 5 5 6 9']`
+14. `[[3, 1, 7, 2, 9], true]`
+15. `[4, 2]`
+16. `['1b', '1d', '2a', '2c']`
+17. `3`
+18. Виклик `(() => { const x = [3, 1, 2]; return [bubbleSort(x), bubbleSort(x, (a, b) => b - a), x]; })()` → `[[1, 2, 3], [3, 2, 1], [3, 1, 2]]`
+19. Виклик `cocktail([5, 1, 4, 2, 8, 0, 2])` → `[0, 1, 2, 2, 4, 5, 8]`
+20. Виклик `desc([4, 9, 1, 7])` → `[9, 7, 4, 1]`
+21. Виклик `byAgeName([{ name: 'b', age: 20 }, { name: 'a', age: 20 }, { name: 'c', age: 18 }]).map(x => x.name + x.age)` → `['c18', 'a20', 'b20']`
+22. Виклик `[isSorted([1, 2, 2, 3]), isSorted([1, 3, 2]), isSorted([]) ]` → `[true, false, true]`
+23. Виклик `[passes([1, 2, 3]), passes([2, 1, 3]), passes([3, 2, 1]), passes([5, 4, 3, 2, 1])]` → `[0, 1, 2, 4]`
+24. Найгірший і середній — O(n²); найкращий (з прапорцем `swapped`, відсортований вхід) — O(n); пам'ять O(1)
+25. Для навчання та дуже малих/майже відсортованих масивів; у продакшені використовують вбудований `sort` (TimSort) чи інші O(n log n) алгоритми

@@ -162,3 +162,418 @@ export const usersSeed: User[] = [
 4. Склади email з імені, прізвища й індексу — унікально.
 5. Додай фіксованого john першим, потім 99 згенерованих.
 6. Поклади в `Map` за `id`.
+
+## Задачі для закріплення
+
+26 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Перші п'ять значень `createRandom(42)`.
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const r = createRandom(42);
+return [r(), r(), r(), r(), r()];
+})()
+```
+
+**2.** Чи однакова послідовність для однакового seed?
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const a = createRandom(7), b = createRandom(7);
+return [a() === b(), a() === b(), a() === b()];
+})()
+```
+
+**3.** Чи різна послідовність для різних seed?
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const a = createRandom(1), b = createRandom(2);
+return [a() === b(), a(), b()];
+})()
+```
+
+**4.** Діапазон значень: чи завжди `[0, 1)` (на 100 000 викликів)?
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const r = createRandom(1);
+let lo = 1, hi = 0;
+for (let i = 0; i < 100000; i++) { const v = r(); if (v < lo) lo = v; if (v > hi) hi = v; }
+return [lo >= 0, hi < 1];
+})()
+```
+
+**5.** Рівномірність: розподіл 100 000 значень по 10 кошиках.
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const r = createRandom(1);
+const b = Array(10).fill(0);
+for (let i = 0; i < 100000; i++) b[Math.floor(r() * 10)]++;
+return b;
+})()
+```
+
+**6.** Перший крок вручну для seed 42: `(seed + 0x6d2b79f5) | 0`.
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+return [(42 + 0x6d2b79f5) | 0, 0x6d2b79f5];
+})()
+```
+
+**7.** Чому `| 0`? Порівняйте з додаванням без обрізання для великого seed.
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const s = 2147483647;
+return [s + 0x6d2b79f5, (s + 0x6d2b79f5) | 0];
+})()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**8.** `Math.imul` проти `*` для великих множників.
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const a = 1831575625, b = 1831565855;
+return [a * b, Math.imul(a, b), Number.isSafeInteger(a * b)];
+})()
+```
+
+**9.** `>>> 0` перетворює знакове число на беззнакове.
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+return [-1713246340 >>> 0, -1 >>> 0, (-1713246340 >>> 0) / 4294967296];
+})()
+```
+
+**10.** Ділення на `4294967296` — чому результат ніколи не дорівнює 1?
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+return [4294967295 / 4294967296, 2 ** 32];
+})()
+```
+
+**11.** `randomInt(min, max)` включно з межами: перевірте всі значення для діапазону 1..4.
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const r = createRandom(3);
+const randomInt = (a, b) => a + Math.floor(r() * (b - a + 1));
+const seen = new Set();
+for (let i = 0; i < 1000; i++) seen.add(randomInt(1, 4));
+return [...seen].sort();
+})()
+```
+
+**12.** Помилка «off by one»: `Math.round` замість `Math.floor` змінює розподіл.
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const r = createRandom(5);
+const cnt = { 0: 0, 1: 0, 2: 0 };
+for (let i = 0; i < 30000; i++) cnt[Math.round(r() * 2)]++;
+return [cnt[1] > cnt[0] * 1.5, cnt];
+})()
+```
+
+**13.** `pick`: вибір елемента масиву та індекс для значення 0.4483 і 16 елементів.
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+return [Math.floor(0.4483 * 16), Math.floor(0.8525 * 16), Math.floor(0.9999 * 16)];
+})()
+```
+
+**14.** Вік `randomInt(18, 80)` для `random() = 0.5266`.
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+return 18 + Math.floor(0.5266 * (80 - 18 + 1));
+})()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**15.** Спільний `random` на модуль: додатковий виклик зсуває всі наступні значення.
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const a = createRandom(42), b = createRandom(42);
+a();
+return [a() === b(), b(), a()];
+})()
+```
+
+**16.** Скільки різних значень у 100 000 викликів (перевірка періоду / повторів)?
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const r = createRandom(1);
+const s = new Set();
+for (let i = 0; i < 100000; i++) s.add(r());
+return s.size;
+})()
+```
+
+**17.** Генерація пароля з 62 символів і `Array.from`.
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const r = createRandom(42);
+const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const pick = (a) => a[Math.floor(r() * a.length)];
+const pw = () => Array.from({ length: 12 }, () => pick([...chars])).join('');
+const p = pw();
+return [chars.length, p.length, /^[a-zA-Z0-9]{12}$/.test(p)];
+})()
+```
+
+**18.** Один виклик `pick` робить один виклик `random()`: лічильник викликів.
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+let calls = 0;
+const base = createRandom(42);
+const r = () => (calls++, base());
+const pick = (a) => a[Math.floor(r() * a.length)];
+for (let i = 0; i < 12; i++) pick('abcdef');
+return calls;
+})()
+```
+
+**19.** `randomInt(createdAt, END)` дає `updatedAt >= createdAt`: перевірка на 1000 пар.
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const r = createRandom(9);
+const randomInt = (a, b) => a + Math.floor(r() * (b - a + 1));
+let bad = 0;
+for (let i = 0; i < 1000; i++) { const c = randomInt(0, 1.7e12); const u = randomInt(c, 1.7e12); if (u < c) bad++; }
+return bad;
+})()
+```
+
+**20.** Дати від 0 до `END`: першим значенням для seed 42 і `END = 1.8e12`.
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const r = createRandom(42);
+const randomInt = (a, b) => a + Math.floor(r() * (b - a + 1));
+r();
+r();
+const t = randomInt(0, 1.8e12);
+return [t, new Date(t).toISOString()];
+})()
+```
+
+**21.** Унікальність email: `ім'я.прізвище+index@example.com` в нижньому регістрі.
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const mail = (f, l, i) => `${f}.${l}${i}@example.com`.toLowerCase();
+return [mail('Chloe', 'Melnyk', 2), mail('Henry', 'Melnyk', 3), mail('Chloe', 'Melnyk', 2) === mail('Chloe', 'Melnyk', 2)];
+})()
+```
+
+### Рівень 4. Практика
+
+**22.** `Array.from({ length: 99 }, (_, i) => i + 2)`: перший і останній id.
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const ids = Array.from({ length: 99 }, (_, i) => i + 2);
+return [ids.length, ids[0], ids.at(-1), [1, ...ids].length];
+})()
+```
+
+**23.** Ключі `Map` за `id` та швидкий доступ.
+
+```js
+(() => {
+const createRandom = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const users = [{ id: '1', n: 'john' }, { id: '2', n: 'ann' }];
+const m = new Map(users.map(u => [u.id, u]));
+return [m.size, m.get('2').n, m.has('3')];
+})()
+```
+
+**24.** Що таке PRNG і чому seed робить його детермінованим?
+
+**25.** Чому такий генератор не можна використовувати для паролів і безпеки?
+
+**26.** Чому `END_DATE = Date.now()` порушує повну детермінованість?
+
+### Відповіді
+
+1. `[0.6011037519201636, 0.44829055899754167, 0.8524657934904099, 0.6697340414393693, 0.17481389874592423]`
+2. `[true, true, true]`
+3. `[false, 0.002735721180215478, 0.32499843230471015]`
+4. `[true, true]`
+5. `[10044, 10036, 10001, 10116, 9906, 10052, 10076, 9896, 10006, 9867]`
+6. `[1831565855, 1831565813]`
+7. `[3979049460, -315917836]`
+8. `[3354651375600284000, 65942231, false]`
+9. `[2581720956, 4294967295, 0.6011037519201636]`
+10. `[0.9999999997671694, 4294967296]`
+11. `[1, 2, 3, 4]`
+12. `[true, { '0': 7415, '1': 15111, '2': 7474 }]`
+13. `[7, 13, 15]`
+14. `51`
+15. `[false, 0.44829055899754167, 0.8524657934904099]`
+16. `99999`
+17. `[62, 12, true]`
+18. `12`
+19. `0`
+20. `[1534438428283, '2018-08-16T16:53:48.283Z']`
+21. `['chloe.melnyk2@example.com', 'henry.melnyk3@example.com', true]`
+22. `[99, 2, 100, 100]`
+23. `[2, 'ann', false]`
+24. Псевдовипадковий генератор обчислює наступне число з попереднього стану за формулою; той самий початковий seed завжди дає ту саму послідовність, що корисно для відтворюваних тестових даних
+25. Послідовність передбачувана за seed або кількома виходами; для безпеки потрібні криптографічні джерела (`crypto.randomBytes`, `crypto.getRandomValues`)
+26. Діапазон дат залежить від моменту запуску, тож ті самі `random()` дають різні `createdAt`/`updatedAt`; для стабільності слід зафіксувати кінцеву дату

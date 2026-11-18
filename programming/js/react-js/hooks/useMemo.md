@@ -76,3 +76,129 @@ React Compiler (19) автоматично розставляє мемоізац
 3. Так → `useMemo(() => ..., [усі реактивні значення])`.
 4. Перевір, що залежності примітиви або стабільні посилання.
 5. Переконайся Profiler'ом, що це справді допомагає.
+
+## Задачі для закріплення
+
+11 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(el)` монтує елемент через `act`, `press(r)` викликає `onClick` кнопки, `text(r)` повертає текст результату; `create` і `act` беруться з `react-test-renderer`, `renderToString` — з `react-dom/server`, хуки — з `react`.
+
+### Рівень 1. Основи
+
+**1.** Скільки разів обчислюється значення з `useMemo(() => f(a), [a])` при 3 рендерах з тим самим `a`?
+
+```jsx
+let calls = 0;
+function C({ a, other }) { const v = useMemo(() => { calls++; return a * 2; }, [a]); return <p>{v}-{other}</p>; }
+const t = await mount(<C a={1} other={0} />);
+await act(async () => { t.update(<C a={1} other={1} />); });
+await act(async () => { t.update(<C a={1} other={2} />); });
+return calls;
+```
+
+**2.** А якщо `a` змінюється?
+
+```jsx
+let calls = 0;
+function C({ a }) { const v = useMemo(() => { calls++; return a * 2; }, [a]); return <p>{v}</p>; }
+const t = await mount(<C a={1} />);
+await act(async () => { t.update(<C a={2} />); });
+await act(async () => { t.update(<C a={2} />); });
+return [calls, text(t)];
+```
+
+**3.** Чи зберігається посилання на масив між рендерами?
+
+```jsx
+const seen = new Set();
+function C({ n }) { const arr = useMemo(() => [1, 2, 3], []); seen.add(arr); return <p>{n}</p>; }
+const t = await mount(<C n={1} />);
+await act(async () => { t.update(<C n={2} />); });
+return seen.size;
+```
+
+### Рівень 2. Деталі й поведінка
+
+**4.** А без `useMemo`?
+
+```jsx
+const seen = new Set();
+function C({ n }) { const arr = [1, 2, 3]; seen.add(arr); return <p>{n}</p>; }
+const t = await mount(<C n={1} />);
+await act(async () => { t.update(<C n={2} />); });
+return seen.size;
+```
+
+**5.** Memo + `React.memo`: скільки рендерів дитини, якщо об'єкт-пропс стабілізований?
+
+```jsx
+let kid = 0;
+const Kid = React.memo(function Kid({ o }) { kid++; return <i>{o.v}</i>; });
+function P({ n }) { const o = useMemo(() => ({ v: 1 }), []); return <div><Kid o={o} />{n}</div>; }
+const t = await mount(<P n={1} />);
+await act(async () => { t.update(<P n={2} />); });
+await act(async () => { t.update(<P n={3} />); });
+return kid;
+```
+
+**6.** Та сама ситуація без стабілізації.
+
+```jsx
+let kid = 0;
+const Kid = React.memo(function Kid({ o }) { kid++; return <i>{o.v}</i>; });
+function P({ n }) { const o = { v: 1 }; return <div><Kid o={o} />{n}</div>; }
+const t = await mount(<P n={1} />);
+await act(async () => { t.update(<P n={2} />); });
+await act(async () => { t.update(<P n={3} />); });
+return kid;
+```
+
+### Рівень 3. Нюанси та пастки
+
+**7.** `useMemo` без масиву залежностей.
+
+```jsx
+let calls = 0;
+function C({ n }) { const v = useMemo(() => { calls++; return n; }); return <p>{v}</p>; }
+const t = await mount(<C n={1} />);
+await act(async () => { t.update(<C n={1} />); });
+return calls;
+```
+
+**8.** Чи можна покладатися на `useMemo` як гарантію? (StrictMode викликає фабрику двічі)
+
+```jsx
+let calls = 0;
+function C() { const v = useMemo(() => { calls++; return 1; }, []); return <p>{v}</p>; }
+await mount(<React.StrictMode><C /></React.StrictMode>);
+return calls;
+```
+
+**9.** Залежність-об'єкт, що створюється щоразу, знецінює мемоізацію.
+
+```jsx
+let calls = 0;
+function C() { const cfg = { a: 1 }; const v = useMemo(() => { calls++; return cfg.a; }, [cfg]); return <p>{v}</p>; }
+const t = await mount(<C />);
+await act(async () => { t.update(<C />); });
+await act(async () => { t.update(<C />); });
+return calls;
+```
+
+### Рівень 4. Практика
+
+**10.** Коли `useMemo` справді потрібен?
+
+**11.** Чи гарантує React збереження мемоізованого значення?
+
+### Відповіді
+
+1. `1`
+2. `[2, '4']`
+3. `1`
+4. `2`
+5. `1`
+6. `3`
+7. `2`
+8. `2`
+9. `3`
+10. Для дорогих обчислень, стабілізації посилань, що йдуть у залежності інших хуків чи `React.memo`-компонентів; не для кожного значення
+11. Ні, це оптимізація: React може відкинути кеш (наприклад, у режимах розробки чи при нестачі пам'яті), код має працювати й без неї

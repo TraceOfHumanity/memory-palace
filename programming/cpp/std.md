@@ -801,3 +801,640 @@ try {
 - `chrono` робить одиниці часу частиною типу; `steady_clock` — для вимірювань.
 - Потоки: `jthread`, `mutex` + `lock_guard`, `atomic`, `async`/`future`; спільні дані без синхронізації — гонка даних.
 - Бібліотека кидає винятки від `std::exception`, але «швидкі» операції нічого не перевіряють — там допомагають debug-режими й санітайзери.
+
+## Задачі для закріплення
+
+42 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код компілюйте командою `clang++ -std=c++20 -Wall`.
+
+### Рівень 1. Основи
+
+**1.** `std::string`: довжина, підрядок, пошук.
+
+```cpp
+#include <iostream>
+#include <string>
+int main() {
+    std::string s = "hello world";
+    std::cout << s.size() << ' ' << s.substr(6, 5) << ' ' << s.find("wor") << ' ' << (s.find("zzz") == std::string::npos) << '\n';
+}
+
+```
+
+**2.** Конкатенація й порівняння рядків.
+
+```cpp
+#include <iostream>
+#include <string>
+int main() {
+    std::string a = "ab", b = "cd";
+    std::cout << a + b << ' ' << (a < b) << ' ' << (a == "ab") << '\n';
+}
+
+```
+
+**3.** `std::string_view`: без копіювання.
+
+```cpp
+#include <iostream>
+#include <string>
+#include <string_view>
+int main() {
+    std::string s = "hello world";
+    std::string_view v(s);
+    v.remove_prefix(6);
+    std::cout << v << ' ' << v.size() << '\n';
+}
+
+```
+
+**4.** Перетворення чисел: `to_string`, `stoi`, `stod`.
+
+```cpp
+#include <iostream>
+#include <string>
+int main() {
+    std::cout << std::to_string(42) + "!" << ' ' << std::stoi("123") + 1 << ' ' << std::stod("2.5") * 2 << '\n';
+}
+
+```
+
+**5.** `std::vector`: `push_back`, `size`, `capacity`-ріст.
+
+```cpp
+#include <iostream>
+#include <vector>
+int main() {
+    std::vector<int> v;
+    for (int i = 0; i < 5; ++i) v.push_back(i);
+    std::cout << v.size() << ' ' << v.front() << ' ' << v.back() << ' ' << v.at(2) << '\n';
+}
+
+```
+
+**6.** `vector::at` проти `operator[]` за межами.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <stdexcept>
+int main() {
+    std::vector<int> v{1, 2, 3};
+    try { v.at(10); } catch (const std::out_of_range&) { std::cout << "out_of_range\n"; }
+}
+
+```
+
+**7.** Ініціалізація вектора розміром n та значенням.
+
+```cpp
+#include <iostream>
+#include <vector>
+int main() {
+    std::vector<int> a(3, 7), b{3, 7};
+    std::cout << a.size() << ' ' << b.size() << '\n';
+}
+
+```
+
+**8.** `emplace_back` та `insert`/`erase`.
+
+```cpp
+#include <iostream>
+#include <vector>
+int main() {
+    std::vector<int> v{1, 2, 3, 4};
+    v.erase(v.begin() + 1);
+    v.insert(v.begin(), 9);
+    v.emplace_back(5);
+    for (int x : v) std::cout << x << ' ';
+    std::cout << '\n';
+}
+
+```
+
+**9.** Ідіома erase-remove.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+int main() {
+    std::vector<int> v{1, 2, 3, 2, 4, 2};
+    v.erase(std::remove(v.begin(), v.end(), 2), v.end());
+    for (int x : v) std::cout << x << ' ';
+    std::cout << '\n';
+}
+
+```
+
+**10.** `std::map`: впорядкованість ключів та `operator[]` створює елемент.
+
+```cpp
+#include <iostream>
+#include <map>
+#include <string>
+int main() {
+    std::map<std::string, int> m{{"b", 2}, {"a", 1}};
+    m["c"];
+    for (auto& [k, v] : m) std::cout << k << '=' << v << ' ';
+    std::cout << m.size() << '\n';
+}
+
+```
+
+**11.** `map::find`, `count`, `contains` (C++20).
+
+```cpp
+#include <iostream>
+#include <map>
+int main() {
+    std::map<int, char> m{{1, 'x'}, {2, 'y'}};
+    std::cout << (m.find(2) != m.end()) << m.count(3) << m.contains(1) << '\n';
+}
+
+```
+
+### Рівень 2. Деталі й поведінка
+
+**12.** `unordered_map`: підрахунок слів (виведення в порядку ключів через `map`).
+
+```cpp
+#include <iostream>
+#include <unordered_map>
+#include <map>
+#include <string>
+int main() {
+    std::unordered_map<std::string, int> cnt;
+    for (std::string w : {"a", "b", "a", "c", "a"}) ++cnt[w];
+    std::map<std::string, int> sorted(cnt.begin(), cnt.end());
+    for (auto& [k, v] : sorted) std::cout << k << v << ' ';
+    std::cout << '\n';
+}
+
+```
+
+**13.** `std::set`: унікальність та впорядкованість.
+
+```cpp
+#include <iostream>
+#include <set>
+int main() {
+    std::set<int> s{5, 1, 3, 1, 5};
+    for (int x : s) std::cout << x << ' ';
+    std::cout << s.size() << '\n';
+}
+
+```
+
+**14.** `std::pair` та `std::tuple`.
+
+```cpp
+#include <iostream>
+#include <tuple>
+#include <utility>
+#include <string>
+int main() {
+    auto p = std::make_pair(1, std::string("a"));
+    auto t = std::make_tuple(1, 2.5, 'c');
+    std::cout << p.first << p.second << ' ' << std::get<1>(t) << std::get<2>(t) << '\n';
+}
+
+```
+
+**15.** `std::array` та `std::deque`.
+
+```cpp
+#include <iostream>
+#include <array>
+#include <deque>
+int main() {
+    std::array<int, 3> a{1, 2, 3};
+    std::deque<int> d{2, 3};
+    d.push_front(1);
+    std::cout << a.size() << ' ' << d.front() << d.back() << '\n';
+}
+
+```
+
+**16.** `std::stack`, `std::queue`, `std::priority_queue`.
+
+```cpp
+#include <iostream>
+#include <stack>
+#include <queue>
+int main() {
+    std::stack<int> s; s.push(1); s.push(2);
+    std::queue<int> q; q.push(1); q.push(2);
+    std::priority_queue<int> pq; pq.push(3); pq.push(9); pq.push(5);
+    std::cout << s.top() << q.front() << pq.top() << '\n';
+}
+
+```
+
+**17.** `std::sort` та власний компаратор.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <functional>
+int main() {
+    std::vector<int> v{5, 2, 9, 1};
+    std::sort(v.begin(), v.end());
+    for (int x : v) std::cout << x;
+    std::sort(v.begin(), v.end(), std::greater<>());
+    std::cout << ' ';
+    for (int x : v) std::cout << x;
+    std::cout << '\n';
+}
+
+```
+
+**18.** Сортування за полем структури лямбдою.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <string>
+int main() {
+    struct P { std::string n; int age; };
+    std::vector<P> v{{"a", 30}, {"b", 20}, {"c", 25}};
+    std::sort(v.begin(), v.end(), [](const P& x, const P& y) { return x.age < y.age; });
+    for (auto& p : v) std::cout << p.n;
+    std::cout << '\n';
+}
+
+```
+
+**19.** `std::find`, `find_if`, `count_if`.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+int main() {
+    std::vector<int> v{1, 4, 6, 3};
+    auto it = std::find_if(v.begin(), v.end(), [](int x) { return x % 2 == 0; });
+    std::cout << *it << ' ' << std::count_if(v.begin(), v.end(), [](int x) { return x > 2; }) << ' ' << (std::find(v.begin(), v.end(), 9) == v.end()) << '\n';
+}
+
+```
+
+**20.** `std::accumulate` та `std::reduce`-подібна сума.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <numeric>
+int main() {
+    std::vector<int> v{1, 2, 3, 4};
+    std::cout << std::accumulate(v.begin(), v.end(), 0) << ' ' << std::accumulate(v.begin(), v.end(), 1, [](int a, int b) { return a * b; }) << '\n';
+}
+
+```
+
+**21.** `std::transform` та `copy_if`.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <iterator>
+int main() {
+    std::vector<int> v{1, 2, 3, 4}, out;
+    std::transform(v.begin(), v.end(), std::back_inserter(out), [](int x) { return x * x; });
+    std::vector<int> ev;
+    std::copy_if(out.begin(), out.end(), std::back_inserter(ev), [](int x) { return x % 2 == 0; });
+    for (int x : ev) std::cout << x << ' ';
+    std::cout << '\n';
+}
+
+```
+
+**22.** `min_element`, `max_element`, `minmax`.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+int main() {
+    std::vector<int> v{3, 8, 1, 6};
+    auto [lo, hi] = std::minmax_element(v.begin(), v.end());
+    std::cout << *lo << ' ' << *hi << ' ' << std::min(2, 5) << std::max({1, 7, 3}) << '\n';
+}
+
+```
+
+### Рівень 3. Нюанси та пастки
+
+**23.** `binary_search`, `lower_bound`.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+int main() {
+    std::vector<int> v{1, 3, 5, 7};
+    auto it = std::lower_bound(v.begin(), v.end(), 4);
+    std::cout << std::binary_search(v.begin(), v.end(), 5) << ' ' << *it << ' ' << (it - v.begin()) << '\n';
+}
+
+```
+
+**24.** `std::reverse`, `rotate`, `unique`.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+int main() {
+    std::vector<int> v{1, 1, 2, 3, 3, 3};
+    v.erase(std::unique(v.begin(), v.end()), v.end());
+    std::reverse(v.begin(), v.end());
+    for (int x : v) std::cout << x;
+    std::cout << '\n';
+}
+
+```
+
+**25.** Ітератори: прямий і зворотний обхід.
+
+```cpp
+#include <iostream>
+#include <vector>
+int main() {
+    std::vector<int> v{1, 2, 3};
+    for (auto it = v.begin(); it != v.end(); ++it) std::cout << *it;
+    std::cout << ' ';
+    for (auto it = v.rbegin(); it != v.rend(); ++it) std::cout << *it;
+    std::cout << '\n';
+}
+
+```
+
+**26.** Ranges (C++20): `views::filter` + `views::transform`.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <ranges>
+int main() {
+    std::vector<int> v{1, 2, 3, 4, 5, 6};
+    auto r = v | std::views::filter([](int x) { return x % 2 == 0; }) | std::views::transform([](int x) { return x * 10; });
+    for (int x : r) std::cout << x << ' ';
+    std::cout << '\n';
+}
+
+```
+
+**27.** `std::ranges::sort` та `views::take`/`iota`.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <ranges>
+#include <algorithm>
+int main() {
+    std::vector<int> v{3, 1, 2};
+    std::ranges::sort(v);
+    for (int x : v) std::cout << x;
+    std::cout << ' ';
+    for (int x : std::views::iota(1) | std::views::take(4)) std::cout << x;
+    std::cout << '\n';
+}
+
+```
+
+**28.** `std::unique_ptr` у контейнері та `make_unique`.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <memory>
+int main() {
+    std::vector<std::unique_ptr<int>> v;
+    v.push_back(std::make_unique<int>(1));
+    v.push_back(std::make_unique<int>(2));
+    int s = 0;
+    for (auto& p : v) s += *p;
+    std::cout << s << '\n';
+}
+
+```
+
+**29.** `std::optional` та `std::variant` разом.
+
+```cpp
+#include <iostream>
+#include <optional>
+#include <variant>
+#include <string>
+int main() {
+    std::optional<std::variant<int, std::string>> o = std::string("x");
+    std::cout << o.has_value() << std::get<std::string>(*o) << '\n';
+}
+
+```
+
+**30.** `std::chrono`: тривалість у різних одиницях.
+
+```cpp
+#include <iostream>
+#include <chrono>
+int main() {
+    using namespace std::chrono;
+    auto d = seconds(90);
+    std::cout << duration_cast<minutes>(d).count() << ' ' << duration_cast<milliseconds>(d).count() << '\n';
+}
+
+```
+
+**31.** `std::thread` та `join`.
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <atomic>
+int main() {
+    std::atomic<int> n{0};
+    std::thread a([&] { for (int i = 0; i < 1000; ++i) ++n; });
+    std::thread b([&] { for (int i = 0; i < 1000; ++i) ++n; });
+    a.join(); b.join();
+    std::cout << n << '\n';
+}
+
+```
+
+**32.** `std::mutex` та `lock_guard`.
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <mutex>
+int main() {
+    int c = 0;
+    std::mutex m;
+    auto work = [&] { for (int i = 0; i < 1000; ++i) { std::lock_guard<std::mutex> g(m); ++c; } };
+    std::thread a(work), b(work);
+    a.join(); b.join();
+    std::cout << c << '\n';
+}
+
+```
+
+**33.** `std::async` та `future::get`.
+
+```cpp
+#include <iostream>
+#include <future>
+int main() {
+    auto f = std::async(std::launch::async, [] { return 6 * 7; });
+    std::cout << f.get() << '\n';
+}
+
+```
+
+### Рівень 4. Практика
+
+**34.** `std::function` та `std::bind`.
+
+```cpp
+#include <iostream>
+#include <functional>
+int main() {
+    std::function<int(int, int)> add = [](int a, int b) { return a + b; };
+    auto add5 = std::bind(add, 5, std::placeholders::_1);
+    std::cout << add(1, 2) << ' ' << add5(10) << '\n';
+}
+
+```
+
+**35.** Помилка компіляції: невідповідність типів у `std::vector<int>`.
+
+```cpp
+#include <vector>
+#include <string>
+int main() {
+    std::vector<int> v;
+    v.push_back(std::string("x"));
+}
+
+```
+
+**36.** `std::move` елемента з вектора та стан після.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+#include <utility>
+int main() {
+    std::vector<std::string> v{"one", "two"};
+    std::string s = std::move(v[0]);
+    std::cout << s << ' ' << v.size() << ' ' << v[0].empty() << '\n';
+}
+
+```
+
+**37.** `std::swap`, `std::exchange`.
+
+```cpp
+#include <iostream>
+#include <utility>
+int main() {
+    int a = 1, b = 2;
+    std::swap(a, b);
+    int old = std::exchange(a, 10);
+    std::cout << a << b << old << '\n';
+}
+
+```
+
+**38.** `std::iota` та `std::partial_sum`.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <numeric>
+int main() {
+    std::vector<int> v(5), s(5);
+    std::iota(v.begin(), v.end(), 1);
+    std::partial_sum(v.begin(), v.end(), s.begin());
+    for (int x : s) std::cout << x << ' ';
+    std::cout << '\n';
+}
+
+```
+
+**39.** `stringstream`: розбір рядка за пробілами.
+
+```cpp
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
+int main() {
+    std::istringstream in("10 20 abc 30");
+    std::string tok; int sum = 0;
+    while (in >> tok) { try { sum += std::stoi(tok); } catch (...) {} }
+    std::cout << sum << '\n';
+}
+
+```
+
+**40.** Що таке простір імен `std` і чому не варто писати `using namespace std;` у заголовках?
+
+**41.** Чим `std::map` відрізняється від `std::unordered_map`?
+
+**42.** Коли інвалідуються ітератори `std::vector`?
+
+### Відповіді
+
+1. `11 world 6 1`
+2. `abcd 1 1`
+3. `world 5`
+4. `42! 124 5`
+5. `5 0 4 2`
+6. `out_of_range`
+7. `3 2`
+8. `9 1 3 4 5 `
+9. `1 3 4 `
+10. `a=1 b=2 c=0 3`
+11. `101`
+12. `a3 b1 c1 `
+13. `1 3 5 3`
+14. `1a 2.5c`
+15. `3 13`
+16. `219`
+17. `1259 9521`
+18. `bca`
+19. `4 3 1`
+20. `10 24`
+21. `4 16 `
+22. `1 8 27`
+23. `1 5 2`
+24. `321`
+25. `123 321`
+26. `20 40 60 `
+27. `123 1234`
+28. `3`
+29. `1x`
+30. `1 90000`
+31. `2000`
+32. `2000`
+33. `42`
+34. `3 15`
+35. Помилка компіляції:
+
+   ```text
+   error: no matching member function for call to 'push_back'
+   ```
+
+36. `one 2 1`
+37. `1012`
+38. `1 3 6 10 15 `
+39. `60`
+40. `std` містить усю стандартну бібліотеку; директива `using` у заголовку «просочується» в усі файли, що його підключають, і викликає конфлікти імен
+41. `map` — збалансоване дерево, впорядковані ключі, операції O(log n); `unordered_map` — хеш-таблиця, неупорядкована, у середньому O(1)
+42. При реалоцації (збільшення ємності), вставці/видаленні до позиції ітератора; після `push_back` без реалоцації інвалідується лише `end()`

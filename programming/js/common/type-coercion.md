@@ -323,3 +323,298 @@ console.log(undefined < 1, undefined > 1, undefined == 0); // false false false
 - `Number.isNaN()` — надійна перевірка; глобальний `isNaN()` спершу приводить аргумент.
 - `<`/`>` для двох рядків порівнюють лексикографічно; `null` у них стає `0` (`null >= 0` — `true`), а `undefined` — `NaN`.
 - Правило індустрії: завжди `===`, узвичаєний виняток — `x == null`.
+
+## Задачі для закріплення
+
+Сорок задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Що поверне `Number` для різних значень?
+
+```js
+[Number('42'), Number(''), Number(' 7 '), Number('4px'), Number(null), Number(undefined), Number(true), Number([]), Number([5]), Number([1, 2])]
+```
+
+**2.** Що поверне унарний плюс?
+
+```js
+[+'3.5', +'', +'0x10', +'1e3', +{}, +[], +new Date(0)]
+```
+
+**3.** Що поверне `parseInt` та `parseFloat`?
+
+```js
+[parseInt('42px'), parseInt('px42'), parseInt('0x1F'), parseInt('101', 2), parseFloat('3.14abc'), parseFloat('.5'), parseInt('')]
+```
+
+**4.** Чому `parseInt(0.0000005)` дорівнює 5?
+
+```js
+[String(0.0000005), parseInt(0.0000005), parseInt(null, 36)]
+```
+
+**5.** Що поверне `String` для різних значень?
+
+```js
+[String(null), String(undefined), String(123), String(true), String([1, 2]), String({}), String(Symbol('s')), String(() => 1)]
+```
+
+**6.** Що поверне `Boolean` для falsy-значень?
+
+```js
+[false, 0, -0, 0n, '', null, undefined, NaN].map(Boolean)
+```
+
+**7.** Які значення truthy, хоч і виглядають як falsy?
+
+```js
+['0', 'false', [], {}, ' ', -1, Infinity].map(Boolean)
+```
+
+**8.** Що поверне `!!document.all`-подібне: `typeof null` і `null instanceof Object`?
+
+```js
+[typeof null, null instanceof Object]
+```
+
+**9.** Що поверне `+` для різних операндів?
+
+```js
+[1 + '2', '3' + 4, 1 + 2 + '3', '1' + 2 + 3, true + 1, null + 1, undefined + 1, [] + [], [] + {}, 1 + null]
+```
+
+**10.** Що поверне `-`, `*`, `/` із рядками?
+
+```js
+['5' - 2, '5' * '2', '10' / '4', 'a' - 1, '5' - '', true - 1]
+```
+
+### Рівень 2. Деталі й поведінка
+
+**11.** Що поверне `==` для базових пар?
+
+```js
+[1 == '1', 0 == '', 0 == '0', '' == '0', null == undefined, null == 0, undefined == 0, NaN == NaN]
+```
+
+**12.** Як `==` працює з boolean?
+
+```js
+[true == 1, true == '1', true == 'true', false == '', false == [], false == '0']
+```
+
+**13.** Як `==` працює з масивами?
+
+```js
+[[] == false, [] == '', [0] == false, [1] == 1, [1, 2] == '1,2', [] == []]
+```
+
+**14.** Як `==` працює з об'єктами?
+
+```js
+(() => { const a = {}; return [a == a, {} == {}, {} == '[object Object]']; })()
+```
+
+**15.** Що дасть порівняння `<` для рядків і чисел?
+
+```js
+['10' < '9', '10' < 9, 10 < '9', 'a' < 'b', 'B' < 'a', null >= 0, null > 0, null == 0, undefined >= 0]
+```
+
+**16.** Чому `null >= 0` істинне, а `null == 0` хибне?
+
+```js
+[null >= 0, null <= 0, null > 0, null < 0, null == 0]
+```
+
+**17.** Що поверне `Object.is` у порівнянні з `===`?
+
+```js
+[Object.is(NaN, NaN), NaN === NaN, Object.is(0, -0), 0 === -0, Object.is('a', 'a')]
+```
+
+**18.** Що поверне SameValueZero (`includes`) і `indexOf`?
+
+```js
+[[NaN].includes(NaN), [NaN].indexOf(NaN), [0].includes(-0), [-0].indexOf(0)]
+```
+
+**19.** Як перевірити NaN?
+
+```js
+[isNaN('abc'), Number.isNaN('abc'), isNaN('12'), Number.isNaN(NaN), isNaN(undefined), Number.isNaN(undefined)]
+```
+
+**20.** Що поверне `ToPrimitive` для звичайного об'єкта з `valueOf` та `toString`?
+
+```js
+(() => { const o = { valueOf() { return 42; }, toString() { return 'str'; } }; return [o + 1, `${o}`, String(o), o * 2, o + '', o == 42]; })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**21.** Що поверне об'єкт із `Symbol.toPrimitive` для різних hint?
+
+```js
+(() => { const o = { [Symbol.toPrimitive](h) { return h; } }; return [`${o}`, +o, o + '', o * 1]; })()
+```
+
+**22.** Що поверне приведення `Date` в `+` та `-`?
+
+```js
+(() => { const d = new Date(0); return [typeof (d + 1), typeof (d - 1)]; })()
+```
+
+**23.** Що поверне `[] + []`, `[] + {}`, `[1] + [2]`?
+
+```js
+[[] + [], [] + {}, [1] + [2], [1, 2] + [3]]
+```
+
+**24.** Що поверне `{} + []` в позиції виразу і в дужках?
+
+```js
+[({}) + [], eval('{} + []')]
+```
+
+**25.** Що поверне `typeof NaN` та `typeof []`?
+
+```js
+[typeof NaN, typeof [], typeof null, typeof function () {}, typeof Symbol(), typeof 1n]
+```
+
+**26.** Що поверне зведення BigInt та Number?
+
+```js
+[1n == 1, 1n === 1, 2n > 1, typeof (1n + 1n), (() => { try { return 1n + 1; } catch (e) { return e.name; } })()]
+```
+
+**27.** Що поверне `Number` для великих/спеціальних рядків?
+
+```js
+[Number('Infinity'), Number('-Infinity'), Number('infinity'), Number('1_000'), Number('0b101'), Number('0o17'), Number('.')]
+```
+
+**28.** Що поверне `String(-0)` та `Number('-0')`?
+
+```js
+[String(-0), Object.is(Number('-0'), -0), `${-0}`, JSON.stringify(-0), (-0).toString()]
+```
+
+**29.** Що поверне `JSON.stringify` для спеціальних значень?
+
+```js
+[JSON.stringify(NaN), JSON.stringify(undefined), JSON.stringify(() => 1), JSON.stringify({ a: undefined, b: null })]
+```
+
+**30.** Яке значення у виразі `'b' + 'a' + +'a' + 'a'`?
+
+```js
+'b' + 'a' + +'a' + 'a'
+```
+
+### Рівень 4. Практика
+
+**31.** Що поверне `[] == ![]`?
+
+```js
+[] == ![]
+```
+
+**32.** Що поверне `0.1 + 0.2 == 0.3` і як порівняти безпечно?
+
+```js
+[0.1 + 0.2 == 0.3, Math.abs(0.1 + 0.2 - 0.3) < Number.EPSILON]
+```
+
+**33.** Що поверне `'b' > 'a'` та `'2' > '12'`?
+
+```js
+['b' > 'a', '2' > '12', 2 > '12']
+```
+
+**34.** Що поверне `if ('0')` та `if ([])`?
+
+```js
+[Boolean('0'), Boolean([]), Boolean(new Boolean(false))]
+```
+
+**35.** Яке значення має `1 < 2 < 3` і `3 > 2 > 1`?
+
+```js
+[1 < 2 < 3, 3 > 2 > 1]
+```
+
+**36.** Що поверне `Array(3).join('-')` і `Array(3) + ''`?
+
+```js
+[Array(3).join('-'), Array(3) + '']
+```
+
+**37.** Що поверне `'5' + - '2'` та `'5' - - '2'`?
+
+```js
+['5' + - '2', '5' - - '2']
+```
+
+**38.** Напишіть `isLooselyEqualNullish(v)`: `true` лише для null/undefined, використовуючи `==`.
+
+```js
+const isNullish = (v) => v == null
+```
+
+**39.** Напишіть `toNum(v)`: повертає 0 замість NaN.
+
+```js
+const toNum = (v) => { const n = Number(v); return Number.isNaN(n) ? 0 : n; }
+```
+
+**40.** Напишіть `strictToInt(s)`, що приймає лише рядки з цифр.
+
+```js
+const strictToInt = (s) => /^-?\d+$/.test(s) ? Number(s) : null
+```
+
+### Відповіді
+
+1. `[42, 0, 7, NaN, 0, NaN, 1, 0, 5, NaN]`
+2. `[3.5, 0, 16, 1000, NaN, 0, 0]`
+3. `[42, NaN, 31, 5, 3.14, 0.5, NaN]`
+4. `['5e-7', 5, 1112745]`
+5. `['null', 'undefined', '123', 'true', '1,2', '[object Object]', 'Symbol(s)', '() => 1']`
+6. `[false, false, false, false, false, false, false, false]`
+7. `[true, true, true, true, true, true, true]`
+8. `['object', false]`
+9. `['12', '34', '33', '123', 2, 1, NaN, '', '[object Object]', 1]`
+10. `[3, 10, 2.5, NaN, 5, 0]`
+11. `[true, true, true, false, true, false, false, false]`
+12. `[true, true, false, true, true, true]`
+13. `[true, true, true, true, true, false]`
+14. `[true, false, true]`
+15. `[true, false, false, true, true, true, false, false, false]`
+16. `[true, true, false, false, false]`
+17. `[true, false, false, true, true]`
+18. `[true, -1, true, 0]`
+19. `[true, false, false, true, true, false]`
+20. `[43, 'str', 'str', 84, '42', true]`
+21. `['string', NaN, 'default', NaN]`
+22. `['string', 'number']`
+23. `['', '[object Object]', '12', '1,23']`
+24. `['[object Object]', 0]`
+25. `['number', 'object', 'object', 'function', 'symbol', 'bigint']`
+26. `[true, false, true, 'bigint', 'TypeError']`
+27. `[Infinity, -Infinity, NaN, NaN, 5, 15, NaN]`
+28. `['0', true, '0', '0', '0']`
+29. `['null', undefined, undefined, '{"b":null}']`
+30. `'baNaNa'`
+31. `true`
+32. `[false, true]`
+33. `[true, true, false]`
+34. `[true, true, true]`
+35. `[true, false]`
+36. `['--', ',,']`
+37. `['5-2', 7]`
+38. Виклик `[null, undefined, 0, '', false, NaN].map(isNullish)` → `[true, true, false, false, false, false]`
+39. Виклик `['5', 'x', '', null, undefined, '7.5'].map(toNum)` → `[5, 0, 0, 0, 0, 7.5]`
+40. Виклик `['12', '-5', '1.5', '12px', ''].map(strictToInt)` → `[12, -5, null, null, null]`

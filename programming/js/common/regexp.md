@@ -702,3 +702,249 @@ console.log(composed === decomposed.normalize("NFC")); // true
 - `\w`, `\d`, `\b` орієнтовані на ASCII; для інших мов — `\p{L}` з прапорцем `u`/`v`.
 - ReDoS: вкладені квантифікатори (`(a+)+`) дають експоненційний backtracking і блокують event loop; обмежуйте ввід, уточнюйте класи.
 - Регекси не парсять вкладені структури (HTML, JSON); для простих перевірок `includes`/`startsWith` кращі за регекс.
+
+## Задачі для закріплення
+
+33 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Що поверне `test` для простого шаблону та різних прапорців?
+
+```js
+[/cat/.test('concatenate'), /cat/.test('CAT'), /cat/i.test('CAT')]
+```
+
+**2.** Що поверне `exec` та яка його структура?
+
+```js
+(() => { const m = /(\d+)-(\d+)/.exec('tel 12-34 end'); return [m[0], m[1], m[2], m.index, m.input]; })()
+```
+
+**3.** Що поверне `exec`, якщо збігу немає?
+
+```js
+/x/.exec('abc')
+```
+
+**4.** Що поверне `match` без і з прапорцем `g`?
+
+```js
+(() => { const a = 'a1b22c333'.match(/\d+/), b = 'a1b22c333'.match(/\d+/g); return [a[0], a.index, b]; })()
+```
+
+**5.** Що поверне `match` з `g`, якщо збігів немає?
+
+```js
+['abc'.match(/\d/g), 'abc'.match(/\d/)]
+```
+
+**6.** Що поверне `matchAll`?
+
+```js
+[...'a1b22'.matchAll(/\d+/g)].map(m => [m[0], m.index])
+```
+
+**7.** Що станеться з `matchAll` без `g`?
+
+```js
+(() => { try { 'a1'.matchAll(/\d/); } catch (e) { return e.name; } })()
+```
+
+**8.** Що поверне `replace` із рядком і з `g`?
+
+```js
+['a-b-c'.replace('-', '+'), 'a-b-c'.replace(/-/g, '+'), 'a-b-c'.replaceAll('-', '+')]
+```
+
+**9.** Що поверне `replaceAll` з негlobальним RegExp?
+
+```js
+(() => { try { 'a'.replaceAll(/a/, 'b'); } catch (e) { return e.name; } })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**10.** Як використовувати групи в `replace` (`$1`, `$&`, `$<name>`)?
+
+```js
+['John Smith'.replace(/(\w+) (\w+)/, '$2, $1'), 'abc'.replace(/b/, '[$&]'), '2024-05'.replace(/(?<y>\d+)-(?<m>\d+)/, '$<m>/$<y>')]
+```
+
+**11.** Як `replace` приймає функцію?
+
+```js
+'a1b2'.replace(/\d/g, (d) => d * 2)
+```
+
+**12.** Що поверне `split` з регуляркою та групою?
+
+```js
+['a1b2c'.split(/\d/), 'a1b2c'.split(/(\d)/), 'a, b;c'.split(/[,;]\s*/)]
+```
+
+**13.** Що поверне `search`?
+
+```js
+['hello'.search(/l/), 'hello'.search(/z/)]
+```
+
+**14.** Що таке `lastIndex` та прапорець `g` у `test`?
+
+```js
+(() => { const r = /a/g; return [r.test('aa'), r.lastIndex, r.test('aa'), r.lastIndex, r.test('aa'), r.lastIndex]; })()
+```
+
+**15.** Що поверне та сама регулярка з `g` у `test` двічі для одного рядка?
+
+```js
+(() => { const r = /x/g; return [r.test('x'), r.test('x')]; })()
+```
+
+**16.** Прапорець `y` (sticky): що поверне?
+
+```js
+(() => { const r = /a/y; r.lastIndex = 1; return [r.test('ba'), r.lastIndex, r.test('ba')]; })()
+```
+
+**17.** Прапорець `s` (dotAll) та `m` (multiline)?
+
+```js
+[/a.b/.test('a\nb'), /a.b/s.test('a\nb'), /^b/.test('a\nb'), /^b/m.test('a\nb')]
+```
+
+**18.** Іменовані групи в `exec`?
+
+```js
+(() => { const m = /(?<y>\d{4})-(?<m>\d{2})/.exec('2024-05'); return [m.groups.y, m.groups.m]; })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**19.** Зворотне посилання `\1`?
+
+```js
+['abab'.match(/(ab)\1/)[0], /(\w)\1/.test('hello'), /(\w)\1/.test('world')]
+```
+
+**20.** Жадібні і лінивi квантифікатори?
+
+```js
+['<a><b>'.match(/<.+>/)[0], '<a><b>'.match(/<.+?>/)[0]]
+```
+
+**21.** Lookahead і lookbehind?
+
+```js
+['price: $30'.match(/(?<=\$)\d+/)[0], 'a1b2'.match(/\d(?=b)/)[0], 'foobar'.match(/foo(?!baz)/) !== null, 'xyz'.match(/(?<!x)z/)]
+```
+
+**22.** Що робить `\b`?
+
+```js
+['cat concat'.match(/\bcat\b/g).length, 'cat concat'.match(/cat/g).length]
+```
+
+**23.** Що поверне `source`, `flags`, `toString`?
+
+```js
+(() => { const r = /a+/gi; return [r.source, r.flags, String(r), r.global, r.ignoreCase]; })()
+```
+
+**24.** Як створити RegExp із рядка й екранувати спецсимволи?
+
+```js
+(() => { const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); return [new RegExp(esc('a.b')).test('axb'), new RegExp(esc('a.b')).test('a.b'), esc('1+1=2?')]; })()
+```
+
+**25.** Unicode: чому без `u` емодзі — два символи?
+
+```js
+['😀'.length, '😀'.match(/./g).length, '😀'.match(/./gu).length, /\p{L}+/u.exec('Привіт, world')[0]]
+```
+
+**26.** Що поверне `\w` для кирилиці та як працювати з нею?
+
+```js
+[/\w/.test('я'), /\p{L}/u.test('я'), /[а-яіїєґ]/i.test('Я')]
+```
+
+**27.** Що дасть вкладені групи й порядок нумерації?
+
+```js
+(() => { const m = /((a)(b))(c)/.exec('abc'); return [m[1], m[2], m[3], m[4]]; })()
+```
+
+### Рівень 4. Практика
+
+**28.** Що поверне необов'язкова група, що не збіглась?
+
+```js
+(() => { const m = /(a)(b)?/.exec('a'); return [m.length, m[2]]; })()
+```
+
+**29.** Що дасть ланцюжок `|` і порядок альтернатив?
+
+```js
+['foobar'.match(/foo|foobar/)[0], 'foobar'.match(/foobar|foo/)[0]]
+```
+
+**30.** Напишіть `isEmail(s)` для простих адрес.
+
+```js
+const isEmail = (s) => /^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test(s)
+```
+
+**31.** Напишіть `words(s)` — слова з літер (Unicode).
+
+```js
+const words = (s) => s.match(/\p{L}+/gu) ?? []
+```
+
+**32.** Напишіть `camelToSnake` та `snakeToCamel`.
+
+```js
+const c2s = (s) => s.replace(/[A-Z]/g, (c) => '_' + c.toLowerCase()); const s2c = (s) => s.replace(/_([a-z])/g, (_, c) => c.toUpperCase())
+```
+
+**33.** Напишіть `parseQuery(qs)` через `matchAll`.
+
+```js
+const parseQuery = (q) => Object.fromEntries([...q.matchAll(/([^&=?]+)=([^&]*)/g)].map(m => [m[1], decodeURIComponent(m[2])]))
+```
+
+### Відповіді
+
+1. `[true, false, true]`
+2. `['12-34', '12', '34', 4, 'tel 12-34 end']`
+3. `null`
+4. `['1', 1, ['1', '22', '333']]`
+5. `[null, null]`
+6. `[['1', 1], ['22', 3]]`
+7. `'TypeError'`
+8. `['a+b-c', 'a+b+c', 'a+b+c']`
+9. `'TypeError'`
+10. `['Smith, John', 'a[b]c', '05/2024']`
+11. `'a2b4'`
+12. `[['a', 'b', 'c'], ['a', '1', 'b', '2', 'c'], ['a', 'b', 'c']]`
+13. `[2, -1]`
+14. `[true, 1, true, 2, false, 0]`
+15. `[true, false]`
+16. `[true, 2, false]`
+17. `[false, true, false, true]`
+18. `['2024', '05']`
+19. `['abab', true, false]`
+20. `['<a><b>', '<a>']`
+21. `['30', '1', true, ['z']]`
+22. `[1, 2]`
+23. `['a+', 'gi', '/a+/gi', true, true]`
+24. `[false, true, '1\+1=2\?']`
+25. `[2, 2, 1, 'Привіт']`
+26. `[false, true, true]`
+27. `['ab', 'a', 'b', 'c']`
+28. `[3, undefined]`
+29. `['foo', 'foobar']`
+30. Виклик `['a@b.co', 'a.b+c@mail.example.org', 'a@b', '@b.co', 'a b@c.com'].map(isEmail)` → `[true, true, false, false, false]`
+31. Виклик `words('Привіт, світе! 42 hello-world')` → `['Привіт', 'світе', 'hello', 'world']`
+32. Виклик `[c2s('userFirstName'), s2c('user_first_name')]` → `['user_first_name', 'userFirstName']`
+33. Виклик `parseQuery('?a=1&b=hello%20world&c=')` → `{ a: '1', b: 'hello world', c: '' }`

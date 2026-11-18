@@ -98,3 +98,108 @@ DOM вже існує, ref прикріплені: `el.value.tagName` → `INPUT
 3. Створив таймер/підписку → `onBeforeUnmount`/`onUnmounted` прибирає.
 4. Після зміни дочекатись DOM → `await nextTick()`.
 5. Повторювана логіка життєвого циклу → композабл із власними `onMounted`/`onUnmounted`.
+
+## Задачі для закріплення
+
+14 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(Component)` монтує компонент у тестове дерево без DOM, `html(r)` серіалізує його, `click(node)` викликає `onClick`, `tick()` — це `nextTick`, `sleep(ms)` — пауза; API Vue (`ref`, `watch`, `h` та інші) імпортуються з `vue`.
+
+### Рівень 1. Основи
+
+**1.** Порядок хуків при монтуванні та розмонтуванні.
+
+```js
+const log = []; const C = defineComponent({ setup() { log.push('setup'); onBeforeMount(() => log.push('beforeMount')); onMounted(() => log.push('mounted')); onBeforeUnmount(() => log.push('beforeUnmount')); onUnmounted(() => log.push('unmounted')); return () => { log.push('render'); return h('p', 'x'); }; } }); const r = mount(C); await tick(); unmount(r); return log;
+```
+
+**2.** Порядок при оновленні.
+
+```js
+const log = []; const n = ref(0); const C = defineComponent({ setup() { onBeforeUpdate(() => log.push('beforeUpdate')); onUpdated(() => log.push('updated')); return () => { log.push('render'); return h('p', n.value); }; } }); mount(C); log.length = 0; n.value = 1; await tick(); return log;
+```
+
+**3.** Скільки разів виконується `setup` при кількох оновленнях?
+
+```js
+let setups = 0; const n = ref(0); const C = defineComponent({ setup() { setups++; return () => h('p', n.value); } }); mount(C); n.value = 1; await tick(); n.value = 2; await tick(); return setups;
+```
+
+**4.** Порядок батько/дитина при монтуванні.
+
+```js
+const log = []; const Kid = defineComponent({ setup() { onBeforeMount(() => log.push('kid beforeMount')); onMounted(() => log.push('kid mounted')); return () => h('i'); } }); const P = defineComponent({ setup() { onBeforeMount(() => log.push('parent beforeMount')); onMounted(() => log.push('parent mounted')); return () => h('div', [h(Kid)]); } }); mount(P); return log;
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Порядок батько/дитина при розмонтуванні.
+
+```js
+const log = []; const Kid = defineComponent({ setup() { onBeforeUnmount(() => log.push('kid beforeUnmount')); onUnmounted(() => log.push('kid unmounted')); return () => h('i'); } }); const P = defineComponent({ setup() { onBeforeUnmount(() => log.push('parent beforeUnmount')); onUnmounted(() => log.push('parent unmounted')); return () => h('div', [h(Kid)]); } }); const r = mount(P); unmount(r); return log;
+```
+
+**6.** Чи доступний DOM-елемент у `onMounted` (через ref)?
+
+```js
+const el = ref(null); let seen; const C = defineComponent({ setup() { onMounted(() => { seen = el.value && el.value.tag; }); return () => h('p', { ref: el }, 'x'); } }); mount(C); return seen;
+```
+
+**7.** А в `onBeforeMount`?
+
+```js
+const el = ref(null); let seen = 'unset'; const C = defineComponent({ setup() { onBeforeMount(() => { seen = el.value; }); return () => h('p', { ref: el }, 'x'); } }); mount(C); return seen;
+```
+
+**8.** `onBeforeUpdate` бачить старий DOM, `onUpdated` — новий.
+
+```js
+const n = ref('a'); let r; const seen = []; const C = defineComponent({ setup() { onBeforeUpdate(() => seen.push(html(r))); onUpdated(() => seen.push(html(r))); return () => h('p', n.value); } }); r = mount(C); n.value = 'b'; await tick(); return seen;
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Очищення в `onUnmounted`: таймер зупиняється.
+
+```js
+let ticks = 0; const C = defineComponent({ setup() { const id = setInterval(() => ticks++, 5); onUnmounted(() => clearInterval(id)); return () => h('p'); } }); const r = mount(C); await sleep(18); unmount(r); const t = ticks; await sleep(20); return [t > 0, ticks === t];
+```
+
+**10.** Хук, викликаний поза `setup`: чи спрацює?
+
+```js
+let ran = false; onMounted(() => { ran = true; }); await tick(); return ran;
+```
+
+**11.** Множинні реєстрації одного хука.
+
+```js
+const log = []; const C = defineComponent({ setup() { onMounted(() => log.push(1)); onMounted(() => log.push(2)); return () => h('p'); } }); mount(C); return log;
+```
+
+**12.** Умовне розмонтування й повторне монтування дитини.
+
+```js
+const show = ref(true); const log = []; const Kid = defineComponent({ setup() { onMounted(() => log.push('mounted')); onUnmounted(() => log.push('unmounted')); return () => h('i'); } }); mount(defineComponent({ setup() { return () => h('div', show.value ? [h(Kid)] : []); } })); show.value = false; await tick(); show.value = true; await tick(); return log;
+```
+
+### Рівень 4. Практика
+
+**13.** Які основні етапи життя компонента?
+
+**14.** Де виконується `setup()` і скільки разів?
+
+### Відповіді
+
+1. `['setup', 'beforeMount', 'render', 'mounted', 'beforeUnmount', 'unmounted']`
+2. `['beforeUpdate', 'render', 'updated']`
+3. `1`
+4. `['parent beforeMount', 'kid beforeMount', 'kid mounted', 'parent mounted']`
+5. `['parent beforeUnmount', 'kid beforeUnmount', 'kid unmounted', 'parent unmounted']`
+6. `'p'`
+7. `null`
+8. `['<p>a</p>', '<p>b</p>']`
+9. `[true, true]`
+10. `false`
+11. `[1, 2]`
+12. `['mounted', 'unmounted', 'mounted']`
+13. Створення (`setup`), монтування (`onBeforeMount` → рендер → `onMounted`), оновлення (`onBeforeUpdate` → `onUpdated`), розмонтування (`onBeforeUnmount` → `onUnmounted`)
+14. Один раз при створенні екземпляра компонента; повторні рендери викликають лише render-функцію/шаблон

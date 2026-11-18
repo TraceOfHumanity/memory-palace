@@ -284,3 +284,339 @@ ALPN: server accepted http/1.1
 6. Кеш: `ETag`/`304`, `max-age`.
 7. З'єднання лишається для наступних запитів.
 8. Для безпеки: тільки HTTPS, HSTS, захищені cookie.
+
+## Задачі для закріплення
+
+33 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Фрагменти з `return` — тіла функцій, відповідь — повернене значення. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Розбір URL на частини.
+
+```js
+(() => { const u = new URL('https://user:pw@example.com:8443/a/b?x=1&y=2#top'); return [u.protocol, u.username, u.hostname, u.port, u.pathname, u.search, u.hash, u.origin]; })()
+```
+
+**2.** Порти за замовчуванням для `http` та `https` у `URL`.
+
+```js
+[new URL('http://a.com:80/').port, new URL('https://a.com:443/').port, new URL('http://a.com/').port, new URL('https://a.com:444/').port]
+```
+
+**3.** Що надсилає клієнт: сирий HTTP/1.1-запит і перший рядок відповіді.
+
+```js
+const s = await serve((req, res) => { res.setHeader('X-Test', '1'); res.end('hello'); });
+const r = await raw(s.port, 'GET /path HTTP/1.1\r\nHost: x\r\nConnection: close\r\n\r\n');
+s.close();
+return r.split('\r\n').filter(l => !/^(Date|Connection|Keep-Alive)/.test(l));
+```
+
+**4.** Що бачить сервер у запиті: метод, шлях, заголовки.
+
+```js
+let seen;
+const s = await serve((req, res) => { seen = [req.method, req.url, req.headers.host === '127.0.0.1:' + s.port, req.headers['x-custom']]; res.end('ok'); });
+await fetch(s.url + '/p?a=1', { method: 'POST', headers: { 'X-Custom': 'v' }, body: 'data' });
+s.close();
+return seen;
+```
+
+**5.** Статуси відповіді: `fetch` не кидає помилку на 404/500.
+
+```js
+const s = await serve((req, res) => { res.statusCode = Number(req.url.slice(1)); res.end(); });
+const out = [];
+for (const c of [200, 201, 204, 301, 404, 500]) { const r = await fetch(s.url + '/' + c, { redirect: 'manual' }); out.push([r.status, r.statusText, r.ok]); }
+s.close();
+return out;
+```
+
+**6.** Перенаправлення 301/302: куди потрапляє клієнт і який метод?
+
+```js
+const s = await serve((req, res) => { if (req.url === '/old') { res.statusCode = 302; res.setHeader('Location', '/new'); return res.end(); } res.end(req.method + ' ' + req.url); });
+const r = await fetch(s.url + '/old');
+const t = await r.text();
+s.close();
+return [r.redirected, new URL(r.url).pathname, t];
+```
+
+**7.** 301/302 після POST: метод змінюється на GET; 307 зберігає.
+
+```js
+const s = await serve((req, res) => { if (req.url === '/a') { res.statusCode = 302; res.setHeader('Location', '/t'); return res.end(); } if (req.url === '/b') { res.statusCode = 307; res.setHeader('Location', '/t'); return res.end(); } res.end(req.method); });
+const a = await (await fetch(s.url + '/a', { method: 'POST', body: 'x' })).text();
+const b = await (await fetch(s.url + '/b', { method: 'POST', body: 'x' })).text();
+s.close();
+return [a, b];
+```
+
+**8.** Заголовки: регістр імен нечутливий.
+
+```js
+const s = await serve((req, res) => { res.setHeader('Content-Type', 'text/plain'); res.end('x'); });
+const r = await fetch(s.url);
+const out = [r.headers.get('content-type'), r.headers.get('CONTENT-TYPE'), r.headers.has('content-length')];
+s.close();
+return out;
+```
+
+**9.** `Content-Type` і `Content-Length` для JSON-відповіді.
+
+```js
+const body = JSON.stringify({ ок: true });
+const s = await serve((req, res) => { res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.end(body); });
+const r = await fetch(s.url);
+const out = [r.headers.get('content-type'), r.headers.get('content-length'), Buffer.byteLength(body), await r.json()];
+s.close();
+return out;
+```
+
+### Рівень 2. Деталі й поведінка
+
+**10.** Методи HTTP: ідемпотентність — що повертає сервер на повторний PUT та POST?
+
+```js
+let n = 0, items = [];
+const s = await serve((req, res) => { if (req.method === 'POST') items.push(++n); res.end(String(items.length)); });
+const out = [];
+for (const m of ['POST', 'POST', 'PUT', 'PUT']) out.push(await (await fetch(s.url, { method: m })).text());
+s.close();
+return out;
+```
+
+**11.** Метод `HEAD`: заголовки без тіла.
+
+```js
+const s = await serve((req, res) => { res.setHeader('Content-Length', '5'); res.end(req.method === 'HEAD' ? undefined : 'hello'); });
+const r = await fetch(s.url, { method: 'HEAD' });
+const out = [r.status, r.headers.get('content-length'), (await r.text()).length];
+s.close();
+return out;
+```
+
+**12.** `OPTIONS` та заголовок `Allow`.
+
+```js
+const s = await serve((req, res) => { if (req.method === 'OPTIONS') { res.setHeader('Allow', 'GET, POST, OPTIONS'); res.statusCode = 204; return res.end(); } res.end('x'); });
+const r = await fetch(s.url, { method: 'OPTIONS' });
+const out = [r.status, r.headers.get('allow')];
+s.close();
+return out;
+```
+
+**13.** Кеш: `ETag` та умовний запит `If-None-Match` → 304.
+
+```js
+const etag = '"v1"';
+const s = await serve((req, res) => { res.setHeader('ETag', etag); if (req.headers['if-none-match'] === etag) { res.statusCode = 304; return res.end(); } res.end('body'); });
+const a = await fetch(s.url);
+const t = await a.text();
+const b = await fetch(s.url, { headers: { 'If-None-Match': a.headers.get('etag') } });
+const out = [a.status, t, b.status, (await b.text()).length];
+s.close();
+return out;
+```
+
+**14.** `Cache-Control: max-age` та `no-store` — які значення бачить клієнт?
+
+```js
+const s = await serve((req, res) => { res.setHeader('Cache-Control', req.url === '/a' ? 'public, max-age=3600' : 'no-store'); res.end('x'); });
+const a = await fetch(s.url + '/a'), b = await fetch(s.url + '/b');
+const out = [a.headers.get('cache-control'), b.headers.get('cache-control')];
+s.close();
+return out;
+```
+
+**15.** Cookie: `Set-Cookie` від сервера та надсилання клієнтом.
+
+```js
+const s = await serve((req, res) => { if (!req.headers.cookie) { res.setHeader('Set-Cookie', ['sid=abc123; HttpOnly; Path=/', 'theme=dark; Max-Age=60']); return res.end('new'); } res.end('cookie=' + req.headers.cookie); });
+const a = await fetch(s.url);
+const cookies = a.headers.getSetCookie();
+const b = await fetch(s.url, { headers: { Cookie: cookies.map(c => c.split(';')[0]).join('; ') } });
+const out = [cookies, await b.text()];
+s.close();
+return out;
+```
+
+**16.** Стиснення: `Accept-Encoding: gzip` та розмір тіла.
+
+```js
+const text = 'abc'.repeat(1000);
+const s = await serve((req, res) => { if ((req.headers['accept-encoding'] || '').includes('gzip')) { const z = zlib.gzipSync(text); res.setHeader('Content-Encoding', 'gzip'); res.setHeader('Content-Length', z.length); return res.end(z); } res.end(text); });
+const r = await fetch(s.url, { headers: { 'Accept-Encoding': 'gzip' } });
+const body = await r.text();
+const out = [r.headers.get('content-encoding'), body.length, Number(r.headers.get('content-length')) < 100];
+s.close();
+return out;
+```
+
+**17.** Діапазони: `Range` → `206 Partial Content`.
+
+```js
+const data = Buffer.from('0123456789');
+const s = await serve((req, res) => { const m = /bytes=(\d+)-(\d+)/.exec(req.headers.range || ''); if (m) { const [a, b] = [+m[1], +m[2]]; res.statusCode = 206; res.setHeader('Content-Range', `bytes ${a}-${b}/${data.length}`); return res.end(data.subarray(a, b + 1)); } res.end(data); });
+const r = await fetch(s.url, { headers: { Range: 'bytes=2-5' } });
+const out = [r.status, r.headers.get('content-range'), await r.text()];
+s.close();
+return out;
+```
+
+**18.** Keep-alive: скільки TCP-з'єднань для трьох послідовних запитів?
+
+```js
+let conns = 0;
+const s = await serve((req, res) => res.end('x'));
+s.s.on('connection', () => conns++);
+const agent = new http.Agent({ keepAlive: true });
+for (let i = 0; i < 3; i++) await new Promise((ok) => http.get(s.url, { agent }, (r) => { r.resume(); r.on('end', ok); }));
+agent.destroy();
+const c1 = conns;
+conns = 0;
+const agent2 = new http.Agent({ keepAlive: false });
+for (let i = 0; i < 3; i++) await new Promise((ok) => http.get(s.url, { agent: agent2, headers: { Connection: 'close' } }, (r) => { r.resume(); r.on('end', ok); }));
+const out = [c1, conns];
+s.close();
+return out;
+```
+
+### Рівень 3. Нюанси та пастки
+
+**19.** Помилковий запит: сервер Node відповідає 400 на некоректний рядок запиту.
+
+```js
+const s = await serve((req, res) => res.end('ok'));
+const r = await raw(s.port, 'THIS IS NOT HTTP\r\n\r\n');
+s.close();
+return r.split('\r\n')[0];
+```
+
+**20.** `Host` обов'язковий у HTTP/1.1: що відповідає Node без нього?
+
+```js
+const s = await serve((req, res) => res.end('ok'));
+const r = await raw(s.port, 'GET / HTTP/1.1\r\nConnection: close\r\n\r\n');
+s.close();
+return r.split('\r\n')[0];
+```
+
+**21.** Chunked-передача: заголовок `Transfer-Encoding` та склеювання частин.
+
+```js
+const s = await serve((req, res) => { res.write('part1,'); setTimeout(() => { res.write('part2,'); res.end('end'); }, 5); });
+const r = await fetch(s.url);
+const out = [r.headers.get('transfer-encoding'), r.headers.get('content-length'), await r.text()];
+s.close();
+return out;
+```
+
+**22.** Тіло POST: `application/json` проти `application/x-www-form-urlencoded`.
+
+```js
+let got = [];
+const s = await serve((req, res) => { let b = ''; req.on('data', c => b += c); req.on('end', () => { got.push([req.headers['content-type'], b]); res.end(); }); });
+await fetch(s.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ a: 1 }) });
+await fetch(s.url, { method: 'POST', body: new URLSearchParams({ a: '1 2', b: 'x&y' }) });
+s.close();
+return got;
+```
+
+**23.** Заголовок `Authorization: Basic` — що це за кодування?
+
+```js
+const h = 'Basic ' + Buffer.from('user:pass').toString('base64');
+return [h, Buffer.from(h.slice(6), 'base64').toString()];
+```
+
+**24.** `Location` і `201 Created`.
+
+```js
+const s = await serve((req, res) => { res.statusCode = 201; res.setHeader('Location', '/items/7'); res.end(); });
+const r = await fetch(s.url, { method: 'POST' });
+const out = [r.status, r.headers.get('location')];
+s.close();
+return out;
+```
+
+**25.** `Retry-After` і код `429`.
+
+```js
+const s = await serve((req, res) => { res.statusCode = 429; res.setHeader('Retry-After', '30'); res.end(); });
+const r = await fetch(s.url);
+const out = [r.status, r.headers.get('retry-after'), r.ok];
+s.close();
+return out;
+```
+
+**26.** Класи кодів статусу.
+
+```js
+[100, 200, 301, 404, 503].map(c => ({ 1: 'інформаційні', 2: 'успіх', 3: 'перенаправлення', 4: 'помилка клієнта', 5: 'помилка сервера' }[Math.floor(c / 100)]))
+```
+
+**27.** Стандартні тексти статусів у Node.
+
+```js
+(() => { const { STATUS_CODES } = process.getBuiltinModule('node:http'); return [200, 201, 204, 301, 304, 400, 401, 403, 404, 418, 500, 502, 503].map(c => c + ' ' + STATUS_CODES[c]); })()
+```
+
+### Рівень 4. Практика
+
+**28.** Методи, що вважаються безпечними й ідемпотентними.
+
+```js
+({ safe: ['GET', 'HEAD', 'OPTIONS'], idempotent: ['GET', 'HEAD', 'OPTIONS', 'PUT', 'DELETE'], nonIdempotent: ['POST', 'PATCH'] })
+```
+
+**29.** HTTPS-запит до порту, де слухає звичайний HTTP: яка помилка?
+
+```js
+const s = await serve((req, res) => res.end('x'));
+try { await fetch('https://127.0.0.1:' + s.port); } catch (e) { s.close(); return [e.name, e.cause?.code ?? e.cause?.message]; }
+```
+
+**30.** Чим HTTP відрізняється від HTTPS?
+
+**31.** Що відбувається під час TLS-рукостискання?
+
+**32.** Чим HTTP/2 відрізняється від HTTP/1.1?
+
+**33.** Чому `GET` не повинен змінювати стан сервера?
+
+### Відповіді
+
+1. `['https:', 'user', 'example.com', '8443', '/a/b', '?x=1&y=2', '#top', 'https://example.com:8443']`
+2. `['', '', '', '444']`
+3. `['HTTP/1.1 200 OK', 'X-Test: 1', 'Content-Length: 5', '', 'hello']`
+4. `['POST', '/p?a=1', true, 'v']`
+5. `[[200, 'OK', true], [201, 'Created', true], [204, 'No Content', true], [301, 'Moved Permanently', false], [404, 'Not Found', false], [500, 'Internal Server Error', false]]`
+6. `[true, '/new', 'GET /new']`
+7. `['GET', 'POST']`
+8. `['text/plain', 'text/plain', true]`
+9. `['application/json; charset=utf-8', '13', 13, { 'ок': true }]`
+10. `['1', '2', '2', '2']`
+11. `[200, '5', 0]`
+12. `[204, 'GET, POST, OPTIONS']`
+13. `[200, 'body', 304, 0]`
+14. `['public, max-age=3600', 'no-store']`
+15. `[['sid=abc123; HttpOnly; Path=/', 'theme=dark; Max-Age=60'], 'cookie=sid=abc123; theme=dark']`
+16. `['gzip', 3000, true]`
+17. `[206, 'bytes 2-5/10', '2345']`
+18. `[1, 3]`
+19. `'HTTP/1.1 400 Bad Request'`
+20. `'HTTP/1.1 400 Bad Request'`
+21. `['chunked', null, 'part1,part2,end']`
+22. `[['application/json', '{"a":1}'], ['application/x-www-form-urlencoded;charset=UTF-8', 'a=1+2&b=x%26y']]`
+23. `['Basic dXNlcjpwYXNz', 'user:pass']`
+24. `[201, '/items/7']`
+25. `[429, '30', false]`
+26. `['інформаційні', 'успіх', 'перенаправлення', 'помилка клієнта', 'помилка сервера']`
+27. `['200 OK', '201 Created', '204 No Content', '301 Moved Permanently', '304 Not Modified', '400 Bad Request', '401 Unauthorized', '403 Forbidden', '404 Not Found', '418 I'm a Teapot', '500 Internal Server Error', '502 Bad Gateway', '503 Service Unavailable']`
+28. `{ safe: ['GET', 'HEAD', 'OPTIONS'], idempotent: ['GET', 'HEAD', 'OPTIONS', 'PUT', 'DELETE'], nonIdempotent: ['POST', 'PATCH'] }`
+29. `['TypeError', 'ERR_SSL_PACKET_LENGTH_TOO_LONG']`
+30. HTTPS — це HTTP поверх TLS: трафік шифрується, сервер автентифікується сертифікатом, а цілісність даних захищена від підміни
+31. Клієнт і сервер узгоджують версію та шифри, сервер надсилає сертифікат, сторони обчислюють спільний ключ сеансу (ECDHE), далі дані шифруються симетрично
+32. Бінарний формат, мультиплексування багатьох запитів в одному з'єднанні, стиснення заголовків (HPACK), серверні push (застаріли); HTTP/3 використовує QUIC поверх UDP
+33. Він має бути безпечним: проміжні вузли можуть кешувати, повторювати й попередньо завантажувати `GET`-запити

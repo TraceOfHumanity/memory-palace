@@ -320,3 +320,143 @@ try {
 - Пастки: приватні поля (`#`) ламаються, якщо `this` = проксі (рішення: `bind(target)`); `proxy !== target`; додаткова вартість кожної операції; прихована поведінка ускладнює налагодження; кеш потребує інвалідації.
 - `Proxy.revocable` дозволяє відкликати доступ.
 - Застосування: реактивність (Vue 3, MobX, Immer), RPC/ORM-клієнти, інтерцептори і кеш у Nest, шпигуни у тестах.
+
+## Задачі для закріплення
+
+19 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Що перехоплює `get`-пастка Proxy?
+
+```js
+(() => { const p = new Proxy({ a: 1 }, { get: (t, k) => k in t ? t[k] : 'default' }); return [p.a, p.zzz]; })()
+```
+
+**2.** Що перехоплює `set`-пастка і валідація?
+
+```js
+(() => { const p = new Proxy({}, { set(t, k, v) { if (k === 'age' && typeof v !== 'number') throw new TypeError('age must be number'); t[k] = v; return true; } }); p.age = 5; try { p.age = 'x'; } catch (e) { return [p.age, e.message]; } })()
+```
+
+**3.** `has`-пастка: приховування приватних ключів.
+
+```js
+(() => { const p = new Proxy({ _s: 1, a: 2 }, { has: (t, k) => !k.startsWith('_') && k in t }); return ['a' in p, '_s' in p]; })()
+```
+
+**4.** `deleteProperty`: захист від видалення.
+
+```js
+(() => { const p = new Proxy({ a: 1 }, { deleteProperty: () => false }); const r = delete p.a; return [r, p.a]; })()
+```
+
+**5.** `ownKeys` і `Object.keys`.
+
+```js
+(() => { const p = new Proxy({ _a: 1, b: 2, c: 3 }, { ownKeys: (t) => Reflect.ownKeys(t).filter(k => !k.startsWith('_')) }); return Object.keys(p); })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**6.** `apply`-пастка для функцій.
+
+```js
+(() => { const f = new Proxy((a, b) => a + b, { apply: (t, th, args) => t(...args) * 10 }); return f(1, 2); })()
+```
+
+**7.** `construct`-пастка.
+
+```js
+(() => { class A { constructor(n) { this.n = n; } } const P = new Proxy(A, { construct: (t, a) => new t(a[0] * 2) }); return new P(4).n; })()
+```
+
+**8.** Створіть логувальний Proxy для будь-якого об'єкта.
+
+```js
+const logged = (o, log) => new Proxy(o, { get(t, k, r) { log.push('get ' + String(k)); return Reflect.get(t, k, r); }, set(t, k, v, r) { log.push('set ' + String(k)); return Reflect.set(t, k, v, r); } })
+```
+
+**9.** Реалізуйте масив із від'ємними індексами.
+
+```js
+const neg = (a) => new Proxy(a, { get: (t, k, r) => typeof k === 'string' && /^-\d+$/.test(k) ? t[t.length + +k] : Reflect.get(t, k, r) })
+```
+
+**10.** Реалізуйте ледаче обчислення (virtual proxy).
+
+```js
+const lazy = (init) => { let v, done = false; return new Proxy({}, { get: (_, k) => { if (!done) { v = init(); done = true; } return v[k]; } }); }
+```
+
+### Рівень 3. Нюанси та пастки
+
+**11.** Створіть кеш-Proxy для функції.
+
+```js
+const cached = (f) => { const c = new Map(); return new Proxy(f, { apply(t, th, a) { const k = JSON.stringify(a); if (!c.has(k)) c.set(k, Reflect.apply(t, th, a)); return c.get(k); } }); }
+```
+
+**12.** Значення за замовчуванням для вкладених шляхів (`auto-vivification`).
+
+```js
+const auto = () => new Proxy({}, { get: (t, k) => (k in t ? t[k] : (t[k] = auto())) })
+```
+
+**13.** Невідкликуваний і відкликуваний Proxy.
+
+```js
+const { proxy, revoke } = Proxy.revocable({ a: 1 }, {})
+```
+
+**14.** Proxy та `this` усередині методів: вбудовані об'єкти (`Map`).
+
+```js
+(() => { const p = new Proxy(new Map(), {}); try { p.set(1, 2); } catch (e) { return e.name; } })()
+```
+
+**15.** Як виправити `Map`-Proxy через `bind`?
+
+```js
+(() => { const m = new Map(); const p = new Proxy(m, { get: (t, k) => typeof t[k] === 'function' ? t[k].bind(t) : t[k] }); p.set(1, 2); return [p.get(1), p.size]; })()
+```
+
+### Рівень 4. Практика
+
+**16.** `Reflect` vs пряма операція: що повертає `Reflect.set`?
+
+```js
+(() => { const o = Object.freeze({ a: 1 }); return [Reflect.set(o, 'a', 2), Reflect.has({ a: 1 }, 'a'), Reflect.ownKeys({ a: 1, [Symbol.for('s')]: 2 }).length]; })()
+```
+
+**17.** Що поверне `typeof` Proxy та `instanceof`?
+
+```js
+(() => { class A {} const p = new Proxy(new A(), {}); const f = new Proxy(() => {}, {}); return [typeof p, p instanceof A, typeof f, Array.isArray(new Proxy([], {}))]; })()
+```
+
+**18.** Чим патерн Proxy відрізняється від `Decorator`?
+
+**19.** Які недоліки Proxy у JavaScript?
+
+### Відповіді
+
+1. `[1, 'default']`
+2. `[5, 'age must be number']`
+3. `[true, false]`
+4. `[false, 1]`
+5. `['b', 'c']`
+6. `30`
+7. `8`
+8. Виклик `(() => { const log = []; const p = logged({ a: 1 }, log); p.a; p.b = 2; return log; })()` → `['get a', 'set b']`
+9. Виклик `(() => { const a = neg([1, 2, 3, 4]); return [a[-1], a[-2], a[0], a.length]; })()` → `[4, 3, 1, 4]`
+10. Виклик `(() => { let n = 0; const p = lazy(() => (n++, { a: 1, b: 2 })); const before = n; return [before, p.a, p.b, n]; })()` → `[0, 1, 2, 1]`
+11. Виклик `(() => { let n = 0; const f = cached((a, b) => (n++, a + b)); f(1, 2); f(1, 2); f(2, 3); return n; })()` → `2`
+12. Виклик `(() => { const o = auto(); o.a.b.c = 5; return [o.a.b.c, typeof o.x.y]; })()` → `[5, 'object']`
+13. Виклик `(() => { const r = proxy.a; revoke(); try { proxy.a; } catch (e) { return [r, e.name]; } })()` → `[1, 'TypeError']`
+14. `'TypeError'`
+15. `[2, 1]`
+16. `[false, true, 2]`
+17. `['object', true, 'function', true]`
+18. Proxy контролює доступ до об'єкта (ліниве створення, кеш, права, логування) з тим самим інтерфейсом; Decorator додає нову поведінку/відповідальність
+19. Накладні витрати на кожну операцію, складніше налагодження, проблеми з внутрішніми слотами вбудованих типів (`Map`, `Date`), невидимість для `===` (проксі ≠ ціль)

@@ -407,3 +407,244 @@ Nest робить рівно це ж саме, але автоматично: ч
 - Provider видимий лише в своєму модулі, якщо не `exports`; `@Global()` робить його доступним скрізь без повторного `imports`.
 - Циклічні залежності (`forwardRef()`) — здебільшого симптом поганого поділу відповідальності, а не норма.
 - Nest-DI — автоматизована версія того самого принципу, який у чистому JS робить розробник вручну, передаючи залежності через параметри функцій/конструкторів замість `new` «усередині» коду.
+
+## Задачі для закріплення
+
+21 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах усі експорти `@nestjs/common` і `NestFactory` імпортовані, `boot(Module)` запускає застосунок на вільному порту й повертає `{ url, close }`, а `get(url)` повертає `{ status, body }`.
+
+### Рівень 1. Основи
+
+**1.** Constructor injection: Nest створює залежності й передає їх.
+
+```ts
+@Injectable() class A { name() { return 'A'; } }
+@Injectable() class B { constructor(private a: A) {} hi() { return 'B uses ' + this.a.name(); } }
+@Module({ providers: [A, B] }) class M {}
+const app = await boot(M);
+const r = app.app.get(B).hi();
+await app.close();
+return r;
+```
+
+**2.** Singleton: один екземпляр на застосунок.
+
+```ts
+let n = 0;
+@Injectable() class S { id = ++n; }
+@Module({ providers: [S] }) class M {}
+const a = await boot(M);
+const x = a.app.get(S), y = a.app.get(S);
+await a.close();
+return [x === y, n];
+```
+
+**3.** Область `Scope.TRANSIENT`: новий екземпляр для кожного споживача.
+
+```ts
+let n = 0;
+@Injectable({ scope: Scope.TRANSIENT }) class S { id = ++n; }
+@Injectable() class A { constructor(public s: S) {} }
+@Injectable() class B { constructor(public s: S) {} }
+@Module({ providers: [S, A, B] }) class M {}
+const app = await boot(M);
+const a = app.app.get(A), b = app.app.get(B);
+await app.close();
+return [a.s === b.s, n];
+```
+
+**4.** Область `Scope.REQUEST`: новий екземпляр на кожен запит.
+
+```ts
+let n = 0;
+@Injectable({ scope: Scope.REQUEST }) class S { id = ++n; }
+@Controller() class C { constructor(private s: S) {} @Get() g() { return this.s.id; } }
+@Module({ controllers: [C], providers: [S] }) class M {}
+const a = await boot(M);
+const x = await get(a.url + '/'), y = await get(a.url + '/');
+await a.close();
+return [x.body, y.body];
+```
+
+**5.** `useValue`: власний провайдер зі значенням і токеном-рядком.
+
+```ts
+@Controller() class C { constructor(@Inject('API_KEY') private k: string) {} @Get() g() { return this.k; } }
+@Module({ controllers: [C], providers: [{ provide: 'API_KEY', useValue: 'secret-1' }] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/');
+await a.close();
+return r.body;
+```
+
+**6.** `useClass`: підміна реалізації за інтерфейсом-токеном.
+
+```ts
+abstract class Mailer { abstract send(): string; }
+@Injectable() class Smtp extends Mailer { send() { return 'smtp'; } }
+@Injectable() class Fake extends Mailer { send() { return 'fake'; } }
+@Injectable() class Svc { constructor(private m: Mailer) {} go() { return this.m.send(); } }
+@Module({ providers: [Svc, { provide: Mailer, useClass: Fake }] }) class M {}
+const app = await boot(M);
+const r = app.app.get(Svc).go();
+await app.close();
+return r;
+```
+
+### Рівень 2. Деталі й поведінка
+
+**7.** `useFactory` із залежностями через `inject`.
+
+```ts
+@Injectable() class Cfg { url = 'db://x'; }
+@Module({ providers: [Cfg, { provide: 'DB', useFactory: (c: Cfg) => ({ conn: c.url + '/main' }), inject: [Cfg] }] }) class M {}
+const app = await boot(M);
+const r = app.app.get('DB');
+await app.close();
+return r;
+```
+
+**8.** Асинхронна фабрика: Nest чекає на `Promise` перед стартом.
+
+```ts
+const log: string[] = [];
+@Module({ providers: [{ provide: 'ASYNC', useFactory: async () => { await new Promise(r => setTimeout(r, 20)); log.push('factory done'); return 42; } }] }) class M {}
+const app = await boot(M);
+log.push('app ready');
+const v = app.app.get('ASYNC');
+await app.close();
+return [log, v];
+```
+
+**9.** `useExisting`: псевдонім до наявного провайдера.
+
+```ts
+@Injectable() class S { id = Math.random(); }
+@Module({ providers: [S, { provide: 'ALIAS', useExisting: S }] }) class M {}
+const app = await boot(M);
+const same = app.app.get('ALIAS') === app.app.get(S);
+await app.close();
+return same;
+```
+
+**10.** `@Optional()`: відсутня залежність не ламає запуск.
+
+```ts
+@Injectable() class S { constructor(@Optional() @Inject('MISSING') public x?: string) {} }
+@Module({ providers: [S] }) class M {}
+const app = await boot(M);
+const r = app.app.get(S).x;
+await app.close();
+return r;
+```
+
+**11.** Без `@Optional` відсутній токен — помилка при запуску.
+
+```ts
+const first = (e: any) => String(e.message).split('\n')[0];
+@Injectable() class S { constructor(@Inject('MISSING') public x: string) {} }
+@Module({ providers: [S] }) class M {}
+try { await boot(M); } catch (e) { return first(e).slice(0, 90); }
+```
+
+**12.** Що станеться, якщо клас без `@Injectable` оголосив параметри конструктора?
+
+```ts
+const first = (e: any) => String(e.message).split('\n')[0];
+class Plain { constructor(public a: string) {} }
+@Module({ providers: [Plain] }) class M {}
+try { await boot(M); } catch (e) { return first(e).slice(0, 85); }
+```
+
+### Рівень 3. Нюанси та пастки
+
+**13.** Інжекція `ModuleRef` та динамічне отримання провайдера.
+
+```ts
+@Injectable() class S { v = 'found'; }
+@Injectable() class Locator { constructor(private ref: ModuleRef) {} find() { return this.ref.get(S).v; } }
+@Module({ providers: [S, Locator] }) class M {}
+const app = await boot(M);
+const r = app.app.get(Locator).find();
+await app.close();
+return r;
+```
+
+**14.** Порядок ініціалізації залежностей: залежності створюються раніше залежних.
+
+```ts
+const log: string[] = [];
+@Injectable() class A { constructor() { log.push('A'); } }
+@Injectable() class B { constructor(a: A) { log.push('B'); } }
+@Injectable() class C { constructor(b: B) { log.push('C'); } }
+@Module({ providers: [C, B, A] }) class M {}
+const app = await boot(M);
+await app.close();
+return log;
+```
+
+**15.** Інжекція за токеном-символом.
+
+```ts
+const TOKEN = Symbol('TOKEN');
+@Injectable() class S { constructor(@Inject(TOKEN) public v: number) {} }
+@Module({ providers: [S, { provide: TOKEN, useValue: 99 }] }) class M {}
+const app = await boot(M);
+const r = app.app.get(S).v;
+await app.close();
+return r;
+```
+
+**16.** Підміна провайдера в тесті через `overrideProvider`.
+
+```ts
+@Injectable() class Db { find() { return 'real'; } }
+@Injectable() class Svc { constructor(private db: Db) {} get() { return this.db.find(); } }
+const t = await Test.createTestingModule({ providers: [Svc, Db] }).overrideProvider(Db).useValue({ find: () => 'fake' }).compile();
+return t.get(Svc).get();
+```
+
+**17.** Provider із `onModuleInit` та залежністю від іншого сервісу.
+
+```ts
+const log: string[] = [];
+@Injectable() class A { ready = false; onModuleInit() { this.ready = true; log.push('A init'); } }
+@Injectable() class B implements OnModuleInit { constructor(private a: A) {} onModuleInit() { log.push('B sees A.ready=' + this.a.ready); } }
+@Module({ providers: [B, A] }) class M {}
+const app = await boot(M);
+await app.close();
+return log;
+```
+
+**18.** Що таке provider у Nest?
+
+### Рівень 4. Практика
+
+**19.** Чому Nest за замовчуванням створює провайдери як singleton?
+
+**20.** Який недолік у `Scope.REQUEST`?
+
+**21.** Як Nest визначає, що впроваджувати в конструктор?
+
+### Відповіді
+
+1. `'B uses A'`
+2. `[true, 1]`
+3. `[false, 2]`
+4. `['1', '2']`
+5. `'secret-1'`
+6. `'fake'`
+7. `{ conn: 'db://x/main' }`
+8. `[['factory done', 'app ready'], 42]`
+9. `true`
+10. `undefined`
+11. `'Nest can't resolve dependencies of the S (?). Please make sure that the argument "MISSING"'`
+12. `undefined`
+13. `'found'`
+14. `['A', 'B', 'C']`
+15. `99`
+16. `'fake'`
+17. `['B sees A.ready=false', 'A init']`
+18. Будь-який клас/значення, яке контейнер DI може створити й впровадити: сервіси, репозиторії, фабрики, конфіги; реєструється в `providers` модуля
+19. Один екземпляр на застосунок економить пам'ять і зберігає спільний стан; для кожного запиту чи споживача використовують `Scope.REQUEST`/`TRANSIENT`
+20. Залежний від нього ланцюжок також стає request-scoped; кожен запит створює нові екземпляри, що збільшує навантаження
+21. За метаданими `design:paramtypes` (типи параметрів, які генерує TypeScript) або за явним токеном через `@Inject(token)`

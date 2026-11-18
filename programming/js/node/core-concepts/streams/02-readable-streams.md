@@ -185,3 +185,137 @@ main().catch((err) => console.error("Demo failed:", err));
 - Chunk'и не відповідають логічним одиницям даних: числа, рядки й навіть багатобайтові символи можуть бути розрізані на межі — зберігай `leftover` між подіями, використовуй `encoding` і `readline`.
 - `Readable.from(iterable)` робить потік з масиву чи (асинхронного) генератора, кожен елемент — окремий chunk.
 - `for await...of` — найпростіший спосіб споживання: без колбеків, з автоматичним backpressure й обробкою помилок через `try/catch`.
+
+## Задачі для закріплення
+
+17 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в Node.js 24; `fs` — `node:fs`, `fsp` — `node:fs/promises`, `dir` — порожня тимчасова директорія, `path`, `os`, `stream`, `events` — відповідні `node:`-модулі.
+
+### Рівень 1. Основи
+
+**1.** Який режим у потоку одразу після створення та після `on('data')`?
+
+```node
+(async () => { const r = Readable.from(['a']); const a = r.readableFlowing; r.on('data', () => {}); const b = r.readableFlowing; await events.once(r, 'end'); return [a, b]; })()
+```
+
+**2.** Що змінює `pause()`/`resume()`?
+
+```node
+(() => { const r = Readable.from(['a']); r.on('data', () => {}); r.pause(); const a = r.readableFlowing; r.resume(); return [a, r.readableFlowing]; })()
+```
+
+**3.** Як працює paused-режим: подія `readable` і `read()`?
+
+```node
+(async () => { const r = new Readable({ read() {} }); r.push('ab'); r.push('cd'); r.push(null); const out = []; r.on('readable', () => { let c; while ((c = r.read()) !== null) out.push(c.toString()); }); await events.once(r, 'end'); return out; })()
+```
+
+**4.** Що таке `highWaterMark` за замовчуванням для Readable та об'єктного режиму?
+
+```node
+[new Readable().readableHighWaterMark, new Readable({ objectMode: true }).readableHighWaterMark]
+```
+
+**5.** Чи залежить кількість чанків від `highWaterMark` для `Readable.from`?
+
+```node
+(async () => { const r = Readable.from(['a', 'b', 'c']); const out = []; for await (const c of r) out.push(c); return out; })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**6.** Класична пастка: чи збігаються межі чанків і межі рядків?
+
+```node
+(async () => { const r = new Readable({ read() {} }); const out = []; r.on('data', (c) => out.push(c.toString())); for (const p of ['hel', 'lo\nwor', 'ld\n']) { r.push(p); await new Promise(res => setImmediate(res)); } r.push(null); await events.once(r, 'end'); return [out, out.join('').split('\n').filter(Boolean)]; })()
+```
+
+**7.** Як правильно збирати рядки з чанків (залишок)?
+
+```node
+(async () => { const chunks = ['hel', 'lo\nwor', 'ld\nlas', 't']; let rest = ''; const lines = []; for (const c of chunks) { rest += c; const parts = rest.split('\n'); rest = parts.pop(); lines.push(...parts); } if (rest) lines.push(rest); return lines; })()
+```
+
+**8.** Що станеться з багатобайтовим символом, розрізаним між чанками, без `setEncoding`?
+
+```node
+(async () => { const b = Buffer.from('я'); const r = new Readable({ read() {} }); const naive = []; r.on('data', (c) => naive.push(c.toString())); r.push(b.subarray(0, 1)); await new Promise(res => setImmediate(res)); r.push(b.subarray(1)); r.push(null); await events.once(r, 'end'); return naive; })()
+```
+
+**9.** А з `setEncoding('utf8')`?
+
+```node
+(async () => { const b = Buffer.from('я'); const r = new Readable({ read() {} }); r.setEncoding('utf8'); const out = []; r.on('data', (c) => out.push(c)); r.push(b.subarray(0, 1)); await new Promise(res => setImmediate(res)); r.push(b.subarray(1)); r.push(null); await events.once(r, 'end'); return out; })()
+```
+
+**10.** Що поверне `Readable.from(iterable)` для рядка та для масиву рядків (чанки)?
+
+```node
+(async () => { const a = []; for await (const c of Readable.from('hello')) a.push(c); const b = []; for await (const c of Readable.from(['he', 'llo'])) b.push(c); return [a, b]; })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**11.** Чи потрібен `objectMode` для потоку об'єктів?
+
+```node
+(async () => { const r = Readable.from([{ a: 1 }, { a: 2 }]); const out = []; for await (const o of r) out.push(o.a); return [r.readableObjectMode, out]; })()
+```
+
+**12.** Що станеться при `push` об'єкта без `objectMode`?
+
+```node
+(async () => { const r = new Readable({ read() {} }); const p = events.once(r, 'error'); r.push({ a: 1 }); const [e] = await p; return e.code; })()
+```
+
+**13.** Як зчитати весь потік у рядок?
+
+```node
+(async () => { const r = Readable.from(['a', 'b', 'c']); let s = ''; for await (const c of r) s += c; return s; })()
+```
+
+**14.** Що поверне `stream/consumers` `text`, `json`, `buffer`?
+
+```node
+(async () => { const c = process.getBuiltinModule('node:stream/consumers'); return [await c.text(Readable.from(['ab', 'cd'])), await c.json(Readable.from(['{"a":', '1}'])), (await c.buffer(Readable.from([Buffer.from('xy')]))).length]; })()
+```
+
+**15.** Що відбудеться, якщо в `for await` вийти через `break` — чи знищується потік?
+
+```node
+(async () => { const r = Readable.from([1, 2, 3, 4]); for await (const x of r) { if (x === 2) break; } return r.destroyed; })()
+```
+
+### Рівень 4. Практика
+
+**16.** Як `Readable` реалізується вручну: `read()` викликається на запит споживача?
+
+```node
+(async () => { let n = 0; const r = new Readable({ read() { n++; this.push(n <= 3 ? 'c' + n : null); } }); const out = []; for await (const c of r) out.push(c.toString()); return [out, n]; })()
+```
+
+**17.** Що дає `readable.unshift` (повернення прочитаного)?
+
+```node
+(() => { const r = new Readable({ read() {} }); r.push('hello'); const first = r.read(2).toString(); r.unshift(Buffer.from(first)); return r.read().toString(); })()
+```
+
+### Відповіді
+
+1. `[null, true]`
+2. `[false, true]`
+3. `['abcd']`
+4. `[65536, 16]`
+5. `['a', 'b', 'c']`
+6. `[['hel', 'lo\nwor', 'ld\n'], ['hello', 'world']]`
+7. `['hello', 'world', 'last']`
+8. `['�', '�']`
+9. `['я']`
+10. `[['hello'], ['he', 'llo']]`
+11. `[true, [1, 2]]`
+12. `'ERR_INVALID_ARG_TYPE'`
+13. `'abc'`
+14. `['abcd', { a: 1 }, 2]`
+15. `true`
+16. `[['c1', 'c2', 'c3'], 4]`
+17. `'hello'`

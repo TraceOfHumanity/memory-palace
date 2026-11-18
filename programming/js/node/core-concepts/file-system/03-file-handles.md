@@ -136,3 +136,140 @@ await fs.rm(flagsDemoPath, { force: true });
 - Прапорці визначають режим доступу: `r`/`r+` (читання, файл має існувати), `w`/`w+` (запис, створює або обрізає до нуля), `a`/`a+` (дописування, створює за потреби), `wx`/`ax` (як `w`/`a`, але помилка, якщо файл уже є).
 - Незакритий `FileHandle` — витік файлового дескриптора (обмежений ресурс ОС) — завжди закривайте через `close()`, найнадійніше — у блоці `finally`, щоб це відбувалось навіть при помилці.
 - `FileHandle` теж має `stat()` для метаданих (розмір, тип) без потреби відкривати файл заново через шлях.
+
+## Задачі для закріплення
+
+18 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в Node.js 24; `fs` — `node:fs`, `fsp` — `node:fs/promises`, `dir` — порожня тимчасова директорія, `path`, `os`, `stream`, `events` — відповідні `node:`-модулі.
+
+### Рівень 1. Основи
+
+**1.** Що таке файловий дескриптор?
+
+**2.** Що поверне `fsp.open` і чим є `fd`?
+
+```node
+(async () => { const h = await fsp.open(path.join(dir, 'a'), 'w'); const r = [h.constructor.name, typeof h.fd, h.fd > 2]; await h.close(); return r; })()
+```
+
+**3.** Що поверне `h.write` і чи змінює він позицію?
+
+```node
+(async () => { const h = await fsp.open(path.join(dir, 'a'), 'w'); const r1 = await h.write('abc'); const r2 = await h.write('def'); await h.close(); return [r1.bytesWritten, r2.bytesWritten, fs.readFileSync(path.join(dir, 'a'), 'utf8')]; })()
+```
+
+**4.** Що поверне `h.read` при читанні за кінцем файлу?
+
+```node
+(async () => { const f = path.join(dir, 'a'); await fsp.writeFile(f, 'abc'); const h = await fsp.open(f, 'r'); const a = await h.read(Buffer.alloc(10), 0, 10, 0); const b = await h.read(Buffer.alloc(10), 0, 10, 3); await h.close(); return [a.bytesRead, b.bytesRead]; })()
+```
+
+**5.** Що станеться при запису у файл, відкритий лише для читання?
+
+```node
+(async () => { const f = path.join(dir, 'a'); await fsp.writeFile(f, 'abc'); const h = await fsp.open(f, 'r'); try { await h.write('x'); } catch (e) { return e.code; } finally { await h.close(); } })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**6.** Що дає прапорець `'r+'` для неіснуючого файлу?
+
+```node
+(async () => { try { await fsp.open(path.join(dir, 'nope'), 'r+'); } catch (e) { return e.code; } })()
+```
+
+**7.** Що дає `'w+'` для існуючого файлу?
+
+```node
+(async () => { const f = path.join(dir, 'a'); await fsp.writeFile(f, 'old content'); const h = await fsp.open(f, 'w+'); const s = await h.stat(); await h.close(); return s.size; })()
+```
+
+**8.** Що дає `'a+'`: позиція запису та читання?
+
+```node
+(async () => { const f = path.join(dir, 'a'); await fsp.writeFile(f, 'abc'); const h = await fsp.open(f, 'a+'); await h.write('Z', 0); const r = await h.read(Buffer.alloc(10), 0, 10, 0); await h.close(); return [r.bytesRead, r.buffer.subarray(0, r.bytesRead).toString()]; })()
+```
+
+**9.** Що дає `'wx'` для існуючого та неіснуючого файлу?
+
+```node
+(async () => { const f = path.join(dir, 'a'); const h = await fsp.open(f, 'wx'); await h.close(); try { await fsp.open(f, 'wx'); } catch (e) { return e.code; } })()
+```
+
+**10.** Що поверне `h.stat()`: розмір та тип?
+
+```node
+(async () => { const f = path.join(dir, 'a'); await fsp.writeFile(f, 'hello'); const h = await fsp.open(f); const s = await h.stat(); await h.close(); return [s.size, s.isFile(), s.isDirectory()]; })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**11.** Що станеться при використанні закритого `FileHandle`?
+
+```node
+(async () => { const h = await fsp.open(path.join(dir, 'a'), 'w'); await h.close(); try { await h.write('x'); } catch (e) { return e.code; } })()
+```
+
+**12.** Що відбудеться при подвійному `close()`?
+
+```node
+(async () => { const h = await fsp.open(path.join(dir, 'a'), 'w'); await h.close(); await h.close(); return 'ok'; })()
+```
+
+**13.** Як `await using` або `try/finally` гарантує закриття?
+
+```node
+(async () => { const h = await fsp.open(path.join(dir, 'a'), 'w'); try { await h.write('x'); } finally { await h.close(); } return h.fd; })()
+```
+
+**14.** Що поверне `h.readFile` та `h.writeFile`?
+
+```node
+(async () => { const h = await fsp.open(path.join(dir, 'a'), 'w+'); await h.writeFile('hello'); const h2 = await fsp.open(path.join(dir, 'a')); const s = await h2.readFile('utf8'); await h.close(); await h2.close(); return s; })()
+```
+
+**15.** Що поверне `h.truncate` і `h.sync`?
+
+```node
+(async () => { const f = path.join(dir, 'a'); await fsp.writeFile(f, '0123456789'); const h = await fsp.open(f, 'r+'); await h.truncate(4); await h.sync(); await h.close(); return fs.readFileSync(f, 'utf8'); })()
+```
+
+### Рівень 4. Практика
+
+**16.** Що поверне `h.readLines()`?
+
+```node
+(async () => { const f = path.join(dir, 'a'); await fsp.writeFile(f, 'l1\nl2\nl3'); const h = await fsp.open(f); const r = []; for await (const l of h.readLines()) r.push(l); return r; })()
+```
+
+**17.** Що поверне `fs.openSync`, `readSync`, `closeSync` у синхронному стилі?
+
+```node
+(() => { const f = path.join(dir, 'a'); fs.writeFileSync(f, 'xyz'); const fd = fs.openSync(f, 'r'); const b = Buffer.alloc(3); const n = fs.readSync(fd, b, 0, 3, 0); fs.closeSync(fd); return [n, b.toString()]; })()
+```
+
+**18.** Скільки одночасно відкритих дескрипторів можна тримати? (відкрийте 50 і закрийте)
+
+```node
+(async () => { const hs = []; for (let i = 0; i < 50; i++) hs.push(await fsp.open(path.join(dir, 'f' + i), 'w')); const n = new Set(hs.map(h => h.fd)).size; await Promise.all(hs.map(h => h.close())); return n; })()
+```
+
+### Відповіді
+
+1. Невелике ціле число (у `FileHandle` — об'єкт), яким ОС позначає відкритий файл у процесі; через нього виконуються читання, запис і метадані
+2. `['FileHandle', 'number', true]`
+3. `[3, 3, 'abcdef']`
+4. `[3, 0]`
+5. `'EBADF'`
+6. `'ENOENT'`
+7. `0`
+8. `[3, 'Zbc']`
+9. `'EEXIST'`
+10. `[5, true, false]`
+11. `'EBADF'`
+12. `'ok'`
+13. `-1`
+14. `'hello'`
+15. `'0123'`
+16. `['l1', 'l2', 'l3']`
+17. `[3, 'xyz']`
+18. `50`

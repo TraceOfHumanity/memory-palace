@@ -70,3 +70,81 @@ async function send(formData) {
 3. Дія (form `action` або `startTransition(async …)`): спершу `addOptimistic(...)`.
 4. `await` мережевий запит.
 5. Успіх → оновити справжній стан. Помилка → показати повідомлення (оптимістичний шар зникне сам).
+
+## Задачі для закріплення
+
+7 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(el)` монтує елемент через `act`, `press(r)` викликає `onClick` кнопки, `text(r)` повертає текст результату; `create` і `act` беруться з `react-test-renderer`, `renderToString` — з `react-dom/server`, хуки — з `react`.
+
+### Рівень 1. Основи
+
+**1.** Початкове оптимістичне значення збігається зі справжнім.
+
+```jsx
+function C() { const [o] = useOptimistic('real'); return <p>{o}</p>; }
+return renderToString(<C />);
+```
+
+**2.** Оптимістичне оновлення під час дії та повернення до справжнього після.
+
+```jsx
+const log = [];
+function C() { const [real, setReal] = useState('a'); const [o, add] = useOptimistic(real, (cur, v) => v); log.push(o); return <button onClick={() => startTransition(async () => { add('b'); await new Promise(r => setTimeout(r, 15)); setReal('b'); })}>{o}</button>; }
+const t = await mount(<C />);
+await press(t);
+await act(async () => { await new Promise(r => setTimeout(r, 50)); });
+return [log.includes('b'), text(t)];
+```
+
+### Рівень 2. Деталі й поведінка
+
+**3.** Якщо дія завершилась помилкою — що покаже інтерфейс?
+
+```jsx
+function C() { const [real] = useState('a'); const [o, add] = useOptimistic(real, (c, v) => v); return <button onClick={() => startTransition(async () => { add('x'); await new Promise(r => setTimeout(r, 10)); })}>{o}</button>; }
+const t = await mount(<C />);
+await press(t);
+const during = text(t);
+await act(async () => { await new Promise(r => setTimeout(r, 40)); });
+return [during, text(t)];
+```
+
+**4.** Оптимістичне додавання до списку з редюсером.
+
+```jsx
+function C() { const [items, setItems] = useState(['a']); const [o, add] = useOptimistic(items, (cur, v) => [...cur, v + '*']); return <button onClick={() => startTransition(async () => { add('b'); await new Promise(r => setTimeout(r, 15)); setItems(i => [...i, 'b']); })}>{o.join(',')}</button>; }
+const t = await mount(<C />);
+await press(t);
+const during = text(t);
+await act(async () => { await new Promise(r => setTimeout(r, 50)); });
+return [during, text(t)];
+```
+
+### Рівень 3. Нюанси та пастки
+
+**5.** Чи працює `addOptimistic` поза transition (діагностика)?
+
+```jsx
+const errs = [];
+const orig = console.error; console.error = (...a) => errs.push(String(a[0]).slice(0, 40));
+function C() { const [o, add] = useOptimistic('a', (c, v) => v); return <button onClick={() => add('b')}>{o}</button>; }
+const t = await mount(<C />);
+await press(t);
+console.error = orig;
+return [text(t), errs.length > 0];
+```
+
+**6.** Для чого `useOptimistic`?
+
+### Рівень 4. Практика
+
+**7.** Коли оптимістичне значення скидається?
+
+### Відповіді
+
+1. `'<p>real</p>'`
+2. `[true, 'b']`
+3. `['x', 'a']`
+4. `['a,b*', 'a,b']`
+5. `['a', true]`
+6. Показує миттєвий результат дії до відповіді сервера; коли дія завершується, інтерфейс автоматично повертається до справжнього стану
+7. Після завершення transition/дії, у якій було викликано `addOptimistic`

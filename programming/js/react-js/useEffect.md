@@ -373,3 +373,166 @@ Update: спершу cleanups, потім setup (усі passive-cleanups поп�
 
 ### 10.9. Ефект і `setState` у ньому
 `setN(n + 1)` в ефекті з `[n]` і умовою `n < 1`: `render 0 | effect 0 | render 1 | effect 1` — оновлення з ефекту породжує другий рендер.
+
+## Задачі для закріплення
+
+14 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(el)` монтує елемент через `act`, `press(r)` викликає `onClick` кнопки, `text(r)` повертає текст результату; `create` і `act` беруться з `react-test-renderer`, `renderToString` — з `react-dom/server`, хуки — з `react`.
+
+### Рівень 1. Основи
+
+**1.** У якому порядку виконуються рендер та ефект?
+
+```jsx
+const log = [];
+function C() { log.push('render'); useEffect(() => { log.push('effect'); return () => log.push('cleanup'); }); return <p>x</p>; }
+const t = await mount(<C />);
+await act(async () => { t.update(<C />); });
+await act(async () => { t.unmount(); });
+return log;
+```
+
+**2.** Порожній масив залежностей: скільки разів ефект?
+
+```jsx
+let n = 0;
+function C({ v }) { useEffect(() => { n++; }, []); return <p>{v}</p>; }
+const t = await mount(<C v={1} />);
+await act(async () => { t.update(<C v={2} />); });
+await act(async () => { t.update(<C v={3} />); });
+return n;
+```
+
+**3.** Залежність від пропса: ефект запускається при зміні?
+
+```jsx
+const log = [];
+function C({ v, other }) { useEffect(() => { log.push(v); }, [v]); return <p>{v}{other}</p>; }
+const t = await mount(<C v={1} other={0} />);
+await act(async () => { t.update(<C v={1} other={1} />); });
+await act(async () => { t.update(<C v={2} other={1} />); });
+return log;
+```
+
+**4.** Cleanup перед наступним ефектом.
+
+```jsx
+const log = [];
+function C({ v }) { useEffect(() => { log.push('run ' + v); return () => log.push('clean ' + v); }, [v]); return <p>{v}</p>; }
+const t = await mount(<C v={1} />);
+await act(async () => { t.update(<C v={2} />); });
+return log;
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** StrictMode: подвійний запуск ефекту у розробці.
+
+```jsx
+const log = [];
+function C() { useEffect(() => { log.push('mount'); return () => log.push('cleanup'); }, []); return <p>x</p>; }
+await mount(<React.StrictMode><C /></React.StrictMode>);
+return log;
+```
+
+**6.** Об'єкт у залежностях створюється заново: скільки запусків?
+
+```jsx
+let n = 0;
+function C() { const o = { a: 1 }; useEffect(() => { n++; }, [o]); return <p>x</p>; }
+const t = await mount(<C />);
+await act(async () => { t.update(<C />); });
+await act(async () => { t.update(<C />); });
+return n;
+```
+
+**7.** Замикання в ефекті бачить застарілий стан (stale closure).
+
+```jsx
+const seen = [];
+function C() { const [n, setN] = useState(0); useEffect(() => { const id = setInterval(() => seen.push(n), 5); return () => clearInterval(id); }, []); return <button onClick={() => setN(n + 1)}>{n}</button>; }
+const t = await mount(<C />);
+await press(t); await press(t);
+await act(async () => { await new Promise(r => setTimeout(r, 30)); });
+await act(async () => { t.unmount(); });
+return [...new Set(seen)];
+```
+
+**8.** Виправлення через функціональне оновлення без залежності від стану.
+
+```jsx
+function C() { const [n, setN] = useState(0); useEffect(() => { const id = setInterval(() => setN(p => p + 1), 5); return () => clearInterval(id); }, []); return <p>{n > 2 ? 'grew' : 'init'}</p>; }
+const t = await mount(<C />);
+await act(async () => { await new Promise(r => setTimeout(r, 60)); });
+const r = text(t);
+await act(async () => { t.unmount(); });
+return r;
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Ефект не виконується при серверному рендері.
+
+```jsx
+let ran = false;
+function C() { useEffect(() => { ran = true; }, []); return <p>ssr</p>; }
+const html = renderToString(<C />);
+return [html, ran];
+```
+
+**10.** Завантаження даних: стан loading → data та скасування застарілої відповіді.
+
+```jsx
+const delays = { a: 20, b: 5 };
+function C({ id }) {
+  const [d, setD] = useState('...');
+  useEffect(() => { let off = false; new Promise(r => setTimeout(() => r('data-' + id), delays[id])).then(v => { if (!off) setD(v); }); return () => { off = true; }; }, [id]);
+  return <p>{d}</p>;
+}
+const t = await mount(<C id="a" />);
+await act(async () => { t.update(<C id="b" />); });
+await act(async () => { await new Promise(r => setTimeout(r, 50)); });
+return text(t);
+```
+
+**11.** `useEffect` без масиву залежностей: скільки разів при 3 рендерах?
+
+```jsx
+let n = 0;
+function C({ v }) { useEffect(() => { n++; }); return <p>{v}</p>; }
+const t = await mount(<C v={1} />);
+await act(async () => { t.update(<C v={2} />); });
+await act(async () => { t.update(<C v={3} />); });
+return n;
+```
+
+**12.** Нескінченний цикл: чому `setState` в ефекті без залежностей небезпечний? (скільки рендерів до обмеження)
+
+```jsx
+let renders = 0;
+function C() { renders++; const [n, setN] = useState(0); useEffect(() => { if (n < 5) setN(n + 1); }); return <p>{n}</p>; }
+const t = await mount(<C />);
+return [text(t), renders];
+```
+
+### Рівень 4. Практика
+
+**13.** Чим ефект відрізняється від обробника подій?
+
+**14.** Навіщо cleanup-функція?
+
+### Відповіді
+
+1. `['render', 'effect', 'render', 'cleanup', 'effect', 'cleanup']`
+2. `1`
+3. `[1, 2]`
+4. `['run 1', 'clean 1', 'run 2']`
+5. `['mount', 'cleanup', 'mount']`
+6. `3`
+7. `[0]`
+8. `'grew'`
+9. `['<p>ssr</p>', false]`
+10. `'data-b'`
+11. `3`
+12. `['5', 6]`
+13. Ефект синхронізує компонент із зовнішньою системою після рендеру і виконується, коли змінюються залежності; обробник виконується у відповідь на конкретну дію користувача
+14. Скасовує підписки, таймери та запити від попереднього ефекту перед повторним запуском і при розмонтуванні, щоб уникнути витоків і застарілих оновлень

@@ -225,3 +225,178 @@ Handbook TypeScript пропонує просту евристику: викор
 - Конфлікт при розширенні: `interface extends` ловить його явно й рано; `&` мовчки зводить поле до `never`, і помилка виринає пізніше.
 - Union-`type` не можна `implements`; `interface` не приймається там, де очікується `Record<string, unknown>` (немає implicit index signature).
 - Для публічних API і контрактів класів за конвенцією обирають `interface`; для union/literal-типів і складних трансформацій — лише `type`.
+
+## Задачі для закріплення
+
+Двадцять задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в TypeScript Playground чи через tsc.
+
+### Рівень 1. Основи
+
+**1.** Чи можна описати об'єкт і `interface`, і `type`?
+
+```ts
+interface A { x: number }
+type B = { x: number };
+const a: A = { x: 1 }; const b: B = a;
+```
+
+**2.** `extends` в інтерфейсі.
+
+```ts
+interface A { x: number }
+interface B extends A { y: string }
+const b: B = { x: 1, y: 'a' };
+```
+
+**3.** Перетин `&` у type.
+
+```ts
+type A = { x: number };
+type B = A & { y: string };
+const b: B = { x: 1, y: 'a' };
+```
+
+**4.** Declaration merging для interface.
+
+```ts
+interface A { x: number }
+interface A { y: string }
+const a: A = { x: 1, y: 'a' };
+```
+
+**5.** Чи можна «злити» два `type` з однаковим іменем?
+
+```ts
+type A = { x: number };
+type A = { y: string };
+```
+
+### Рівень 2. Деталі й поведінка
+
+**6.** `type` для union.
+
+```ts
+type Id = string | number;
+const i: Id = 5;
+```
+
+**7.** Чи можна `interface` описати union?
+
+```ts
+interface Id = string | number;
+```
+
+**8.** `type` для кортежу.
+
+```ts
+type P = [number, number];
+const p: P = [1, 2];
+```
+
+**9.** `type` для функції та `interface` з call signature.
+
+```ts
+type F = (a: number) => number;
+interface G { (a: number): number }
+const f: F = (a) => a; const g: G = f;
+```
+
+**10.** Конфлікт типів при `extends`: несумісні властивості.
+
+```ts
+interface A { x: number }
+interface B extends A { x: string }
+```
+
+### Рівень 3. Нюанси та пастки
+
+**11.** Конфлікт при `&`: що станеться з властивістю?
+
+```ts
+type A = { x: number } & { x: string };
+type X = A['x'];
+```
+
+**12.** Клас реалізує interface і type-об'єкт.
+
+```ts
+interface I { m(): void }
+type T = { n: number };
+class C implements I, T { n = 1; m() {} }
+```
+
+**13.** Клас не може реалізувати union-type.
+
+```ts
+type U = { a: 1 } | { b: 2 };
+class C implements U { a = 1 as const }
+```
+
+**14.** Mapped type працює лише з `type`.
+
+```ts
+type Opt<T> = { [K in keyof T]?: T[K] };
+interface P { a: number }
+const o: Opt<P> = {};
+```
+
+**15.** Рекурсивний тип через interface і type.
+
+```ts
+interface N { next?: N }
+type M = { next?: M };
+const n: N = { next: { next: {} } }; const m: M = n;
+```
+
+### Рівень 4. Практика
+
+**16.** Індексні сигнатури в обох.
+
+```ts
+interface D { [k: string]: number }
+type E = { [k: string]: number };
+const d: D = { a: 1 }; const e: E = d;
+```
+
+**17.** `readonly` властивості у interface та type.
+
+```ts
+interface A { readonly x: number }
+type B = { readonly x: number };
+const a: A = { x: 1 };
+```
+
+**18.** Присвоєння readonly-властивості.
+
+```ts
+interface A { readonly x: number }
+const a: A = { x: 1 };
+a.x = 2;
+```
+
+**19.** Коли використовувати `interface`, а коли `type`?
+
+**20.** Що таке declaration merging?
+
+### Відповіді
+
+1. Компілюється без помилок
+2. Компілюється без помилок
+3. Компілюється без помилок
+4. Компілюється без помилок
+5. Помилка: `TS2300: Duplicate identifier 'A'.` (і ще 1)
+6. Компілюється без помилок
+7. Помилка: `TS1005: '{' expected.` (і ще 2)
+8. Компілюється без помилок
+9. Компілюється без помилок
+10. Помилка: `TS2430: Interface 'B' incorrectly extends interface 'A'.   Types of property 'x' are incompatible.     Type 'string' is not assignable to type 'number'.`
+11. `never`
+12. Компілюється без помилок
+13. Помилка: `TS2422: A class can only implement an object type or intersection of object types with statically known members.`
+14. Компілюється без помилок
+15. Компілюється без помилок
+16. Компілюється без помилок
+17. Компілюється без помилок
+18. Помилка: `TS2540: Cannot assign to 'x' because it is a read-only property.`
+19. `interface` — для об'єктних контрактів і розширення (extends, declaration merging, `implements`); `type` — для union, кортежів, умовних і mapped типів, псевдонімів примітивів
+20. Кілька оголошень `interface` з одним ім'ям об'єднуються в один; це використовують для розширення сторонніх типів (наприклад, `Window`)

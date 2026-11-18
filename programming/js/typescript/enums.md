@@ -186,3 +186,149 @@ moveConst(DirectionConst.Up); // move: up
 - Numeric enum з TS 5.0 відкидає «чужі» числові літерали, але значення типу `number` досі приймає без помилки — джерело тихих багів.
 - `enum` несумісний з Node type stripping і `--erasableSyntaxOnly` (TS 5.8).
 - Альтернатива без рантайм-коду — `as const` об'єкт + `(typeof obj)[keyof typeof obj]`: сьогодні частіше типовий вибір у нових проєктах, хоча `enum` лишається зручним, коли реально потрібне зворотне відображення значення → ім'я.
+
+## Задачі для закріплення
+
+19 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в TypeScript Playground чи через tsc.
+
+### Рівень 1. Основи
+
+**1.** Тип члена числового enum.
+
+```ts
+enum Dir { Up, Down }
+const d = Dir.Up;
+```
+
+**2.** Які значення отримують члени `enum Dir { Up, Down, Left }`?
+
+**3.** Що буде, якщо першому члену задати `Up = 10`?
+
+**4.** Що генерує TS для числового enum у JS (двобічне відображення)?
+
+```ts
+(() => { var Dir; (function (Dir) { Dir[Dir['Up'] = 0] = 'Up'; Dir[Dir['Down'] = 1] = 'Down'; })(Dir || (Dir = {})); return [Dir.Up, Dir[0], Object.keys(Dir)]; })()
+```
+
+**5.** Що генерує TS для string enum (без зворотного відображення)?
+
+```ts
+(() => { var C; (function (C) { C['R'] = 'red'; C['G'] = 'green'; })(C || (C = {})); return [C.R, C['red'], Object.keys(C)]; })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**6.** Чи можна присвоїти довільне число числовому enum (TS 5)?
+
+```ts
+enum Dir { Up, Down }
+const d: Dir = 5;
+```
+
+**7.** Чи можна присвоїти рядок string enum?
+
+```ts
+enum C { R = 'red' }
+const c: C = 'red';
+```
+
+**8.** Чи можна порівняти string enum з літералом через `as`?
+
+```ts
+enum C { R = 'red' }
+const c = C.R;
+const is: boolean = (c as string) === 'red';
+```
+
+**9.** `keyof typeof` для enum.
+
+```ts
+enum C { R = 'red', G = 'green' }
+type K = keyof typeof C;
+```
+
+**10.** Union значень enum.
+
+```ts
+enum C { R = 'red', G = 'green' }
+type V = `${C}`;
+```
+
+### Рівень 3. Нюанси та пастки
+
+**11.** Тип `Dir` як union членів.
+
+```ts
+enum Dir { Up, Down }
+type D = Dir.Up | Dir.Down;
+```
+
+**12.** Чи можна змінити член enum?
+
+```ts
+enum Dir { Up }
+Dir.Up = 1;
+```
+
+**13.** Обчислюваний член enum.
+
+```ts
+enum F { A = 1 << 0, B = 1 << 1, C = A | B }
+const c = F.C;
+```
+
+**14.** Тип const enum у використанні.
+
+```ts
+const enum E { A = 'a' }
+const x = E.A;
+```
+
+**15.** Чи можна звертатись до const enum за індексом?
+
+```ts
+const enum E { A }
+const n = E[0];
+```
+
+### Рівень 4. Практика
+
+**16.** Альтернатива: union літералів замість enum.
+
+```ts
+type Dir = 'up' | 'down';
+const d: Dir = 'up';
+```
+
+**17.** Альтернатива: об'єкт `as const` замість enum.
+
+```ts
+const Dir = { Up: 'up', Down: 'down' } as const;
+type D = typeof Dir[keyof typeof Dir];
+```
+
+**18.** Чому багато команд віддають перевагу union-літералам замість enum?
+
+**19.** Чим const enum відрізняється від звичайного?
+
+### Відповіді
+
+1. `Dir.Up`
+2. `Up = 0`, `Down = 1`, `Left = 2` (автоінкремент від 0)
+3. Наступні члени продовжують лічбу: `Down = 11`, `Left = 12`
+4. `[0, 'Up', ['0', '1', 'Up', 'Down']]`
+5. `['red', undefined, ['R', 'G']]`
+6. Помилка: `TS2322: Type '5' is not assignable to type 'Dir'.`
+7. Помилка: `TS2322: Type '"red"' is not assignable to type 'C'.`
+8. Компілюється без помилок
+9. `"R" | "G"`
+10. `"red" | "green"`
+11. `Dir`
+12. Помилка: `TS2540: Cannot assign to 'Up' because it is a read-only property.`
+13. `F.C`
+14. `E.A`
+15. Помилка: `TS2476: A const enum member can only be accessed using a string literal.`
+16. `"up" | "down"`
+17. `"up" | "down"`
+18. Вони не генерують рантайм-коду, не потребують імпорту значень, легше сумісні з JSON та `isolatedModules`; enum додає код і має нюанси (числові двобічні мапи, const enum)
+19. Не існує в рантаймі: використання підставляється літералом при компіляції; це дає менший код, але ускладнює сумісність із `isolatedModules`

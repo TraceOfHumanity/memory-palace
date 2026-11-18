@@ -66,3 +66,98 @@ function Fancy({ ref }) { useImperativeHandle(ref, () => ({ ... }), []); ... }
 3. `useImperativeHandle(ref, () => ({ методи }), [deps])`.
 4. Батько: `ref.current?.метод()` в обробнику/ефекті.
 5. Розглянь декларативну альтернативу (пропси) перш ніж вводити імперативний API.
+
+## Задачі для закріплення
+
+9 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(el)` монтує елемент через `act`, `press(r)` викликає `onClick` кнопки, `text(r)` повертає текст результату; `create` і `act` беруться з `react-test-renderer`, `renderToString` — з `react-dom/server`, хуки — з `react`.
+
+### Рівень 1. Основи
+
+**1.** Що отримує батько через `ref`, коли дитина використовує `useImperativeHandle`?
+
+```jsx
+const Kid = forwardRef(function Kid(props, ref) { useImperativeHandle(ref, () => ({ hello: () => 'hi', secret: undefined }), []); return <p>k</p>; });
+let got; function P() { const r = useRef(null); useEffect(() => { got = Object.keys(r.current).sort(); }, []); return <Kid ref={r} />; }
+await mount(<P />);
+return got;
+```
+
+**2.** Виклик методу дитини з батька.
+
+```jsx
+const Kid = forwardRef(function Kid(props, ref) { const [n, setN] = useState(0); useImperativeHandle(ref, () => ({ inc: () => setN(x => x + 1) }), []); return <p>{n}</p>; });
+let h; function P() { const r = useRef(null); h = r; return <Kid ref={r} />; }
+const t = await mount(<P />);
+await act(async () => { h.current.inc(); h.current.inc(); });
+return text(t);
+```
+
+**3.** React 19: `ref` як звичайний prop (без forwardRef).
+
+```jsx
+function Kid({ ref }) { useImperativeHandle(ref, () => ({ id: 7 }), []); return <p>k</p>; }
+let got; function P() { const r = useRef(null); useEffect(() => { got = r.current.id; }, []); return <Kid ref={r} />; }
+await mount(<P />);
+return got;
+```
+
+### Рівень 2. Деталі й поведінка
+
+**4.** Чи оновлюється handle, якщо залежності змінилися?
+
+```jsx
+const Kid = forwardRef(function Kid({ v }, ref) { useImperativeHandle(ref, () => ({ get: () => v }), [v]); return <p>{v}</p>; });
+let h; function P({ v }) { const r = useRef(null); h = r; return <Kid ref={r} v={v} />; }
+const t = await mount(<P v={1} />);
+const a = h.current.get();
+await act(async () => { t.update(<P v={2} />); });
+return [a, h.current.get()];
+```
+
+**5.** А без залежностей-масиву (застаріле значення при `[]`).
+
+```jsx
+const Kid = forwardRef(function Kid({ v }, ref) { useImperativeHandle(ref, () => ({ get: () => v }), []); return <p>{v}</p>; });
+let h; function P({ v }) { const r = useRef(null); h = r; return <Kid ref={r} v={v} />; }
+const t = await mount(<P v={1} />);
+await act(async () => { t.update(<P v={2} />); });
+return h.current.get();
+```
+
+**6.** Що буде з `ref.current` після розмонтування дитини?
+
+```jsx
+const Kid = forwardRef(function Kid(props, ref) { useImperativeHandle(ref, () => ({ a: 1 }), []); return <p>k</p>; });
+let h; function P({ show }) { const r = useRef(null); h = r; return show ? <Kid ref={r} /> : null; }
+const t = await mount(<P show={true} />);
+const a = h.current !== null;
+await act(async () => { t.update(<P show={false} />); });
+return [a, h.current];
+```
+
+### Рівень 3. Нюанси та пастки
+
+**7.** Обмежений API: чи видно DOM-вузол батькові?
+
+```jsx
+const Kid = forwardRef(function Kid(props, ref) { useImperativeHandle(ref, () => ({ focus() { return 'focused'; } }), []); return <input />; });
+let h; function P() { const r = useRef(null); h = r; return <Kid ref={r} />; }
+await mount(<P />);
+return [Object.keys(h.current), typeof h.current.focus];
+```
+
+**8.** Для чого `useImperativeHandle`?
+
+**9.** Коли слід уникати імперативного API?
+
+### Відповіді
+
+1. `['hello', 'secret']`
+2. `'2'`
+3. `7`
+4. `[1, 2]`
+5. `1`
+6. `[true, null]`
+7. `[['focus'], 'function']`
+8. Дозволяє дитині відкрити батьківському компоненту через `ref` лише обмежений набір імперативних методів замість всього DOM-вузла
+9. Коли ту саму задачу можна розв'язати декларативно через пропси й стан; імперативний API — виняток (фокус, прокрутка, медіа)

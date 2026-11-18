@@ -202,3 +202,154 @@ console.log(trulyFrozen.value); // 1 — тепер захищено і в ра�
 - Найпоширеніше застосування: enum-подібний об'єкт без додаткового рантайм-коду, у зв'язці з `(typeof obj)[keyof typeof obj]`.
 - Відрізняється від `Readonly<T>`: `as const` одночасно і робить readonly, і звужує значення до літералів; `Readonly<T>` лише додає readonly, залишаючи типи значень широкими.
 - Як і `Readonly<T>`, `as const` — лише compile-time; до того ж readonly-об'єкт можна непомітно передати туди, де очікується мутабельний тип. Для реального рантайм-захисту потрібен `Object.freeze()`, і їх зазвичай комбінують: `Object.freeze({...} as const)`.
+
+## Задачі для закріплення
+
+19 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в TypeScript Playground чи через tsc.
+
+### Рівень 1. Основи
+
+**1.** Тип `let x = 'a'` (widening).
+
+```ts
+let x = 'a';
+```
+
+**2.** Тип `const x = 'a'`.
+
+```ts
+const x = 'a';
+```
+
+**3.** Тип об'єкта без `as const`.
+
+```ts
+const o = { mode: 'dark', size: 3 };
+```
+
+**4.** Тип того самого об'єкта з `as const`.
+
+```ts
+const o = { mode: 'dark', size: 3 } as const;
+```
+
+**5.** Тип масиву з `as const`.
+
+```ts
+const a = [1, 2, 3] as const;
+```
+
+### Рівень 2. Деталі й поведінка
+
+**6.** Тип елемента масиву `as const` через індекс.
+
+```ts
+const a = ['x', 'y'] as const;
+type E = (typeof a)[number];
+```
+
+**7.** Union ключів об'єкта `as const`.
+
+```ts
+const o = { a: 1, b: 2 } as const;
+type K = keyof typeof o;
+```
+
+**8.** Union значень об'єкта `as const`.
+
+```ts
+const o = { a: 'x', b: 'y' } as const;
+type V = (typeof o)[keyof typeof o];
+```
+
+**9.** Чи можна змінити поле об'єкта з `as const`?
+
+```ts
+const o = { a: 1 } as const;
+o.a = 2;
+```
+
+**10.** Чи можна додати елемент до `as const` масиву?
+
+```ts
+const a = [1, 2] as const;
+a.push(3);
+```
+
+### Рівень 3. Нюанси та пастки
+
+**11.** Тип кортежу `as const` із вкладеним об'єктом.
+
+```ts
+const t = [{ id: 1 }, 'a'] as const;
+```
+
+**12.** Тип при поверненні `as const` з функції.
+
+```ts
+const f = () => ({ ok: true, code: 200 }) as const;
+type R = ReturnType<typeof f>;
+```
+
+**13.** Чи сумісний `string` із літеральним типом `'a' | 'b'`?
+
+```ts
+const s: string = 'a';
+const x: 'a' | 'b' = s;
+```
+
+**14.** А літерал із `as const`?
+
+```ts
+const s = 'a' as const;
+const x: 'a' | 'b' = s;
+```
+
+**15.** Створіть тип ролей із масиву `as const`.
+
+```ts
+const roles = ['admin', 'user', 'guest'] as const;
+type Role = typeof roles[number];
+```
+
+### Рівень 4. Практика
+
+**16.** Тип шаблонного літерала з `as const`.
+
+```ts
+const p = 'id' as const;
+const k = `${p}_1` as const;
+```
+
+**17.** Чи можна застосувати `as const` до змінної?
+
+```ts
+const a = 5;
+const b = a as const;
+```
+
+**18.** Що робить `as const`?
+
+**19.** Чим `as const` відрізняється від `Object.freeze` щодо типів?
+
+### Відповіді
+
+1. `string`
+2. `"a"`
+3. `{ mode: string; size: number; }`
+4. `{ readonly mode: "dark"; readonly size: 3; }`
+5. `readonly [1, 2, 3]`
+6. `"x" | "y"`
+7. `"a" | "b"`
+8. `"x" | "y"`
+9. Помилка: `TS2540: Cannot assign to 'a' because it is a read-only property.`
+10. Помилка: `TS2339: Property 'push' does not exist on type 'readonly [1, 2]'.`
+11. `readonly [{ readonly id: 1; }, "a"]`
+12. `{ readonly ok: true; readonly code: 200; }`
+13. Помилка: `TS2322: Type 'string' is not assignable to type '"a" | "b"'.`
+14. Компілюється без помилок
+15. `"admin" | "user" | "guest"`
+16. `"id_1"`
+17. Помилка: `TS1355: A 'const' assertions can only be applied to references to enum members, or string, number, boolean, array, or object literals.`
+18. Вимикає widening: літерали зберігають точні типи, об'єкти й масиви стають `readonly`, а кортежі — фіксованої довжини
+19. `as const` діє лише на рівні типів (під час виконання нічого не заморожує), а `Object.freeze` — лише у рантаймі та на один рівень

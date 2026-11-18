@@ -462,3 +462,242 @@ console.log(this === module.exports); // true — цей файл виконує
 - Стрілки — для вкладених колбеків; для методів об'єкта, яким потрібен `this`, — звичайний синтаксис методу.
 - Class field зі стрілкою — метод, прив'язаний до екземпляра, ціною окремої функції на кожен екземпляр.
 - `this` на верхньому рівні: `undefined` в ES-модулі, `module.exports` у CommonJS, `window` у класичному скрипті.
+
+## Задачі для закріплення
+
+32 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Що таке `this` у звичайному виклику функції у strict mode?
+
+```js
+(function () { 'use strict'; return (function () { return this; })(); })()
+```
+
+**2.** А у sloppy mode (глобальний об'єкт)?
+
+```js
+(function () { return (function () { return this === globalThis; })(); })()
+```
+
+**3.** Що таке `this` у методі об'єкта при виклику `obj.m()`?
+
+```js
+(() => { const o = { n: 1, m() { return this.n; } }; return o.m(); })()
+```
+
+**4.** Що станеться, якщо витягти метод у змінну (strict)?
+
+```js
+(() => { 'use strict'; const o = { n: 1, m() { return this; } }; const f = o.m; return f(); })()
+```
+
+**5.** Що поверне `this.n` після відокремлення методу у sloppy (глобального `n` немає)?
+
+```js
+(function () { const o = { n: 1, m() { return this.n; } }; const f = o.m; return f(); })()
+```
+
+**6.** Що поверне `call` із явним `this`?
+
+```js
+(function () { function f(a, b) { return [this.x, a, b]; } return f.call({ x: 'X' }, 1, 2); })()
+```
+
+**7.** Що поверне `apply`?
+
+```js
+(function () { function f(a, b) { return [this.x, a, b]; } return f.apply({ x: 'X' }, [1, 2]); })()
+```
+
+**8.** Що поверне `bind` і чи змінює повторний `bind` this?
+
+```js
+(function () { function f() { return this.v; } const a = f.bind({ v: 1 }); const b = a.bind({ v: 2 }); return [a(), b()]; })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**9.** Чи можна змінити `this` стрілкової функції через `call`?
+
+```js
+(function () { const o = { v: 'outer', m() { return (() => this.v).call({ v: 'other' }); } }; return o.m(); })()
+```
+
+**10.** Що таке `this` у стрілці всередині методу?
+
+```js
+(() => { const o = { v: 1, m() { return [1].map(() => this.v); } }; return o.m(); })()
+```
+
+**11.** А у звичайній функції всередині методу (strict)?
+
+```js
+(() => { 'use strict'; const o = { m() { return [1].map(function () { return this; }); } }; return o.m(); })()
+```
+
+**12.** Що поверне `map` із другим аргументом thisArg?
+
+```js
+(function () { return [1, 2].map(function (x) { return this.k * x; }, { k: 10 }); })()
+```
+
+**13.** Що таке `this` у конструкторі при `new`?
+
+```js
+(() => { function P(n) { this.n = n; } const p = new P(3); return [p.n, p instanceof P]; })()
+```
+
+**14.** Що станеться при `new` без `this`-присвоєнь, якщо функція повертає об'єкт?
+
+```js
+(() => { function P() { this.a = 1; return { b: 2 }; } return new P(); })()
+```
+
+**15.** А якщо повертає примітив?
+
+```js
+(() => { function P() { this.a = 1; return 5; } return new P(); })()
+```
+
+**16.** Що поверне виклик конструктора класу без `new`?
+
+```js
+(() => { class A {} try { A(); } catch (e) { return e.name + ': ' + e.message; } })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**17.** Що станеться, якщо звернутися до `this` у конструкторі похідного класу до `super()`?
+
+```js
+(() => { class A {} class B extends A { constructor() { try { this.x = 1; } catch (e) { globalThis.__e = e.name; } super(); } } new B(); return globalThis.__e; })()
+```
+
+**18.** Що таке `this` у статичному методі класу?
+
+```js
+(() => { class A { static who() { return this.name; } } class B extends A {} return [A.who(), B.who()]; })()
+```
+
+**19.** Чи втрачається `this` при передачі методу як колбека?
+
+```js
+(() => { 'use strict'; class C { n = 5; get() { return this?.n; } } const c = new C(); const run = (cb) => cb(); return [run(c.get), run(c.get.bind(c)), run(() => c.get())]; })()
+```
+
+**20.** Що дасть метод-стрілка як поле класу при відокремленні?
+
+```js
+(() => { class C { n = 5; get = () => this.n; } const { get } = new C(); return get(); })()
+```
+
+**21.** Який пріоритет: `new` чи `bind`?
+
+```js
+(() => { function F() { this.v = 1; } const B = F.bind({ v: 2 }); return new B().v; })()
+```
+
+**22.** Який пріоритет: `call` чи `bind`?
+
+```js
+(() => { function f() { return this.v; } const b = f.bind({ v: 1 }); return b.call({ v: 2 }); })()
+```
+
+**23.** Що поверне `this` у виклику з `null` у sloppy для `call(null)`?
+
+```js
+(function () { function f() { return this === globalThis; } return f.call(null); })()
+```
+
+**24.** А у strict із `call(null)`?
+
+```js
+(function () { 'use strict'; function f() { return this; } return f.call(null); })()
+```
+
+### Рівень 4. Практика
+
+**25.** Що поверне `this` для примітивного значення у strict через `call(5)`?
+
+```js
+(function () { 'use strict'; function f() { return typeof this; } return f.call(5); })()
+```
+
+**26.** А у sloppy для `call(5)`?
+
+```js
+(function () { function f() { return typeof this; } return f.call(5); })()
+```
+
+**27.** Що таке `this` у getter/setter?
+
+```js
+(() => { const o = { _v: 1, get v() { return this._v * 2; } }; return o.v; })()
+```
+
+**28.** Що таке `this` в успадкованому методі через прототип?
+
+```js
+(() => { const p = { who() { return this.name; } }; const o = Object.create(p); o.name = 'child'; return o.who(); })()
+```
+
+**29.** Що поверне `(o.m)()` і `(0, o.m)()` у strict?
+
+```js
+(() => { 'use strict'; const o = { m() { return this === o; } }; return [(o.m)(), (0, o.m)()]; })()
+```
+
+**30.** Що таке `globalThis` у Node: тип і чи дорівнює `global`?
+
+```js
+[typeof globalThis, globalThis === global]
+```
+
+**31.** Напишіть `myBind(fn, ctx, ...preset)` без `Function.prototype.bind`.
+
+```js
+const myBind = (fn, ctx, ...p) => (...a) => fn.apply(ctx, [...p, ...a])
+```
+
+**32.** Напишіть `myCall(fn, ctx, ...args)` через тимчасову властивість із Symbol.
+
+```js
+const myCall = (fn, ctx, ...a) => { const s = Symbol(); ctx[s] = fn; const r = ctx[s](...a); delete ctx[s]; return r; }
+```
+
+### Відповіді
+
+1. `undefined`
+2. `true`
+3. `1`
+4. `undefined`
+5. `undefined`
+6. `['X', 1, 2]`
+7. `['X', 1, 2]`
+8. `[1, 1]`
+9. `'outer'`
+10. `[1]`
+11. `[undefined]`
+12. `[10, 20]`
+13. `[3, true]`
+14. `{ b: 2 }`
+15. `{ a: 1 }`
+16. `'TypeError: Class constructor A cannot be invoked without 'new''`
+17. `'ReferenceError'`
+18. `['A', 'B']`
+19. `[undefined, 5, 5]`
+20. `5`
+21. `1`
+22. `1`
+23. `true`
+24. `null`
+25. `'number'`
+26. `'object'`
+27. `2`
+28. `'child'`
+29. `[true, false]`
+30. `['object', true]`
+31. Виклик `myBind(function (a, b) { return this.k + a + b; }, { k: 1 }, 2)(3)` → `6`
+32. Виклик `myCall(function (x) { return this.v + x; }, { v: 10 }, 5)` → `15`

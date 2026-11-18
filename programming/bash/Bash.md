@@ -985,3 +985,675 @@ Alias діє лише в інтерактивній оболонці й не в 
 - Скрипти: shebang, `chmod +x`, `"$@"`, `getopts`, `set -euo pipefail`, `trap … EXIT`, `local`, помилки в stderr, `shellcheck`; `source` виконує в поточній оболонці.
 - Процеси: `&`, `jobs`, `fg/bg`, `kill` (SIGTERM, потім SIGKILL), `wait`, `nohup`; архіви `tar`, мережа `curl/ssh/scp`.
 - Макос має bash 3.2 (без `${v^^}`, асоціативних масивів, `globstar`) і zsh за замовчуванням: для переносимості пишіть POSIX або явно вказуйте версію.
+
+## Задачі для закріплення
+
+46 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Команди виконуйте в bash у порожній тимчасовій директорії; утиліти — BSD-варіанти з macOS.
+
+### Рівень 1. Основи
+
+**1.** Що виведе `echo` з лапками, без лапок та з `-n`?
+
+```bash
+echo "a   b"
+echo a   b
+echo -n x; echo y
+```
+
+**2.** Яка різниця між одинарними та подвійними лапками?
+
+```bash
+name=World
+echo "Hi $name"
+echo 'Hi $name'
+```
+
+**3.** Що виведе `pwd` після `cd` у підкаталог та `cd -`?
+
+```bash
+mkdir -p a/b
+cd a/b
+basename "$PWD"
+cd ..
+basename "$PWD"
+```
+
+**4.** Створіть вкладені директорії та виведіть дерево через `find`.
+
+```bash
+mkdir -p proj/src proj/docs
+touch proj/src/a.js proj/src/b.js proj/docs/readme.md
+find proj | sort
+```
+
+**5.** Що робить `cp -r` та `mv` (перейменування)?
+
+```bash
+mkdir d; echo data > d/f.txt
+cp -r d d2
+mv d2/f.txt d2/g.txt
+ls d d2
+```
+
+**6.** `rm` безпечно: що станеться з `rm -i` у неінтерактивному режимі та з `rm -f`?
+
+```bash
+touch a b
+rm -f a missing
+ls
+```
+
+**7.** Виведіть перші та останні рядки файлу (`head`, `tail`).
+
+```bash
+seq 1 10 > n.txt
+head -n 3 n.txt
+tail -n 2 n.txt
+```
+
+**8.** Підрахунок рядків, слів і байтів через `wc`.
+
+```bash
+printf 'one two\nthree\n' > t.txt
+wc -l < t.txt | tr -d ' '
+wc -w < t.txt | tr -d ' '
+wc -c < t.txt | tr -d ' '
+```
+
+**9.** Права доступу: `chmod 640` та перегляд у числовому вигляді.
+
+```bash
+touch f
+chmod 640 f
+stat -f '%Lp' f
+chmod u+x f
+stat -f '%Lp' f
+```
+
+**10.** Символічні права `ls -l` для щойно створеного файлу з `umask 022`.
+
+```bash
+umask 022
+touch f
+ls -l f | cut -c1-10
+```
+
+**11.** `grep`: пошук із номерами рядків та без урахування регістру.
+
+```bash
+printf 'Alpha\nbeta\nALPHA two\n' > f
+grep -n -i alpha f
+```
+
+**12.** `grep -v` та `-c`.
+
+```bash
+printf 'a\nb\na\n' > f
+grep -c a f
+grep -v a f
+```
+
+### Рівень 2. Деталі й поведінка
+
+**13.** `grep -E` розширені регулярні вирази та `-o`.
+
+```bash
+echo 'id=42 id=7 x=9' | grep -oE 'id=[0-9]+'
+```
+
+**14.** `find` за іменем і типом.
+
+```bash
+mkdir -p a/b; touch a/x.txt a/b/y.txt a/b/z.log
+find . -type f -name '*.txt' | sort
+```
+
+**15.** `find` із `-exec`.
+
+```bash
+mkdir d; touch d/a.tmp d/b.tmp d/c.keep
+find d -name '*.tmp' -exec rm {} \;
+ls d
+```
+
+**16.** Конвеєр: `sort | uniq -c | sort -rn`.
+
+```bash
+printf 'b\na\nb\nc\nb\na\n' | sort | uniq -c | sort -rn | sed 's/^ *//'
+```
+
+**17.** `cut` та `awk` для стовпців.
+
+```bash
+printf 'ann 30 kyiv\nbob 25 lviv\n' > p.txt
+cut -d' ' -f1,3 p.txt
+awk '{ s += $2 } END { print s }' p.txt
+```
+
+**18.** `sed`: заміна та видалення рядків.
+
+```bash
+printf 'foo bar\nfoo baz\nkeep\n' | sed -e 's/foo/FOO/' -e '/keep/d'
+```
+
+**19.** `tr`: зміна регістру та видалення символів.
+
+```bash
+echo 'Hello, World' | tr 'a-z' 'A-Z'
+echo 'a1b2c3' | tr -d '0-9'
+```
+
+**20.** Перенаправлення: `>` перезаписує, `>>` додає.
+
+```bash
+echo one > f
+echo two >> f
+echo three > f
+cat f
+```
+
+**21.** Потоки: stdout та stderr окремо.
+
+```bash
+ls nonexistent 2>/dev/null; echo "exit=$?"
+ls nonexistent 2>&1 | wc -l | tr -d ' '
+```
+
+**22.** `tee` та `here-doc`.
+
+```bash
+cat <<EOF | tee out.txt | wc -l | tr -d ' '
+line1
+line2
+EOF
+cat out.txt
+```
+
+**23.** Змінні: присвоєння, експорт та підоболонка.
+
+```bash
+x=1
+export y=2
+( x=10; y=20; echo $x $y )
+echo $x $y
+bash -c 'echo "[$x] [$y]"'
+```
+
+**24.** Розширення параметрів: значення за замовчуванням та обрізання.
+
+```bash
+unset v
+echo "${v:-default}"
+f=archive.tar.gz
+echo "${f%.gz}" "${f%%.*}" "${f#*.}" "${#f}"
+```
+
+### Рівень 3. Нюанси та пастки
+
+**25.** Арифметика: `$(( ))` та цілочисельне ділення.
+
+```bash
+echo $((7 / 2)) $((7 % 3)) $((2 ** 10)) $((-7 / 2))
+```
+
+**26.** Підстановка команд та вкладеність.
+
+```bash
+echo "count: $(printf 'a\nb\nc\n' | wc -l | tr -d ' ')"
+echo "$(echo $(echo deep))"
+```
+
+**27.** Фігурні дужки (brace expansion) і glob.
+
+```bash
+touch a1 a2 b1
+echo {x,y}{1,2}
+echo a*
+echo {1..5}
+```
+
+**28.** Умови: `[ ]`, `[[ ]]`, коди завершення.
+
+```bash
+[ -f nofile ]; echo $?
+touch f; [ -f f ]; echo $?
+[[ abc == a* ]] && echo match
+test 5 -gt 3 && echo yes
+```
+
+**29.** Цикл `for` по файлах та по діапазону.
+
+```bash
+touch a.txt b.txt
+for f in *.txt; do echo "file $f"; done
+for i in 1 2 3; do printf "%s " $i; done; echo
+```
+
+**30.** Цикл `while read`.
+
+```bash
+printf 'a 1\nb 2\n' | while read name n; do echo "$name=$((n * 10))"; done
+```
+
+**31.** Функції та `return`.
+
+```bash
+add() { echo $(($1 + $2)); }
+check() { [ "$1" -gt 0 ] && return 0 || return 3; }
+add 2 3
+check 5; echo $?
+check -1; echo $?
+```
+
+**32.** `case`.
+
+```bash
+for x in apple kiwi pear; do
+  case $x in
+    a*) echo "$x: starts with a" ;;
+    kiwi|pear) echo "$x: kiwi or pear" ;;
+  esac
+done
+```
+
+**33.** Позиційні параметри скрипта: `$#`, `$@`, `shift`.
+
+```bash
+cat > s.sh <<'EOF'
+echo "n=$#"
+echo "first=$1"
+shift
+echo "rest=$@"
+EOF
+bash s.sh a b c
+```
+
+**34.** `set -e` і `set -u`: що станеться при помилці?
+
+```bash
+bash -c 'set -e; false; echo not-reached'; echo "code=$?"
+bash -c 'set -u; echo $undefined_var' 2>&1 | sed 's/^.*undefined_var/undefined_var/'
+```
+
+**35.** Код завершення конвеєра: `pipefail`.
+
+```bash
+false | true; echo $?
+set -o pipefail
+false | true; echo $?
+```
+
+**36.** `&&` та `||`: ланцюжки команд.
+
+```bash
+true && echo A
+false && echo B
+false || echo C
+true || echo D
+```
+
+### Рівень 4. Практика
+
+**37.** Фонові задачі: `&`, `wait`, `$!`.
+
+```bash
+sleep 0.1 &
+pid=$!
+wait $pid; echo "waited code=$?"
+```
+
+**38.** Сигнали: `trap` на EXIT.
+
+```bash
+trap 'echo cleanup' EXIT
+echo working
+```
+
+**39.** Архіви: `tar` створення та перегляд, `gzip`.
+
+```bash
+mkdir d; echo hi > d/f
+tar -czf a.tgz d
+tar -tzf a.tgz | sort
+rm -rf d
+tar -xzf a.tgz
+cat d/f
+```
+
+**40.** `xargs` та `printf`.
+
+```bash
+printf '1\n2\n3\n' | xargs -n1 echo item
+printf 'a b c' | xargs -n2
+```
+
+**41.** `sort` числовий проти лексикографічного.
+
+```bash
+printf '10\n9\n100\n' | sort
+printf '10\n9\n100\n' | sort -n
+```
+
+**42.** Небезпека: невдалий `rm -rf $dir/*` при порожній змінній — як захиститись `${dir:?}`?
+
+```bash
+unset dir
+( rm -rf "${dir:?dir is empty}/"* ) 2>&1 | sed 's/^.*: dir:/bash: dir:/'; echo "code=${PIPESTATUS[0]}"
+```
+
+**43.** Пробіли в іменах файлів: ітерація без лапок та з лапками.
+
+```bash
+touch 'my file.txt'
+for f in $(ls); do echo "[$f]"; done
+for f in *; do echo "[$f]"; done
+```
+
+**44.** Що таке оболонка (shell) і чим вона відрізняється від термінала?
+
+**45.** Що означає код завершення 0 і ненульові значення?
+
+**46.** Чим `>` відрізняється від `|`?
+
+### Відповіді
+
+1. Вивід:
+
+   ```text
+   a   b
+   a b
+   xy
+   ```
+
+2. Вивід:
+
+   ```text
+   Hi World
+   Hi $name
+   ```
+
+3. Вивід:
+
+   ```text
+   b
+   a
+   ```
+
+4. Вивід:
+
+   ```text
+   proj
+   proj/docs
+   proj/docs/readme.md
+   proj/src
+   proj/src/a.js
+   proj/src/b.js
+   ```
+
+5. Вивід:
+
+   ```text
+   d:
+   f.txt
+   
+   d2:
+   g.txt
+   ```
+
+6. `b`
+7. Вивід:
+
+   ```text
+   1
+   2
+   3
+   9
+   10
+   ```
+
+8. Вивід:
+
+   ```text
+   2
+   3
+   14
+   ```
+
+9. Вивід:
+
+   ```text
+   640
+   740
+   ```
+
+10. `-rw-r--r--`
+11. Вивід:
+
+   ```text
+   1:Alpha
+   3:ALPHA two
+   ```
+
+12. Вивід:
+
+   ```text
+   2
+   b
+   ```
+
+13. Вивід:
+
+   ```text
+   id=42
+   id=7
+   ```
+
+14. Вивід:
+
+   ```text
+   ./a/b/y.txt
+   ./a/x.txt
+   ```
+
+15. `c.keep`
+16. Вивід:
+
+   ```text
+   3 b
+   2 a
+   1 c
+   ```
+
+17. Вивід:
+
+   ```text
+   ann kyiv
+   bob lviv
+   55
+   ```
+
+18. Вивід:
+
+   ```text
+   FOO bar
+   FOO baz
+   ```
+
+19. Вивід:
+
+   ```text
+   HELLO, WORLD
+   abc
+   ```
+
+20. `three`
+21. Вивід:
+
+   ```text
+   exit=1
+   1
+   ```
+
+22. Вивід:
+
+   ```text
+   2
+   line1
+   line2
+   ```
+
+23. Вивід:
+
+   ```text
+   10 20
+   1 2
+   [] [2]
+   ```
+
+24. Вивід:
+
+   ```text
+   default
+   archive.tar archive tar.gz 14
+   ```
+
+25. `3 1 1024 -3`
+26. Вивід:
+
+   ```text
+   count: 3
+   deep
+   ```
+
+27. Вивід:
+
+   ```text
+   x1 x2 y1 y2
+   a1 a2
+   1 2 3 4 5
+   ```
+
+28. Вивід:
+
+   ```text
+   1
+   0
+   match
+   yes
+   ```
+
+29. Вивід:
+
+   ```text
+   file a.txt
+   file b.txt
+   1 2 3 
+   ```
+
+30. Вивід:
+
+   ```text
+   a=10
+   b=20
+   ```
+
+31. Вивід:
+
+   ```text
+   5
+   0
+   3
+   ```
+
+32. Вивід:
+
+   ```text
+   apple: starts with a
+   kiwi: kiwi or pear
+   pear: kiwi or pear
+   ```
+
+33. Вивід:
+
+   ```text
+   n=3
+   first=a
+   rest=b c
+   ```
+
+34. Вивід:
+
+   ```text
+   code=1
+   undefined_var: unbound variable
+   ```
+
+35. Вивід:
+
+   ```text
+   0
+   1
+   ```
+
+36. Вивід:
+
+   ```text
+   A
+   C
+   ```
+
+37. `waited code=0`
+38. Вивід:
+
+   ```text
+   working
+   cleanup
+   ```
+
+39. Вивід:
+
+   ```text
+   d/
+   d/f
+   hi
+   ```
+
+40. Вивід:
+
+   ```text
+   item 1
+   item 2
+   item 3
+   a b
+   c
+   ```
+
+41. Вивід:
+
+   ```text
+   10
+   100
+   9
+   9
+   10
+   100
+   ```
+
+42. Вивід:
+
+   ```text
+   bash: dir: dir is empty
+   code=1
+   ```
+
+43. Вивід:
+
+   ```text
+   [my]
+   [file.txt]
+   [my file.txt]
+   ```
+
+44. Термінал — вікно, що відображає текст і передає ввід; оболонка (bash, zsh) — програма, що інтерпретує команди й запускає процеси
+45. 0 — успіх, будь-яке інше число — помилка; код останньої команди доступний у `$?`
+46. `>` перенаправляє вивід у файл, `|` передає вивід однієї команди на ввід іншої

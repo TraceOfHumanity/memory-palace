@@ -703,3 +703,288 @@ readFilePromise("/missing.json").catch((err) => console.log("via promisify:", er
 - Генератори + раннер — історичний механізм, на якому концептуально побудовано async/await; `async function*` + `for await...of` — для послідовностей асинхронних значень.
 - `AbortController` — стандартне скасування (Web API, не ECMAScript); `AbortSignal.timeout()` — готовий таймаут.
 - Патерни retry, concurrency limit, debounce, promisify будуються поверх Promise і async/await.
+
+## Задачі для закріплення
+
+36 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** У якому порядку виведуться повідомлення: синхронний код, `Promise.then`, `setTimeout`?
+
+```js
+(async () => { const L = []; setTimeout(() => L.push('timeout'), 0); Promise.resolve().then(() => L.push('then')); L.push('sync'); await new Promise(r => setTimeout(r, 10)); return L; })()
+```
+
+**2.** Що раніше всередині колбека таймера: `queueMicrotask`, `process.nextTick`, `setImmediate`, `setTimeout(0)`?
+
+```js
+(async () => { const L = []; await new Promise(res => setTimeout(() => { setTimeout(() => L.push('timeout'), 0); setImmediate(() => L.push('immediate')); queueMicrotask(() => L.push('microtask')); process.nextTick(() => L.push('nextTick')); setTimeout(res, 20); }, 0)); return L; })()
+```
+
+**3.** Що поверне `await` для значення, що не є promise?
+
+```js
+(async () => { const v = await 5; return v; })()
+```
+
+**4.** У якому порядку виконуються `then` у ланцюжку?
+
+```js
+(async () => { const L = []; await Promise.resolve(1).then(v => { L.push(v); return v + 1; }).then(v => { L.push(v); return v + 1; }).then(v => L.push(v)); return L; })()
+```
+
+**5.** Що станеться, якщо `then` кидає помилку, а `catch` її обробляє?
+
+```js
+(async () => { return await Promise.resolve().then(() => { throw new Error('x'); }).then(() => 'skipped').catch(e => 'caught ' + e.message).then(v => v + '!'); })()
+```
+
+**6.** Що виконається після `finally`?
+
+```js
+(async () => { const L = []; const r = await Promise.resolve('v').finally(() => { L.push('fin'); return 'ignored'; }); L.push(r); return L; })()
+```
+
+**7.** Що поверне `Promise.all` із трьох значень і з одним відхиленим?
+
+```js
+(async () => { const ok = await Promise.all([1, Promise.resolve(2), new Promise(r => setTimeout(() => r(3), 5))]); let err; try { await Promise.all([1, Promise.reject(new Error('boom')), 3]); } catch (e) { err = e.message; } return [ok, err]; })()
+```
+
+**8.** Що поверне `Promise.allSettled`?
+
+```js
+(async () => (await Promise.allSettled([1, Promise.reject('e')])).map(r => r.status + ':' + (r.value ?? r.reason)))()
+```
+
+**9.** Що поверне `Promise.race` та `Promise.any`?
+
+```js
+(async () => { const slow = new Promise(r => setTimeout(() => r('slow'), 20)); const fast = new Promise(r => setTimeout(() => r('fast'), 5)); const bad = Promise.reject(new Error('bad')); bad.catch(() => {}); return [await Promise.race([slow, fast]), await Promise.any([bad, slow, fast])]; })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**10.** Що поверне `Promise.any`, коли всі відхилені?
+
+```js
+(async () => { try { await Promise.any([Promise.reject(1), Promise.reject(2)]); } catch (e) { return [e.name, e.errors]; } })()
+```
+
+**11.** Що поверне `Promise.race([])` та `Promise.all([])`?
+
+```js
+(async () => { const a = await Promise.all([]); const r = await Promise.race([new Promise(() => {}), Promise.resolve('x')]); return [a, r]; })()
+```
+
+**12.** Що поверне `Promise.withResolvers`?
+
+```js
+(async () => { const { promise, resolve } = Promise.withResolvers(); setTimeout(() => resolve('done'), 5); return await promise; })()
+```
+
+**13.** У якому порядку виконаються `await`-продовження двох async-функцій?
+
+```js
+(async () => { const L = []; const a = async () => { L.push('a1'); await null; L.push('a2'); }; const b = async () => { L.push('b1'); await null; L.push('b2'); }; const p = Promise.all([a(), b()]); L.push('sync'); await p; return L; })()
+```
+
+**14.** Що станеться з помилкою в async-функції без `await`?
+
+```js
+(async () => { const f = async () => { throw new Error('x'); }; const p = f(); let r = await p.then(() => 'ok', e => 'rejected ' + e.message); return r; })()
+```
+
+**15.** Чи ловить `try/catch` помилку з не-awaited promise?
+
+```js
+(async () => { const f = async () => { throw new Error('late'); }; let caught = false; try { f().catch(() => {}); } catch { caught = true; } return caught; })()
+```
+
+**16.** Що виведе послідовний та паралельний `await` у циклі за часом?
+
+```js
+(async () => { const d = (ms) => new Promise(r => setTimeout(r, ms)); let t = Date.now(); for (const ms of [30, 30, 30]) await d(ms); const seq = Date.now() - t; t = Date.now(); await Promise.all([30, 30, 30].map(d)); const par = Date.now() - t; return [seq >= 85, par < 70]; })()
+```
+
+**17.** Що поверне `forEach` з `async`-колбеком?
+
+```js
+(async () => { const r = []; [1, 2, 3].forEach(async (x) => { await null; r.push(x); }); const before = [...r]; await new Promise(res => setTimeout(res, 5)); return [before, r]; })()
+```
+
+**18.** Як правильно виконати async у циклі по черзі?
+
+```js
+(async () => { const r = []; for (const x of [1, 2, 3]) { await new Promise(res => setTimeout(res, 3)); r.push(x * 2); } return r; })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**19.** Що поверне `for await...of` для масиву promise?
+
+```js
+(async () => { const r = []; for await (const v of [Promise.resolve('a'), 'b', new Promise(x => setTimeout(() => x('c'), 3))]) r.push(v); return r; })()
+```
+
+**20.** Що поверне async-генератор?
+
+```js
+(async () => { async function* g() { yield 1; await null; yield 2; } const r = []; for await (const v of g()) r.push(v); return r; })()
+```
+
+**21.** Як працює `AbortController`?
+
+```js
+(async () => { const c = new AbortController(); const p = new Promise((res, rej) => c.signal.addEventListener('abort', () => rej(c.signal.reason))); setTimeout(() => c.abort(), 3); try { await p; } catch (e) { return [e.name, c.signal.aborted]; } })()
+```
+
+**22.** Яка помилка при `AbortSignal.timeout`?
+
+```js
+(async () => { const s = AbortSignal.timeout(5); await new Promise(r => setTimeout(r, 20)); return [s.aborted, s.reason.name]; })()
+```
+
+**23.** Що станеться, якщо promise вирішується двічі?
+
+```js
+(async () => new Promise((res) => { const p = new Promise((r, j) => { r('first'); r('second'); j(new Error('x')); }); p.then(res); }))()
+```
+
+**24.** Що поверне `then` з не-функцією?
+
+```js
+(async () => await Promise.resolve('keep').then(null).then(undefined).then(42))()
+```
+
+**25.** Що поверне виклик `thenable`?
+
+```js
+(async () => await { then(res) { res('thenable!'); } })()
+```
+
+**26.** Що виведе приклад із `await` у блоці `finally`?
+
+```js
+(async () => { const L = []; try { L.push('try'); return await Promise.resolve('r'); } finally { L.push('finally'); globalThis.__L = L; } })().then(v => [v, globalThis.__L])
+```
+
+**27.** Що станеться з необробленим відхиленням: подія `unhandledRejection`?
+
+```js
+(async () => { const L = []; const h = (e) => L.push('unhandled ' + e.message); process.on('unhandledRejection', h); Promise.reject(new Error('lost')); await new Promise(r => setTimeout(r, 10)); process.off('unhandledRejection', h); return L; })()
+```
+
+### Рівень 4. Практика
+
+**28.** Напишіть `sleep(ms)` і виміряйте, що `await sleep(20)` займає ≥ 18 мс.
+
+```js
+const sleep = (ms) => new Promise(r => setTimeout(r, ms))
+
+(async () => { const t = Date.now(); await sleep(20); return Date.now() - t >= 18; })()
+```
+
+**29.** Напишіть `timeout(promise, ms)` через `Promise.race`.
+
+```js
+const sleep = (ms) => new Promise(r => setTimeout(r, ms)); const timeout = (p, ms) => Promise.race([p, new Promise((_, j) => setTimeout(() => j(new Error('timeout')), ms))])
+
+(async () => { const a = await timeout(sleep(5).then(() => 'ok'), 50); let b; try { await timeout(sleep(50), 5); } catch (e) { b = e.message; } return [a, b]; })()
+```
+
+**30.** Напишіть `retry(fn, n)`, що повторює невдалі спроби.
+
+```js
+const retry = async (fn, n) => { let last; for (let i = 0; i < n; i++) { try { return await fn(i); } catch (e) { last = e; } } throw last; }
+
+(async () => { let calls = 0; const r = await retry(async () => { if (++calls < 3) throw new Error('fail'); return 'ok after ' + calls; }, 5); let e2; try { await retry(async () => { throw new Error('always'); }, 2); } catch (e) { e2 = e.message; } return [r, e2]; })()
+```
+
+**31.** Напишіть `promisify(fn)` для callback-стилю `(err, value)`.
+
+```js
+const promisify = (fn) => (...a) => new Promise((res, rej) => fn(...a, (e, v) => e ? rej(e) : res(v)))
+
+(async () => { const add = (a, b, cb) => setTimeout(() => cb(null, a + b), 1); const bad = (cb) => setTimeout(() => cb(new Error('no')), 1); let m; try { await promisify(bad)(); } catch (e) { m = e.message; } return [await promisify(add)(2, 3), m]; })()
+```
+
+**32.** Напишіть `pool(tasks, limit)` — обмежена паралельність; поверніть порядок завершення.
+
+```js
+const pool = async (tasks, limit) => { const res = [], run = async () => { while (tasks.length) { const t = tasks.shift(); res.push(await t()); } }; await Promise.all(Array.from({ length: limit }, run)); return res; }
+
+(async () => { const d = (ms, v) => () => new Promise(r => setTimeout(() => r(v), ms)); return await pool([d(45, 'a'), d(10, 'b'), d(10, 'c'), d(10, 'd')], 2); })()
+```
+
+**33.** Напишіть `mapSeries(arr, fn)` — послідовний `map` для async.
+
+```js
+const mapSeries = async (a, f) => { const r = []; for (const x of a) r.push(await f(x)); return r; }
+
+(async () => { const L = []; const r = await mapSeries([1, 2, 3], async (x) => { L.push('s' + x); await null; L.push('e' + x); return x * 2; }); return [r, L]; })()
+```
+
+**34.** Напишіть `once(fn)` для async-функції: один виклик, спільний promise.
+
+```js
+const onceAsync = (fn) => { let p; return (...a) => p ??= fn(...a); }
+
+(async () => { let n = 0; const f = onceAsync(async () => ++n); const [a, b] = await Promise.all([f(), f()]); return [a, b, n]; })()
+```
+
+**35.** Напишіть `debounce(fn, ms)` (повертає promise останнього виклику).
+
+```js
+const debounce = (fn, ms) => { let t; return (...a) => new Promise(r => { clearTimeout(t); t = setTimeout(() => r(fn(...a)), ms); }); }
+
+(async () => { const L = []; const d = debounce((x) => (L.push(x), x), 10); d(1); d(2); const last = await d(3); await new Promise(r => setTimeout(r, 20)); return [last, L]; })()
+```
+
+**36.** Напишіть `EventEmitter`-обгортку `once(emitter, name)` на promise.
+
+```js
+const { EventEmitter } = process.getBuiltinModule('node:events'); const onceP = (e, n) => new Promise(r => e.once(n, r))
+
+(async () => { const e = new EventEmitter(); setTimeout(() => e.emit('ready', 'payload'), 3); return await onceP(e, 'ready'); })()
+```
+
+### Відповіді
+
+1. `['sync', 'then', 'timeout']`
+2. `['nextTick', 'microtask', 'immediate', 'timeout']`
+3. `5`
+4. `[1, 2, 3]`
+5. `'caught x!'`
+6. `['fin', 'v']`
+7. `[[1, 2, 3], 'boom']`
+8. `['fulfilled:1', 'rejected:e']`
+9. `['fast', 'fast']`
+10. `['AggregateError', [1, 2]]`
+11. `[[], 'x']`
+12. `'done'`
+13. `['a1', 'b1', 'sync', 'a2', 'b2']`
+14. `'rejected x'`
+15. `false`
+16. `[true, true]`
+17. `[[], [1, 2, 3]]`
+18. `[2, 4, 6]`
+19. `['a', 'b', 'c']`
+20. `[1, 2]`
+21. `['AbortError', true]`
+22. `[true, 'TimeoutError']`
+23. `'first'`
+24. `'keep'`
+25. `'thenable!'`
+26. `['r', ['try', 'finally']]`
+27. `['unhandled lost']`
+28. `true`
+29. `['ok', 'timeout']`
+30. `['ok after 3', 'always']`
+31. `[5, 'no']`
+32. `['b', 'c', 'd', 'a']`
+33. `[[2, 4, 6], ['s1', 'e1', 's2', 'e2', 's3', 'e3']]`
+34. `[1, 1, 1]`
+35. `[3, [3]]`
+36. `'payload'`

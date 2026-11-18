@@ -135,3 +135,349 @@ _main:
 - Apple Developer Documentation: *Writing ARM64 code for Apple platforms*.
 - Patterson D., Hennessy J. *Computer Organization and Design: ARM Edition*. Morgan Kaufmann, 2016.
 - Kusswurm D. *Modern Arm Assembly Language Programming*. Apress, 2020.
+
+## Задачі для закріплення
+
+23 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код асемблюйте й запускайте на Apple Silicon: `clang -o prog prog.s && ./prog; echo $?`.
+
+### Рівень 1. Основи
+
+**1.** Що поверне програма, що записує число в `w0`?
+
+```asm
+.global _main
+.align 2
+_main:
+    mov w0, #42
+    ret
+
+```
+
+**2.** Додавання регістрів `add`.
+
+```asm
+.global _main
+.align 2
+_main:
+    mov x1, #30
+    mov x2, #12
+    add x0, x1, x2
+    ret
+
+```
+
+**3.** Віднімання та множення: `sub`, `mul`.
+
+```asm
+.global _main
+.align 2
+_main:
+    mov x1, #9
+    mov x2, #4
+    sub x3, x1, x2
+    mul x0, x3, x2
+    ret
+
+```
+
+**4.** Ділення `udiv` та залишок через `msub`.
+
+```asm
+.global _main
+.align 2
+_main:
+    mov x1, #47
+    mov x2, #5
+    udiv x3, x1, x2
+    msub x0, x3, x2, x1
+    ret
+
+```
+
+**5.** Логічні операції: `and`, `orr`, `eor`.
+
+```asm
+.global _main
+.align 2
+_main:
+    mov x1, #0xF0
+    mov x2, #0x3C
+    and x3, x1, x2
+    orr x4, x1, x2
+    eor x0, x3, x4
+    ret
+
+```
+
+**6.** Зсуви `lsl` та `lsr`.
+
+```asm
+.global _main
+.align 2
+_main:
+    mov x1, #5
+    lsl x1, x1, #3
+    lsr x0, x1, #1
+    ret
+
+```
+
+### Рівень 2. Деталі й поведінка
+
+**7.** 32-бітні регістри `w`: обнулення старших бітів.
+
+```asm
+.global _main
+.align 2
+_main:
+    movz x1, #0xFFFF, lsl #16
+    movk x1, #0xFFFF
+    add w2, w1, #1
+    mov x0, x2
+    ret
+
+```
+
+**8.** Нульовий регістр `xzr`: запис ігнорується.
+
+```asm
+.global _main
+.align 2
+_main:
+    mov x1, #7
+    add xzr, x1, x1
+    add x0, xzr, x1
+    ret
+
+```
+
+**9.** Порівняння й умовна гілка `cmp` + `b.gt`.
+
+```asm
+.global _main
+.align 2
+_main:
+    mov x1, #10
+    mov x2, #3
+    cmp x1, x2
+    b.gt greater
+    mov x0, #0
+    ret
+greater:
+    mov x0, #1
+    ret
+
+```
+
+**10.** Умовне присвоєння `csel` (max двох чисел).
+
+```asm
+.global _main
+.align 2
+_main:
+    mov x1, #17
+    mov x2, #42
+    cmp x1, x2
+    csel x0, x1, x2, gt
+    ret
+
+```
+
+**11.** Цикл: сума від 1 до 10.
+
+```asm
+.global _main
+.align 2
+_main:
+    mov x0, #0
+    mov x1, #1
+loop:
+    add x0, x0, x1
+    add x1, x1, #1
+    cmp x1, #11
+    b.lt loop
+    ret
+
+```
+
+**12.** Факторіал 5 циклом.
+
+```asm
+.global _main
+.align 2
+_main:
+    mov x0, #1
+    mov x1, #5
+loop:
+    mul x0, x0, x1
+    subs x1, x1, #1
+    b.ne loop
+    ret
+
+```
+
+### Рівень 3. Нюанси та пастки
+
+**13.** Виклик функції `bl` та регістр зв'язку `lr` (збереження через стек).
+
+```asm
+.global _main
+.align 2
+double_it:
+    lsl x0, x0, #1
+    ret
+_main:
+    stp x29, x30, [sp, #-16]!
+    mov x0, #21
+    bl double_it
+    ldp x29, x30, [sp], #16
+    ret
+
+```
+
+**14.** Стек: `str` і `ldr` з вирівнюванням 16 байтів.
+
+```asm
+.global _main
+.align 2
+_main:
+    sub sp, sp, #16
+    mov x1, #77
+    str x1, [sp]
+    mov x1, #0
+    ldr x0, [sp]
+    add sp, sp, #16
+    ret
+
+```
+
+**15.** Дані в секції `.data`: завантаження адреси й значення.
+
+```asm
+.global _main
+.align 2
+_main:
+    adrp x1, value@PAGE
+    add x1, x1, value@PAGEOFF
+    ldr w0, [x1]
+    ret
+.data
+.align 2
+value: .word 99
+
+```
+
+**16.** Масив у пам'яті: сума трьох елементів через `ldr` зі зміщенням.
+
+```asm
+.global _main
+.align 2
+_main:
+    adrp x1, arr@PAGE
+    add x1, x1, arr@PAGEOFF
+    ldr w2, [x1]
+    ldr w3, [x1, #4]
+    ldr w4, [x1, #8]
+    add w0, w2, w3
+    add w0, w0, w4
+    ret
+.data
+.align 2
+arr: .word 10, 20, 30
+
+```
+
+**17.** Системний виклик `exit` через `svc` (macOS: номер у `x16`).
+
+```asm
+.global _main
+.align 2
+_main:
+    mov x0, #7
+    mov x16, #1
+    svc #0x80
+
+```
+
+**18.** Виклик `_putchar` із libc (вивід символу) та код 0.
+
+```asm
+.global _main
+.align 2
+_main:
+    stp x29, x30, [sp, #-16]!
+    mov w0, #72
+    bl _putchar
+    mov w0, #10
+    bl _putchar
+    mov w0, #0
+    ldp x29, x30, [sp], #16
+    ret
+
+```
+
+### Рівень 4. Практика
+
+**19.** Помилка: невалідна інструкція (`add` із пам'яттю як операндом).
+
+```asm
+.global _main
+.align 2
+_main:
+    add x0, [sp], x1
+    ret
+
+```
+
+**20.** Помилка: непідтримуване безпосереднє значення в `mov`.
+
+```asm
+.global _main
+.align 2
+_main:
+    mov x0, #0x12345678
+    ret
+
+```
+
+**21.** Що таке архітектура load/store?
+
+**22.** Яке призначення регістрів `x30` (lr) і `sp`?
+
+**23.** Чим `w0` відрізняється від `x0`?
+
+### Відповіді
+
+1. Код завершення: `42`
+2. Код завершення: `42`
+3. Код завершення: `20`
+4. Код завершення: `2`
+5. Код завершення: `204`
+6. Код завершення: `20`
+7. Код завершення: `0`
+8. Код завершення: `7`
+9. Код завершення: `1`
+10. Код завершення: `42`
+11. Код завершення: `55`
+12. Код завершення: `120`
+13. Код завершення: `42`
+14. Код завершення: `77`
+15. Код завершення: `99`
+16. Код завершення: `60`
+17. Код завершення: `7`
+18. `H` Код завершення: `0`
+19. Помилка асемблера:
+
+   ```text
+   error: invalid operand for instruction
+   ```
+
+20. Помилка асемблера:
+
+   ```text
+   error: expected compatible register or logical immediate
+   ```
+
+21. Арифметичні інструкції працюють лише з регістрами, доступ до пам'яті виконують окремі інструкції `ldr`/`str`
+22. `x30` зберігає адресу повернення після `bl`; `sp` — покажчик стека, що має бути вирівняний за 16 байтів при зверненнях до пам'яті
+23. `w0` — молодші 32 біти регістра `x0`; запис у `w0` обнуляє старші 32 біти

@@ -258,3 +258,174 @@ handleSuccess({ name: "Iryna", age: 30 }); // Iryna 30
 - Можна «витягти» кілька частин одночасно (`[infer First, ...infer Rest]`).
 - Conditional type може бути рекурсивним — так реалізують повне «розгортання» вкладеності на рівні типів.
 - Твердження про типи варто перевіряти компілятором (`assertType<Equal<A, B>>()`), а не лише коментарем.
+
+## Задачі для закріплення
+
+21 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в TypeScript Playground чи через tsc.
+
+### Рівень 1. Основи
+
+**1.** Тип `ReturnType` функції.
+
+```ts
+const f = (a: number) => a.toString();
+type R = ReturnType<typeof f>;
+```
+
+**2.** Тип `Parameters` функції.
+
+```ts
+const f = (a: number, b: string) => {};
+type P = Parameters<typeof f>;
+```
+
+**3.** Свій `MyReturn<T>` через `infer`.
+
+```ts
+type MyReturn<T> = T extends (...a: any[]) => infer R ? R : never;
+type X = MyReturn<() => boolean>;
+```
+
+**4.** `infer` для першого аргументу.
+
+```ts
+type First<T> = T extends [infer H, ...any[]] ? H : never;
+type X = First<[string, number]>;
+```
+
+**5.** `infer` для останнього елемента кортежу.
+
+```ts
+type Last<T> = T extends [...any[], infer L] ? L : never;
+type X = Last<[1, 2, 3]>;
+```
+
+**6.** `infer` для елемента масиву.
+
+```ts
+type El<T> = T extends (infer E)[] ? E : never;
+type X = El<string[]>;
+```
+
+### Рівень 2. Деталі й поведінка
+
+**7.** `Awaited` для вкладеного Promise.
+
+```ts
+type X = Awaited<Promise<Promise<number>>>;
+```
+
+**8.** Свій `Unpromise`.
+
+```ts
+type Unp<T> = T extends Promise<infer U> ? Unp<U> : T;
+type X = Unp<Promise<Promise<string>>>;
+```
+
+**9.** `infer` у властивості об'єкта.
+
+```ts
+type IdOf<T> = T extends { id: infer I } ? I : never;
+type X = IdOf<{ id: number; name: string }>;
+```
+
+**10.** Результат, якщо умова не виконується.
+
+```ts
+type IdOf<T> = T extends { id: infer I } ? I : never;
+type X = IdOf<{ name: string }>;
+```
+
+**11.** Розподіл `infer` по union.
+
+```ts
+type El<T> = T extends (infer E)[] ? E : T;
+type X = El<string[] | number>;
+```
+
+**12.** `infer` у шаблонному літералі.
+
+```ts
+type Pre<S> = S extends `${infer P}-${string}` ? P : S;
+type X = Pre<'user-id'>;
+```
+
+### Рівень 3. Нюанси та пастки
+
+**13.** `Split` через `infer`.
+
+```ts
+type Split<S, D extends string> = S extends `${infer H}${D}${infer T}` ? [H, ...Split<T, D>] : [S];
+type X = Split<'a.b.c', '.'>;
+```
+
+**14.** `infer` для аргументів конструктора.
+
+```ts
+class A { constructor(public n: number, public s: string) {} }
+type C = ConstructorParameters<typeof A>;
+```
+
+**15.** `InstanceType`.
+
+```ts
+class A { x = 1 }
+type I = InstanceType<typeof A>;
+```
+
+**16.** `ThisParameterType` та `OmitThisParameter` для методу.
+
+```ts
+function f(this: { n: number }, a: string) {}
+type T = ThisParameterType<typeof f>;
+```
+
+**17.** Чи можна використати `infer` поза умовним типом?
+
+```ts
+type X<T> = infer U;
+```
+
+**18.** Витягніть тип значень `Record`.
+
+```ts
+type V<T> = T extends Record<string, infer U> ? U : never;
+type X = V<{ a: number; b: number }>;
+```
+
+### Рівень 4. Практика
+
+**19.** Витягніть тип результату async-функції.
+
+```ts
+const f = async () => 42;
+type R = Awaited<ReturnType<typeof f>>;
+```
+
+**20.** Що таке `infer`?
+
+**21.** Де дозволено `infer`?
+
+### Відповіді
+
+1. `string`
+2. `[a: number, b: string]`
+3. `boolean`
+4. `string`
+5. `3`
+6. `string`
+7. `number`
+8. `string`
+9. `number`
+10. `never`
+11. `string | number`
+12. `"user"`
+13. `["a", "b", "c"]`
+14. `[n: number, s: string]`
+15. `A`
+16. `{ n: number; }`
+17. Помилка: `TS1338: 'infer' declarations are only permitted in the 'extends' clause of a conditional type.`
+18. `number`
+19. `number`
+20. Ключове слово в умовному типі, що оголошує змінну типу, яку TS виводить із зіставлення зі структурою (`T extends Promise<infer U> ? U : T`)
+21. Лише у `extends`-частині умовного типу

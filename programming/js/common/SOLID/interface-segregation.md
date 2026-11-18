@@ -145,3 +145,103 @@ console.log(greeting({ name: "Olena" })); // Hello, Olena! — у тестах �
 - Функції вимагають мінімальну потрібну роль; кілька ролей поєднуються через `A & B`.
 - У TS принцип працює й без `interface`: мінімальна форма параметра або `Pick<T, ...>`.
 - Пов'язані принципи: [single-responsibility.md](single-responsibility.md), [dependency-inversion.md](dependency-inversion.md).
+
+## Задачі для закріплення
+
+15 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Сформулюйте принцип розділення інтерфейсів.
+
+**2.** Чому «жирний» інтерфейс `Machine { print, scan, fax }` проблемний для простого принтера?
+
+**3.** Покажіть, що відбувається, коли клас реалізує невикористовувані методи.
+
+```js
+(() => { class OldPrinter { print() { return 'p'; } scan() { throw new Error('not supported'); } } const o = new OldPrinter(); try { return [o.print(), o.scan()]; } catch (e) { return e.message; } })()
+```
+
+**4.** Розділіть на ролі `Printer`, `Scanner` і складіть багатофункціональний пристрій композицією.
+
+```js
+const printer = { print: (d) => 'print ' + d }; const scanner = { scan: () => 'scanned' }; const mfp = { ...printer, ...scanner }
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Напишіть `canPrint(device)` через duck typing замість великого інтерфейсу.
+
+```js
+const canPrint = (d) => typeof d.print === 'function'
+```
+
+**6.** Створіть ролі `Readable` і `Writable` та клас, що реалізує обидві (через міксин).
+
+```js
+const Readable = (B) => class extends B { read() { return 'r'; } }; const Writable = (B) => class extends B { write() { return 'w'; } }; class File extends Writable(Readable(Object)) {}
+```
+
+**7.** Напишіть `describe(obj, ...methods)`, що перевіряє, чи об'єкт має лише потрібні для клієнта методи.
+
+```js
+const has = (o, ...m) => m.every(k => typeof o[k] === 'function')
+```
+
+**8.** Функція-клієнт отримує лише потрібне: `sendReport(emailer)` вимагає тільки `send`.
+
+```js
+const sendReport = (e, r) => e.send(r); const fake = { send: (r) => 'sent:' + r }
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Як ISP пов'язаний із TypeScript `Pick`/`Omit`?
+
+**10.** Чи завжди дроблення інтерфейсів корисне?
+
+**11.** Яка різниця між ISP та SRP?
+
+**12.** Складіть роль `Logger` і `Metrics` окремо та об'єднайте `Service` лише з тим, що потрібно.
+
+```js
+const logger = { log: (m) => 'log:' + m }; const metrics = { inc: (k) => 'inc:' + k }; const mkService = (deps) => ({ run: () => [deps.log?.('run'), deps.inc?.('runs')] })
+```
+
+### Рівень 4. Практика
+
+**13.** Напишіть адаптер, що перетворює «жирний» об'єкт на вузьку роль.
+
+```js
+const asReader = (o) => ({ read: () => o.read() }); const fat = { read: () => 'data', write() {}, delete() {} }
+```
+
+**14.** Що поверне перевірка контракту за наявністю методів для різних пристроїв?
+
+```js
+(() => { const dev = [{ print() {}, scan() {} }, { print() {} }, { scan() {} }]; return dev.map(d => ['print', 'scan'].filter(m => typeof d[m] === 'function')); })()
+```
+
+**15.** Як розділити «жирний» об'єкт на дві ролі через деструктуризацію?
+
+```js
+(() => { const fat = { read: 1, write: 2, del: 3 }; const { read, ...rest } = fat; return [{ read }, rest]; })()
+```
+
+### Відповіді
+
+1. Клієнти не повинні залежати від методів, яких вони не використовують; краще кілька вузьких інтерфейсів, ніж один великий
+2. Принтер змушений реалізовувати `scan` і `fax` заглушками чи винятками, що порушує LSP і створює залежність від зайвих методів
+3. `'not supported'`
+4. Виклик `[mfp.print('x'), mfp.scan(), Object.keys(printer), Object.keys(mfp)]` → `['print x', 'scanned', ['print'], ['print', 'scan']]`
+5. Виклик `[canPrint({ print() {} }), canPrint({ scan() {} })]` → `[true, false]`
+6. Виклик `(() => { const f = new File(); return [f.read(), f.write()]; })()` → `['r', 'w']`
+7. Виклик `[has({ a() {}, b() {} }, 'a'), has({ a() {} }, 'a', 'b')]` → `[true, false]`
+8. Виклик `sendReport(fake, 'Q1')` → `'sent:Q1'`
+9. Можна виводити вузький тип із великого: `Pick<Big, 'a' | 'b'>`; функція приймає лише потрібну частину, а не весь інтерфейс
+10. Ні: надмірно дрібні інтерфейси ускладнюють розуміння; ділять за ролями клієнтів, а не за кожним методом
+11. SRP — про причини змін класу, ISP — про залежності клієнтів від методів інтерфейсу; вони доповнюють одне одного
+12. Виклик `[mkService({ ...logger, ...metrics }).run(), mkService(logger).run()]` → `[['log:run', 'inc:runs'], ['log:run', undefined]]`
+13. Виклик `(() => { const r = asReader(fat); return [r.read(), Object.keys(r)]; })()` → `['data', ['read']]`
+14. `[['print', 'scan'], ['print'], ['scan']]`
+15. `[{ read: 1 }, { write: 2, del: 3 }]`

@@ -193,3 +193,94 @@ try {
 - `structuredClone` — сучасна глибока копія (`Date`, `Map`, `Set`, цикли), але кидає `DataCloneError` на функціях і губить прототип: екземпляр класу стає звичайним об'єктом без методів.
 - Найнадійніший варіант для власних класів — явний метод `clone()`, який копіює кожен змінний вкладений об'єкт і зберігає клас.
 - Реєстр прототипів дає іменовані «зразки»: `create(name, overrides)` = клонуй і підправ потрібне.
+
+## Задачі для закріплення
+
+12 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Що поверне `Object.create(proto)` та хто є прототипом?
+
+```js
+(() => { const proto = { hi() { return 'hi'; } }; const o = Object.create(proto); return [o.hi(), Object.getPrototypeOf(o) === proto, Object.keys(o)]; })()
+```
+
+**2.** Реалізуйте `clone()` через прототип (поверхнева копія).
+
+```js
+class Doc { constructor(t, tags) { this.t = t; this.tags = tags; } clone() { return Object.assign(Object.create(Object.getPrototypeOf(this)), this); } }
+```
+
+**3.** Додайте глибоке клонування через `structuredClone`.
+
+```js
+class Doc { constructor(t, tags) { this.t = t; this.tags = tags; } clone() { const c = Object.create(Object.getPrototypeOf(this)); return Object.assign(c, structuredClone({ ...this })); } }
+```
+
+### Рівень 2. Деталі й поведінка
+
+**4.** Чи копіює `structuredClone` методи та прототип?
+
+```js
+(() => { class A { x = 1; m() {} } const c = structuredClone(new A()); return [c instanceof A, typeof c.m, c.x]; })()
+```
+
+**5.** Чим відрізняється spread від `Object.assign` при клонуванні геттерів?
+
+```js
+(() => { const o = { get v() { return 1; } }; const a = { ...o }; const b = Object.assign({}, o); return [Object.getOwnPropertyDescriptor(a, 'v').get === undefined, Object.getOwnPropertyDescriptor(b, 'v').get === undefined]; })()
+```
+
+**6.** Чи клонує `JSON.parse(JSON.stringify)` дату, `undefined`, `Map`?
+
+```js
+(() => { const o = { d: new Date(0), u: undefined, m: new Map([[1, 2]]), n: NaN }; return JSON.parse(JSON.stringify(o)); })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**7.** Реєстр прототипів: клонування за ім'ям.
+
+```js
+const registry = new Map(); const reg = (n, p) => registry.set(n, p); const spawn = (n, over = {}) => ({ ...structuredClone(registry.get(n)), ...over })
+```
+
+**8.** Прототипне наслідування функцій: перевизначення методу в клоні.
+
+```js
+const base = { speak() { return 'generic'; } }; const dog = Object.create(base, { speak: { value() { return 'woof'; } } })
+```
+
+**9.** Що поверне `Object.getPrototypeOf` ланцюжка після `Object.setPrototypeOf`?
+
+```js
+(() => { const a = { n: 'a' }; const b = { m: 'b' }; Object.setPrototypeOf(b, a); return [b.n, Object.getPrototypeOf(b) === a]; })()
+```
+
+### Рівень 4. Практика
+
+**10.** Глибока копія з урахуванням циклів (WeakMap).
+
+```js
+const deep = (o, seen = new WeakMap()) => { if (o === null || typeof o !== 'object') return o; if (seen.has(o)) return seen.get(o); const c = Array.isArray(o) ? [] : {}; seen.set(o, c); for (const k of Object.keys(o)) c[k] = deep(o[k], seen); return c; }
+```
+
+**11.** Яку проблему вирішує Prototype?
+
+**12.** Чим глибока копія відрізняється від поверхневої?
+
+### Відповіді
+
+1. `['hi', true, []]`
+2. Виклик `(() => { const a = new Doc('x', ['a']); const b = a.clone(); b.t = 'y'; b.tags.push('b'); return [a.t, b.t, a.tags, b instanceof Doc]; })()` → `['x', 'y', ['a', 'b'], true]`
+3. Виклик `(() => { const a = new Doc('x', ['a']); const b = a.clone(); b.tags.push('b'); return [a.tags, b.tags, b instanceof Doc]; })()` → `[['a'], ['a', 'b'], true]`
+4. `[false, 'undefined', 1]`
+5. `[true, true]`
+6. `{ d: '1970-01-01T00:00:00.000Z', m: {}, n: null }`
+7. Виклик `(() => { reg('orc', { hp: 10, items: ['axe'] }); const a = spawn('orc'); const b = spawn('orc', { hp: 5 }); a.items.push('x'); return [a, b, registry.get('orc')]; })()` → `[{ hp: 10, items: ['axe', 'x'] }, { hp: 5, items: ['axe'] }, { hp: 10, items: ['axe'] }]`
+8. Виклик `[base.speak(), dog.speak(), Object.getPrototypeOf(dog).speak()]` → `['generic', 'woof', 'generic']`
+9. `['a', true]`
+10. Виклик `(() => { const a = { n: 1 }; a.self = a; const c = deep(a); return [c !== a, c.self === c, c.n]; })()` → `[true, true, 1]`
+11. Створення нових об'єктів копіюванням існуючого, коли створення «з нуля» дороге або складне
+12. Поверхнева копіює лише верхній рівень (вкладені об'єкти спільні), глибока — рекурсивно всі рівні

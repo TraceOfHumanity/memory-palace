@@ -145,3 +145,99 @@ for (const bird of birds) {
 - TypeScript порушень LSP не помічає — вони поведінкові.
 - Рішення — базова абстракція, що обіцяє лише те, що виконують **усі** нащадки; незмінні об'єкти знімають багато таких конфліктів.
 - `instanceof`-перевірки на конкретний підклас у «загальному» коді — сигнал порушення. Пов'язане: [inheritance.md](../OOP/inheritance.md).
+
+## Задачі для закріплення
+
+15 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Сформулюйте принцип підстановки Барбари Лісков.
+
+**2.** Чому `Square extends Rectangle` порушує LSP?
+
+**3.** Покажіть, як порушення LSP ламає код клієнта.
+
+```js
+(() => { class R { constructor(w, h) { this.w = w; this.h = h; } setW(w) { this.w = w; } setH(h) { this.h = h; } area() { return this.w * this.h; } } class S extends R { setW(w) { this.w = this.h = w; } setH(h) { this.w = this.h = h; } } const grow = (r) => { r.setW(5); r.setH(2); return r.area(); }; return [grow(new R(1, 1)), grow(new S(1, 1))]; })()
+```
+
+**4.** Виправте: спільна абстракція `Shape` без `setW/setH`, а окремі `Rect` та `Square`.
+
+```js
+class Shape { area() { throw new Error('abstract'); } } class Rect extends Shape { constructor(w, h) { super(); this.w = w; this.h = h; } area() { return this.w * this.h; } } class Square extends Shape { constructor(a) { super(); this.a = a; } area() { return this.a ** 2; } }
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Що порушує LSP: нащадок кидає виняток, якого не було в базовому?
+
+```js
+(() => { class Bird { fly() { return 'fly'; } } class Penguin extends Bird { fly() { throw new Error('cannot fly'); } } const move = (b) => b.fly(); try { return [move(new Bird()), move(new Penguin())]; } catch (e) { return e.message; } })()
+```
+
+**6.** Виправте проблему Penguin: розділіть `Bird` і `FlyingBird`.
+
+```js
+class Bird { move() { return 'walk'; } } class FlyingBird extends Bird { move() { return 'fly'; } } class Penguin extends Bird {} const run = (b) => b.move()
+```
+
+**7.** Чи порушує LSP нащадок, що посилює передумови?
+
+```js
+(() => { class Base { set(n) { this.n = n; return 'ok'; } } class Strict extends Base { set(n) { if (n < 0) throw new RangeError('non-negative'); return super.set(n); } } const use = (o) => o.set(-1); try { return [use(new Base()), use(new Strict())]; } catch (e) { return e.name; } })()
+```
+
+**8.** Чи порушує LSP нащадок, що повертає інший тип?
+
+```js
+(() => { class A { size() { return 3; } } class B extends A { size() { return '3'; } } const sum = (o) => o.size() + 1; return [sum(new A()), sum(new B())]; })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Які правила контрактів описує LSP?
+
+**10.** Як швидко помітити порушення LSP?
+
+**11.** Чому композиція іноді безпечніша за наслідування з погляду LSP?
+
+**12.** Напишіть `ReadOnlyList`, що не наслідує змінюваний `List`, а лише читає.
+
+```js
+class ReadOnlyList { #a; constructor(a) { this.#a = [...a]; } get(i) { return this.#a[i]; } get size() { return this.#a.length; } }
+```
+
+### Рівень 4. Практика
+
+**13.** Як перевірити заміну на практиці: один тестовий набір для кожного нащадка?
+
+```js
+(() => { class A { total(x) { return x + 1; } } class B extends A { total(x) { return x + 1; } } const contract = (C) => new C().total(1) === 2; return [A, B].map(contract); })()
+```
+
+**14.** Що таке коваріантність повернень і контраваріантність параметрів?
+
+**15.** Напишіть `Stack` і `LimitedStack`, що додає `limit` без порушення контракту `push` (повертає `false` замість винятку).
+
+```js
+class Stack { #a = []; push(x) { this.#a.push(x); return true; } get size() { return this.#a.length; } } class Limited extends Stack { constructor(n) { super(); this.n = n; } push(x) { return this.size >= this.n ? false : super.push(x); } }
+```
+
+### Відповіді
+
+1. Об'єкти підкласу мають бути взаємозамінними з об'єктами базового класу без порушення коректності програми
+2. Квадрат змінює очікуване від прямокутника правило незалежності сторін: після `setWidth` клієнт очікує незмінну висоту, а квадрат її змінює
+3. `[10, 4]`
+4. Виклик `[new Rect(5, 2).area(), new Square(3).area()]` → `[10, 9]`
+5. `'cannot fly'`
+6. Виклик `[run(new FlyingBird()), run(new Penguin()), run(new Bird())]` → `['fly', 'walk', 'walk']`
+7. `'RangeError'`
+8. `[4, '31']`
+9. Передумови в нащадку не можна посилювати, післяумови — послаблювати; інваріанти базового класу зберігаються; нові винятки не додаються
+10. Клієнтський код перевіряє тип (`instanceof`) перед викликом, нащадок кидає `not implemented`, або метод нащадка тихо нічого не робить
+11. Об'єкт не обіцяє бути підтипом, тож не береться на себе весь контракт базового типу; використовується лише потрібна поведінка
+12. Виклик `(() => { const l = new ReadOnlyList([1, 2, 3]); return [l.get(1), l.size, typeof l.push]; })()` → `[2, 3, 'undefined']`
+13. `[true, true]`
+14. Нащадок може повертати вужчий тип і приймати ширший тип параметра, не ламаючи клієнта
+15. Виклик `(() => { const s = new Limited(2); return [s.push(1), s.push(2), s.push(3), s.size]; })()` → `[true, true, false, 2]`

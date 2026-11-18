@@ -116,3 +116,177 @@ function handle() { setN(n + 1); console.log(n); }   // лог покаже СТ
 4. Нове значення залежить від старого → `setX(prev => ...)`.
 5. Об'єкти/масиви — завжди нове значення, ніколи мутація.
 6. Складна логіка переходів → `useReducer`.
+
+## Задачі для закріплення
+
+14 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(el)` монтує елемент через `act`, `press(r)` викликає `onClick` кнопки, `text(r)` повертає текст результату; `create` і `act` беруться з `react-test-renderer`, `renderToString` — з `react-dom/server`, хуки — з `react`.
+
+### Рівень 1. Основи
+
+**1.** Що відрендерить компонент із `useState(0)` до і після кліку?
+
+```jsx
+function Counter() {
+  const [n, setN] = useState(0);
+  return <button onClick={() => setN(n + 1)}>{n}</button>;
+}
+const r = await mount(<Counter />);
+const a = text(r);
+await press(r);
+return [a, text(r)];
+```
+
+**2.** Що покаже лічильник після трьох кліків поспіль із `setN(n + 1)` в одному обробнику?
+
+```jsx
+function C() {
+  const [n, setN] = useState(0);
+  return <button onClick={() => { setN(n + 1); setN(n + 1); setN(n + 1); }}>{n}</button>;
+}
+const r = await mount(<C />);
+await press(r);
+return text(r);
+```
+
+**3.** А з функціональним оновленням `setN(p => p + 1)` тричі?
+
+```jsx
+function C() {
+  const [n, setN] = useState(0);
+  return <button onClick={() => { setN(p => p + 1); setN(p => p + 1); setN(p => p + 1); }}>{n}</button>;
+}
+const r = await mount(<C />);
+await press(r);
+return text(r);
+```
+
+**4.** Скільки разів викличеться ініціалізатор `useState(init())` проти `useState(init)` при 3 рендерах?
+
+```jsx
+let a = 0, b = 0;
+const init = (c) => () => { c === 'a' ? a++ : b++; return 0; };
+function A() { const [n, setN] = useState(init('a')()); return <button onClick={() => setN(n + 1)}>{n}</button>; }
+function B() { const [n, setN] = useState(init('b')); return <button onClick={() => setN(n + 1)}>{n}</button>; }
+const ra = await mount(<A />); await press(ra); await press(ra);
+const rb = await mount(<B />); await press(rb); await press(rb);
+return [a, b];
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Скільки рендерів станеться, якщо встановити те саме значення стану (bail-out)?
+
+```jsx
+let renders = 0;
+function C() { renders++; const [n, setN] = useState(5); return <button onClick={() => setN(5)}>{n}</button>; }
+const r = await mount(<C />);
+const before = renders;
+await press(r);
+await press(r);
+return [before, renders];
+```
+
+**6.** Що станеться, якщо мутувати об'єкт стану замість заміни?
+
+```jsx
+function C() {
+  const [o, setO] = useState({ n: 0 });
+  return <button onClick={() => { o.n++; setO(o); }}>{o.n}</button>;
+}
+const r = await mount(<C />);
+await press(r);
+return text(r);
+```
+
+**7.** А якщо створити новий об'єкт?
+
+```jsx
+function C() {
+  const [o, setO] = useState({ n: 0 });
+  return <button onClick={() => setO({ ...o, n: o.n + 1 })}>{o.n}</button>;
+}
+const r = await mount(<C />);
+await press(r);
+return text(r);
+```
+
+**8.** Що побачить обробник із закриттям після `setTimeout` (знімок стану)?
+
+```jsx
+let seen;
+function C() {
+  const [n, setN] = useState(0);
+  return <button onClick={() => { setN(n + 5); seen = n; }}>{n}</button>;
+}
+const r = await mount(<C />);
+await press(r);
+return [seen, text(r)];
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Чи зберігається стан при зміні `key`?
+
+```jsx
+function C() { const [n, setN] = useState(0); return <button onClick={() => setN(n + 1)}>{n}</button>; }
+function P({ k }) { return <C key={k} />; }
+const r = await mount(<P k="a" />);
+await press(r); await press(r);
+const a = text(r);
+await act(async () => { r.update(<P k="b" />); });
+return [a, text(r)];
+```
+
+**10.** Чи зберігається стан при перерендері батька з тим самим типом?
+
+```jsx
+function C() { const [n, setN] = useState(0); return <button onClick={() => setN(n + 1)}>{n}</button>; }
+function P({ t }) { return <div title={t}><C /></div>; }
+const r = await mount(<P t="1" />);
+await press(r);
+await act(async () => { r.update(<P t="2" />); });
+return text(r);
+```
+
+**11.** Що буде, якщо передати функцію як значення: `setF(() => x)`?
+
+```jsx
+function C() {
+  const [f, setF] = useState(() => (x) => x * 2);
+  return <button onClick={() => setF(() => (x) => x * 3)}>{f(5)}</button>;
+}
+const r = await mount(<C />);
+const a = text(r);
+await press(r);
+return [a, text(r)];
+```
+
+**12.** Що поверне `renderToString` для початкового стану?
+
+```jsx
+function C() { const [n] = useState(7); return <p>{n}</p>; }
+return renderToString(<C />);
+```
+
+### Рівень 4. Практика
+
+**13.** Чому `setState` асинхронний щодо поточного рендеру?
+
+**14.** Коли використовувати функціональне оновлення?
+
+### Відповіді
+
+1. `['0', '1']`
+2. `'1'`
+3. `'3'`
+4. `[3, 1]`
+5. `[1, 1]`
+6. `'0'`
+7. `'1'`
+8. `[0, '5']`
+9. `['2', '0']`
+10. `'1'`
+11. `['10', '15']`
+12. `'<p>7</p>'`
+13. Оновлення плануються й застосовуються при наступному рендері; змінна `n` у поточному замиканні лишається старою (знімок)
+14. Коли нове значення залежить від попереднього, особливо при кількох викликах поспіль або в асинхронних колбеках

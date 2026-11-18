@@ -285,3 +285,183 @@ patchUser(2, { name: "New name", age: 40 }); // Updating user 2: { name: 'New na
 - `NonNullable` — прибирає `null`/`undefined` з типу.
 - `ReturnType`/`Parameters`/`Awaited` — «витягують» типи із сигнатури функції, автоматично синхронізуючись з її змінами.
 - Utility types часто комбінують (`Partial<Omit<T, "id">>`) для точного опису форми даних під сценарій без дублювання основного типу.
+
+## Задачі для закріплення
+
+22 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в TypeScript Playground чи через tsc.
+
+### Рівень 1. Основи
+
+**1.** `Partial<User>`.
+
+```ts
+type User = { id: number; name: string; email?: string };
+type R = Partial<User>;
+```
+
+**2.** `Required<User>`.
+
+```ts
+type User = { id: number; name: string; email?: string };
+type R = Required<User>;
+```
+
+**3.** `Readonly<User>`.
+
+```ts
+type User = { id: number; name: string; email?: string };
+type R = Readonly<User>;
+```
+
+**4.** `Pick<User, 'id' | 'name'>`.
+
+```ts
+type User = { id: number; name: string; email?: string };
+type R = Pick<User, 'id' | 'name'>;
+```
+
+**5.** `Omit<User, 'email'>`.
+
+```ts
+type User = { id: number; name: string; email?: string };
+type R = Omit<User, 'email'>;
+```
+
+**6.** `Record<'a' | 'b', number>`.
+
+```ts
+type R = Record<'a' | 'b', number>;
+```
+
+### Рівень 2. Деталі й поведінка
+
+**7.** `Exclude<'a' | 'b' | 'c', 'a'>`.
+
+```ts
+type R = Exclude<'a' | 'b' | 'c', 'a'>;
+```
+
+**8.** `Extract<string | number | boolean, string | boolean>`.
+
+```ts
+type R = Extract<string | number | boolean, string | boolean>;
+```
+
+**9.** `NonNullable<string | null | undefined>`.
+
+```ts
+type R = NonNullable<string | null | undefined>;
+```
+
+**10.** `ReturnType` та `Parameters`.
+
+```ts
+const f = (a: number, b: string) => a > 0;
+type R = ReturnType<typeof f>;
+type P = Parameters<typeof f>;
+```
+
+**11.** `Awaited<Promise<string[]>>`.
+
+```ts
+type R = Awaited<Promise<string[]>>;
+```
+
+**12.** Присвоєння до `Readonly`-поля.
+
+```ts
+type User = { id: number; name: string; email?: string };
+const u: Readonly<User> = { id: 1, name: 'a' };
+u.name = 'b';
+```
+
+### Рівень 3. Нюанси та пастки
+
+**13.** `Partial` для оновлення.
+
+```ts
+type User = { id: number; name: string; email?: string };
+function update(u: User, p: Partial<User>): User { return { ...u, ...p }; }
+update({ id: 1, name: 'a' }, { name: 'b' });
+```
+
+**14.** `Pick` неіснуючого ключа.
+
+```ts
+type User = { id: number; name: string; email?: string };
+type R = Pick<User, 'age'>;
+```
+
+**15.** `Omit` та `Pick` разом: створення DTO.
+
+```ts
+type User = { id: number; name: string; email?: string };
+type Create = Omit<User, 'id'>;
+type CreateName = Pick<Create, 'name'>;
+```
+
+**16.** `Uppercase<'abc'>` та `Capitalize`.
+
+```ts
+type A = Uppercase<'abc'>;
+type B = Capitalize<'abc'>;
+```
+
+**17.** `Record` зі словником.
+
+```ts
+type Dict = Record<string, number>;
+type V = Dict['x'];
+```
+
+**18.** `ConstructorParameters` та `InstanceType`.
+
+```ts
+class A { constructor(public a: number, public b: string) {} }
+type P = ConstructorParameters<typeof A>;
+```
+
+### Рівень 4. Практика
+
+**19.** Власний `Mutable<T>`.
+
+```ts
+type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+type R = Mutable<Readonly<{ a: number }>>;
+```
+
+**20.** Власний `DeepPartial<T>`.
+
+```ts
+type DP<T> = { [K in keyof T]?: T[K] extends object ? DP<T[K]> : T[K] };
+type R = DP<{ a: { b: number } }>;
+```
+
+**21.** Чим `Omit` відрізняється від `Exclude`?
+
+**22.** Чи змінюють utility-типи значення під час виконання?
+
+### Відповіді
+
+1. `{ id?: number | undefined; name?: string | undefined; email?: string | undefined; }`
+2. `{ id: number; name: string; email: string; }`
+3. `{ readonly id: number; readonly name: string; readonly email?: string | undefined; }`
+4. `{ id: number; name: string; }`
+5. `{ id: number; name: string; }`
+6. `{ a: number; b: number; }`
+7. `"b" | "c"`
+8. `string | boolean`
+9. `string`
+10. `[a: number, b: string]`
+11. `string[]`
+12. Помилка: `TS2540: Cannot assign to 'name' because it is a read-only property.`
+13. Компілюється без помилок
+14. Помилка: `TS2344: Type '"age"' does not satisfy the constraint 'keyof User'.`
+15. `{ name: string; }`
+16. `"Abc"`
+17. `number`
+18. `[a: number, b: string]`
+19. `{ a: number; }`
+20. `{ a?: DP<{ b: number; }> | undefined; }`
+21. `Omit<T, K>` прибирає ключі з об'єктного типу; `Exclude<U, E>` прибирає члени з union
+22. Ні, вони існують лише на рівні типів і зникають після компіляції

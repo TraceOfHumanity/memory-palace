@@ -77,3 +77,80 @@ Reject у async `setup` → помилка піде в `onErrorCaptured` бат�
 3. У класичному async `setup` — хуки до першого `await`.
 4. Помилки → `onErrorCaptured`.
 5. Альтернатива без Suspense — `onMounted` + `loading`/`error`.
+
+## Задачі для закріплення
+
+10 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(Component)` монтує компонент у тестове дерево без DOM, `html(r)` серіалізує його, `click(node)` викликає `onClick`, `tick()` — це `nextTick`, `sleep(ms)` — пауза; API Vue (`ref`, `watch`, `h` та інші) імпортуються з `vue`.
+
+### Рівень 1. Основи
+
+**1.** Що показує `Suspense`, поки async `setup` не завершився?
+
+```js
+const Kid = defineComponent({ async setup() { await sleep(10); return () => h('p', 'ready'); } }); const r = mount(defineComponent({ setup() { return () => h(Suspense, null, { default: () => h(Kid), fallback: () => h('i', 'loading') }); } })); const a = html(r); await sleep(40); return [a, html(r)];
+```
+
+**2.** `defineAsyncComponent` у `Suspense`.
+
+```js
+const A = defineAsyncComponent(() => sleep(5).then(() => defineComponent({ render: () => h('b', 'loaded') }))); const r = mount(defineComponent({ setup() { return () => h(Suspense, null, { default: () => h(A), fallback: () => h('i', 'wait') }); } })); const a = html(r); await sleep(30); return [a, html(r)];
+```
+
+**3.** Помилка в async `setup` та `onErrorCaptured`.
+
+```js
+const Bad = defineComponent({ async setup() { await sleep(2); throw new Error('fail'); } }); const log = []; const r = mount(defineComponent({ setup() { onErrorCaptured((e) => { log.push(e.message); return false; }); return () => h(Suspense, null, { default: () => h(Bad), fallback: () => h('i', 'w') }); } })); await sleep(20); return log;
+```
+
+### Рівень 2. Деталі й поведінка
+
+**4.** Хуки життєвого циклу до та після `await` у `setup`.
+
+```js
+const log = []; const C = defineComponent({ async setup() { onMounted(() => log.push('before-await')); await sleep(2); onMounted(() => log.push('after-await')); return () => h('p'); } }); mount(defineComponent({ setup() { return () => h(Suspense, null, { default: () => h(C), fallback: () => h('i') }); } })); await sleep(30); return log;
+```
+
+**5.** Події `Suspense`: pending / fallback / resolve.
+
+```js
+const log = []; const Kid = defineComponent({ async setup() { await sleep(5); return () => h('p', 'k'); } }); mount(defineComponent({ setup() { return () => h(Suspense, { onPending: () => log.push('pending'), onResolve: () => log.push('resolve'), onFallback: () => log.push('fallback') }, { default: () => h(Kid), fallback: () => h('i') }); } })); await sleep(30); return log;
+```
+
+**6.** Кілька async-дітей: чи чекає `Suspense` на всіх?
+
+```js
+const mkKid = (ms, t) => defineComponent({ async setup() { await sleep(ms); return () => h('p', t); } }); const r = mount(defineComponent({ setup() { return () => h(Suspense, null, { default: () => h('div', [h(mkKid(5, 'a')), h(mkKid(25, 'b'))]), fallback: () => h('i', 'w') }); } })); await sleep(12); const mid = html(r); await sleep(40); return [mid, html(r)];
+```
+
+### Рівень 3. Нюанси та пастки
+
+**7.** Чи виконується `setup` повторно при оновленні батька?
+
+```js
+let setups = 0; const n = ref(0); const Kid = defineComponent({ async setup() { setups++; await sleep(2); return () => h('p', 'k'); } }); mount(defineComponent({ setup() { return () => h('div', [h('span', n.value), h(Suspense, null, { default: () => h(Kid), fallback: () => h('i') })]); } })); await sleep(15); n.value = 1; await tick(); await sleep(10); return setups;
+```
+
+**8.** Стан, отриманий через `await` у `setup`.
+
+```js
+const Kid = defineComponent({ async setup() { const data = await Promise.resolve([1, 2, 3]); const total = computed(() => data.reduce((a, b) => a + b, 0)); return () => h('p', total.value); } }); const r = mount(defineComponent({ setup() { return () => h(Suspense, null, { default: () => h(Kid), fallback: () => h('i', 'w') }); } })); await sleep(20); return html(r);
+```
+
+**9.** Що таке `<Suspense>`?
+
+### Рівень 4. Практика
+
+**10.** Чому після `await` у `setup` не можна реєструвати хуки?
+
+### Відповіді
+
+1. `['<i>loading</i>', '<p>ready</p>']`
+2. `['<i>wait</i>', '<b>loaded</b>']`
+3. `['fail']`
+4. `['before-await']`
+5. `['pending', 'fallback', 'resolve']`
+6. `['<i>w</i>', '<div><p>a</p><p>b</p></div>']`
+7. `1`
+8. `'<p>6</p>'`
+9. Компонент, що координує очікування асинхронних залежностей (async `setup`, async-компоненти) та показує `fallback` до їх завершення
+10. Після `await` Vue втрачає поточний активний екземпляр компонента; у `<script setup>` компілятор зберігає контекст, а в звичайному `setup` хуки потрібно викликати до першого `await`

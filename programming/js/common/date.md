@@ -556,3 +556,312 @@ console.log(new Intl.DateTimeFormat("en-US", {
 - `Date.now()` — настінний годинник (може стрибати), для вимірів тривалості — `performance.now()` (монотонний).
 - Пастки: мутабельність (копіюйте `new Date(d)`), `Object.freeze` не захищає, місяці з 0, один числовий аргумент = мілісекунди, `Date` як ключ `Map` порівнюється за посиланням.
 - Альтернативи: Temporal (майбутній стандарт), date-fns, Luxon, Day.js.
+
+## Задачі для закріплення
+
+42 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Що поверне `new Date(0).toISOString()`?
+
+```js
+new Date(0).toISOString()
+```
+
+**2.** Що поверне `Date.UTC(2024, 0, 15)` та відповідний ISO?
+
+```js
+[Date.UTC(2024, 0, 15), new Date(Date.UTC(2024, 0, 15)).toISOString()]
+```
+
+**3.** Чому місяці у `Date` рахуються з нуля?
+
+```js
+[new Date(Date.UTC(2024, 0, 1)).getUTCMonth(), new Date(Date.UTC(2024, 11, 1)).getUTCMonth(), new Date(Date.UTC(2024, 11, 1)).getUTCDate()]
+```
+
+**4.** Що поверне `getUTCDay` для відомих дат?
+
+```js
+['2024-01-01', '2024-02-29', '2000-01-01'].map(s => new Date(s).getUTCDay())
+```
+
+**5.** Що поверне `new Date('2024-03-15')` порівняно з `'2024-03-15T00:00:00'` щодо UTC?
+
+```js
+[new Date('2024-03-15').toISOString(), new Date('2024-03-15T00:00:00Z').toISOString()]
+```
+
+**6.** Що поверне парсинг некоректного рядка?
+
+```js
+[new Date('abc').getTime(), String(new Date('abc')), isNaN(new Date('abc')), new Date(NaN).toString()]
+```
+
+**7.** Що поверне `toISOString` для Invalid Date?
+
+```js
+(() => { try { new Date(NaN).toISOString(); } catch (e) { return e.name + ': ' + e.message; } })()
+```
+
+**8.** Що поверне `toJSON` для Invalid Date та валідної?
+
+```js
+[new Date(NaN).toJSON(), new Date(0).toJSON(), JSON.stringify({ d: new Date(86400000) })]
+```
+
+**9.** Що відбувається при переповненні місяця: 13-й місяць, 32 січня?
+
+```js
+[new Date(Date.UTC(2024, 12, 1)).toISOString(), new Date(Date.UTC(2024, 0, 32)).toISOString()]
+```
+
+**10.** Що дасть день 0 і від'ємні дні?
+
+```js
+[new Date(Date.UTC(2024, 2, 0)).getUTCDate(), new Date(Date.UTC(2023, 2, 0)).getUTCDate(), new Date(Date.UTC(2024, 0, -1)).toISOString().slice(0, 10)]
+```
+
+**11.** Як дізнатися кількість днів у місяці?
+
+```js
+[[2024, 1], [2023, 1], [2024, 3], [2024, 11]].map(([y, m]) => new Date(Date.UTC(y, m + 1, 0)).getUTCDate())
+```
+
+### Рівень 2. Деталі й поведінка
+
+**12.** Як перевірити високосність?
+
+```js
+[1900, 2000, 2023, 2024, 2100].map(y => new Date(Date.UTC(y, 1, 29)).getUTCMonth() === 1)
+```
+
+**13.** Що поверне віднімання дат?
+
+```js
+(new Date('2024-03-01') - new Date('2024-02-01')) / 864e5
+```
+
+**14.** Що поверне `+date`, `date.valueOf()`, `getTime()`?
+
+```js
+(() => { const d = new Date('1970-01-02T00:00:00Z'); return [+d, d.valueOf(), d.getTime(), typeof (d + 1), d - 0]; })()
+```
+
+**15.** Що дасть `d1 == d2` і `d1 === d2` для двох однакових дат?
+
+```js
+(() => { const a = new Date(5), b = new Date(5); return [a == b, a === b, +a === +b, a <= b && a >= b]; })()
+```
+
+**16.** Як додати 30 днів до дати без мутації?
+
+```js
+(() => { const d = new Date('2024-01-15T00:00:00Z'); const n = new Date(d); n.setUTCDate(n.getUTCDate() + 30); return [d.toISOString(), n.toISOString()]; })()
+```
+
+**17.** Що повертає `setUTCHours` та чи мутує дату?
+
+```js
+(() => { const d = new Date(0); const r = d.setUTCHours(5); return [r, d.getTime()]; })()
+```
+
+**18.** Що поверне `setUTCMonth(1)` для 31 січня?
+
+```js
+(() => { const d = new Date('2024-01-31T00:00:00Z'); d.setUTCMonth(1); return d.toISOString().slice(0, 10); })()
+```
+
+**19.** Що поверне `new Date(2024, 0, 31)` + 1 місяць через локальні методи?
+
+```js
+(() => { const d = new Date(2024, 0, 31); d.setMonth(1); return [d.getMonth(), d.getDate()]; })()
+```
+
+**20.** Що поверне `Date()` без `new` та `typeof`?
+
+```js
+[typeof Date(), typeof new Date()]
+```
+
+**21.** Що поверне `new Date(2024, 0)` (місяць, без днів) локально?
+
+```js
+(() => { const d = new Date(2024, 0); return [d.getFullYear(), d.getMonth(), d.getDate(), d.getHours()]; })()
+```
+
+**22.** Що поверне двозначний рік: `new Date(99, 0).getFullYear()`?
+
+```js
+[new Date(99, 0).getFullYear(), new Date(100, 0).getFullYear(), new Date(0, 0).getFullYear()]
+```
+
+### Рівень 3. Нюанси та пастки
+
+**23.** Що поверне `Date.parse` різних форматів (UTC-варіанти)?
+
+```js
+[Date.parse('2024-01-01T00:00:00Z'), Date.parse('2024-01-01T00:00:00+02:00'), Date.parse('2024-01'), Date.parse('2024')]
+```
+
+**24.** Що поверне `Date.parse('2024-01-01T24:00:00Z')`?
+
+```js
+[Date.parse('2024-01-01T24:00:00Z'), Date.parse('2024-01-01T25:00:00Z')]
+```
+
+**25.** Максимальна дата у JS?
+
+```js
+[new Date(8.64e15).toISOString(), new Date(8.64e15 + 1).getTime(), new Date(-8.64e15).toISOString()]
+```
+
+**26.** Чи рівні `toISOString().slice(0, 10)` та локальна дата для півночі UTC (UTC-формат)?
+
+```js
+new Date('2024-05-05T23:59:59Z').toISOString().slice(0, 10)
+```
+
+**27.** Що виведе `Intl.DateTimeFormat` для UTC із фіксованою локаллю?
+
+```js
+new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(Date.UTC(2024, 2, 5)))
+```
+
+**28.** Те саме українською?
+
+```js
+new Intl.DateTimeFormat('uk-UA', { timeZone: 'UTC', dateStyle: 'long' }).format(new Date(Date.UTC(2024, 2, 5)))
+```
+
+**29.** Що виведе `toLocaleDateString('en-GB', ...)` у UTC?
+
+```js
+new Date(Date.UTC(2024, 2, 5)).toLocaleDateString('en-GB', { timeZone: 'UTC' })
+```
+
+**30.** Різниця у часових зонах: та сама мить у Києві та Нью-Йорку (січень)?
+
+```js
+['Europe/Kyiv', 'America/New_York', 'Asia/Tokyo'].map(z => new Intl.DateTimeFormat('en-GB', { timeZone: z, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date('2024-01-15T12:00:00Z')))
+```
+
+**31.** Та сама мить влітку: літній час?
+
+```js
+['Europe/Kyiv', 'America/New_York'].map(z => new Intl.DateTimeFormat('en-GB', { timeZone: z, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date('2024-07-15T12:00:00Z')))
+```
+
+**32.** Що поверне `Intl.RelativeTimeFormat`?
+
+```js
+(() => { const r = new Intl.RelativeTimeFormat('en', { numeric: 'auto' }); return [r.format(-1, 'day'), r.format(2, 'week'), r.format(0, 'day')]; })()
+```
+
+**33.** Скільки мс у добі, годині, тижні?
+
+```js
+[24 * 60 * 60 * 1000, 3600000, 7 * 864e5]
+```
+
+### Рівень 4. Практика
+
+**34.** Напишіть `addDays(date, n)`, що не мутує вихідну дату (UTC).
+
+```js
+const addDays = (d, n) => { const r = new Date(d); r.setUTCDate(r.getUTCDate() + n); return r; }
+```
+
+**35.** Напишіть `daysBetween(a, b)`.
+
+```js
+const daysBetween = (a, b) => Math.round((b - a) / 864e5)
+```
+
+**36.** Напишіть `isoWeekday(d)`: 1=пн … 7=нд (UTC).
+
+```js
+const wd = (d) => d.getUTCDay() || 7
+```
+
+**37.** Напишіть `startOfMonth` та `endOfMonth` (UTC, ISO-день).
+
+```js
+const som = (d) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)); const eom = (d) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0))
+```
+
+**38.** Напишіть `age(birth, today)` у повних роках.
+
+```js
+const age = (b, t) => { let a = t.getUTCFullYear() - b.getUTCFullYear(); const m = t.getUTCMonth() - b.getUTCMonth(); if (m < 0 || (m === 0 && t.getUTCDate() < b.getUTCDate())) a--; return a; }
+```
+
+**39.** Напишіть `isoWeek(d)` — номер ISO-тижня.
+
+```js
+const isoWeek = (d) => { const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())); const n = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - n); const y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - y) / 864e5 + 1) / 7); }
+```
+
+**40.** Напишіть `formatISODate(d)` та `parseISODate(s)` для `YYYY-MM-DD` у UTC із перевіркою.
+
+```js
+const fmt = (d) => d.toISOString().slice(0, 10); const parse = (s) => { const d = new Date(s + 'T00:00:00Z'); return isNaN(d) || fmt(d) !== s ? null : d; }
+```
+
+**41.** Напишіть `rangeOfDays(from, to)` — масив ISO-дат включно.
+
+```js
+const rangeOfDays = (a, b) => { const r = []; for (let t = +a; t <= +b; t += 864e5) r.push(new Date(t).toISOString().slice(0, 10)); return r; }
+```
+
+**42.** Напишіть `groupByMonth(dates)`.
+
+```js
+const gm = (a) => a.reduce((m, d) => { const k = d.toISOString().slice(0, 7); (m[k] ||= []).push(d.toISOString().slice(8, 10)); return m; }, {})
+```
+
+### Відповіді
+
+1. `'1970-01-01T00:00:00.000Z'`
+2. `[1705276800000, '2024-01-15T00:00:00.000Z']`
+3. `[0, 11, 1]`
+4. `[1, 4, 6]`
+5. `['2024-03-15T00:00:00.000Z', '2024-03-15T00:00:00.000Z']`
+6. `[NaN, 'Invalid Date', true, 'Invalid Date']`
+7. `'RangeError: Invalid time value'`
+8. `[null, '1970-01-01T00:00:00.000Z', '{"d":"1970-01-02T00:00:00.000Z"}']`
+9. `['2025-01-01T00:00:00.000Z', '2024-02-01T00:00:00.000Z']`
+10. `[29, 28, '2023-12-30']`
+11. `[29, 28, 30, 31]`
+12. `[false, true, false, true, false]`
+13. `29`
+14. `[86400000, 86400000, 86400000, 'string', 86400000]`
+15. `[false, false, true, true]`
+16. `['2024-01-15T00:00:00.000Z', '2024-02-14T00:00:00.000Z']`
+17. `[18000000, 18000000]`
+18. `'2024-03-02'`
+19. `[2, 2]`
+20. `['string', 'object']`
+21. `[2024, 0, 1, 0]`
+22. `[1999, 100, 1900]`
+23. `[1704067200000, 1704060000000, 1704067200000, 1704067200000]`
+24. `[1704153600000, NaN]`
+25. `['+275760-09-13T00:00:00.000Z', NaN, '-271821-04-20T00:00:00.000Z']`
+26. `'2024-05-05'`
+27. `'March 5, 2024'`
+28. `'5 березня 2024 р.'`
+29. `'05/03/2024'`
+30. `['14:00', '07:00', '21:00']`
+31. `['15:00', '08:00']`
+32. `['yesterday', 'in 2 weeks', 'today']`
+33. `[86400000, 3600000, 604800000]`
+34. Виклик `(() => { const d = new Date('2024-02-27T00:00:00Z'); return [addDays(d, 3).toISOString().slice(0, 10), d.toISOString().slice(0, 10)]; })()` → `['2024-03-01', '2024-02-27']`
+35. Виклик `[daysBetween(new Date('2024-01-01'), new Date('2024-12-31')), daysBetween(new Date('2024-03-10'), new Date('2024-03-01'))]` → `[365, -9]`
+36. Виклик `['2024-01-01', '2024-01-07', '2024-01-06'].map(s => wd(new Date(s)))` → `[1, 7, 6]`
+37. Виклик `(() => { const d = new Date('2024-02-10T12:00:00Z'); return [som(d).toISOString().slice(0, 10), eom(d).toISOString().slice(0, 10)]; })()` → `['2024-02-01', '2024-02-29']`
+38. Виклик `[age(new Date('2000-06-15'), new Date('2024-06-14')), age(new Date('2000-06-15'), new Date('2024-06-15')), age(new Date('2000-02-29'), new Date('2023-02-28'))]` → `[23, 24, 22]`
+39. Виклик `['2024-01-01', '2024-12-30', '2021-01-03', '2020-12-31'].map(s => isoWeek(new Date(s)))` → `[1, 1, 53, 53]`
+40. Виклик `[fmt(new Date(86400000 * 365)), parse('2024-02-29') && 'ok', parse('2023-02-29'), parse('2024-13-01')]` → `['1971-01-01', 'ok', null, null]`
+41. Виклик `rangeOfDays(new Date('2024-02-27'), new Date('2024-03-01'))` → `['2024-02-27', '2024-02-28', '2024-02-29', '2024-03-01']`
+42. Виклик `gm([new Date('2024-01-05'), new Date('2024-01-20'), new Date('2024-02-01')])` → `{ '2024-01': ['05', '20'], '2024-02': ['01'] }`

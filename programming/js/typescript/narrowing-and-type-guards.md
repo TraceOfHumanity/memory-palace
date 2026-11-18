@@ -353,3 +353,155 @@ demoSafePattern(box);
 - Assertion function (`asserts value is Type`) кидає помилку й звужує тип на весь код після виклику, без `if`.
 - Звуження `let`-змінної не переходить у колбек, якщо змінну потім перепризначають (з TS 5.4 — переходить, якщо не перепризначають).
 - Звуження властивості `obj.prop` TS зберігає навіть після викликів, що могли її змінити — це може призвести до падіння в рантаймі; надійний захист — копія в локальну `const`.
+
+## Задачі для закріплення
+
+19 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в TypeScript Playground чи через tsc.
+
+### Рівень 1. Основи
+
+**1.** Звуження через `typeof`.
+
+```ts
+function f(x: string | number) { if (typeof x === 'string') { return x; } return x; }
+const r = (x: string | number) => typeof x === 'string' ? x : x;
+```
+
+**2.** Звуження через truthiness.
+
+```ts
+function f(x: string | null) { if (x) return x.length; return 0; }
+```
+
+**3.** Без звуження: використання `string | null`.
+
+```ts
+function f(x: string | null) { return x.length; }
+```
+
+**4.** Оператор `?.` та `??`.
+
+```ts
+function f(x?: { n: number }) { return x?.n ?? 0; }
+```
+
+**5.** Рівність: звуження через `===`.
+
+```ts
+function f(a: string | number, b: string | boolean) { if (a === b) { return a.toUpperCase(); } }
+```
+
+### Рівень 2. Деталі й поведінка
+
+**6.** `instanceof` для класів.
+
+```ts
+class A { a = 1 } class B { b = 2 }
+function f(x: A | B) { return x instanceof A ? x.a : x.b; }
+```
+
+**7.** `in` для об'єктів.
+
+```ts
+type Cat = { meow(): void }; type Dog = { bark(): void };
+function f(p: Cat | Dog) { if ('meow' in p) p.meow(); else p.bark(); }
+```
+
+**8.** Дискримінований union.
+
+```ts
+type S = { kind: 'c'; r: number } | { kind: 's'; a: number };
+function area(s: S) { switch (s.kind) { case 'c': return s.r; case 's': return s.a; } }
+```
+
+**9.** Вичерпність через `never`: пропущений випадок.
+
+```ts
+type S = { kind: 'c' } | { kind: 's' };
+function f(s: S): number { switch (s.kind) { case 'c': return 1; default: const _x: never = s; return _x; } }
+```
+
+**10.** Користувацький type guard `x is T`.
+
+```ts
+interface User { name: string }
+const isUser = (x: unknown): x is User => typeof x === 'object' && x !== null && 'name' in x;
+function f(v: unknown) { if (isUser(v)) return v.name; }
+```
+
+### Рівень 3. Нюанси та пастки
+
+**11.** Assertion function `asserts x is T`.
+
+```ts
+function assertStr(x: unknown): asserts x is string { if (typeof x !== 'string') throw new Error('no'); }
+function f(v: unknown) { assertStr(v); return v.toUpperCase(); }
+```
+
+**12.** Звуження `Array.isArray`.
+
+```ts
+function f(x: string | string[]) { return Array.isArray(x) ? x : [x]; }
+const r = f('a');
+```
+
+**13.** Звуження через `filter` із type guard.
+
+```ts
+const xs = [1, null, 2];
+const r = xs.filter((x): x is number => x !== null);
+```
+
+**14.** Чи звужує `filter(x => x !== null)` тип без явного type guard (TS 5.5 і новіше виводить предикат)?
+
+```ts
+const xs = [1, null, 2];
+const r: number[] = xs.filter(x => x !== null);
+```
+
+**15.** Звуження за присвоєнням.
+
+```ts
+let x: string | number = 'a';
+x.toUpperCase();
+```
+
+### Рівень 4. Практика
+
+**16.** Звуження в `while`/раннє повернення.
+
+```ts
+function f(x: string | undefined) { if (!x) return; return x.length; }
+```
+
+**17.** Звуження втрачається після колбека.
+
+```ts
+function f(o: { v: string | null }) { if (o.v) { setTimeout(() => { o.v.length; }); } }
+```
+
+**18.** Що таке narrowing?
+
+**19.** Для чого дискримінований union?
+
+### Відповіді
+
+1. `(x: string | number) => string | number`
+2. Компілюється без помилок
+3. Помилка: `TS18047: 'x' is possibly 'null'.`
+4. Компілюється без помилок
+5. Компілюється без помилок
+6. Компілюється без помилок
+7. Компілюється без помилок
+8. Компілюється без помилок
+9. Помилка: `TS2322: Type '{ kind: "s"; }' is not assignable to type 'never'.`
+10. Компілюється без помилок
+11. Компілюється без помилок
+12. `string[]`
+13. `number[]`
+14. Помилок немає
+15. Компілюється без помилок
+16. Компілюється без помилок
+17. Помилка: `TS18047: 'o.v' is possibly 'null'.`
+18. Процес, у якому TS уточнює тип змінної в гілках коду за перевірками (`typeof`, `instanceof`, `in`, `===`, truthiness, type guards)
+19. Спільне літеральне поле (`kind`) дозволяє TS безпечно звужувати union у `switch`/`if` і перевіряти вичерпність

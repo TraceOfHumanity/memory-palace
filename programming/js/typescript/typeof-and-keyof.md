@@ -258,3 +258,166 @@ anotherRepo.save("new product"); // Saved "new product" to repository products
 - `typeof` + `keyof` разом — найпоширеніший спосіб отримати union значень (а не ключів) з enum-подібного `as const`-об'єкта.
 - Пастка: `keyof` масиву повертає `number` плюс усі методи `Array.prototype` — для типу елемента використовуй `(typeof arr)[number]`.
 - `typeof Клас` дає тип конструктора (з `prototype` і статичними членами), `typeof екземпляр` — тип екземпляра (те саме, що ім'я класу в позиції типу).
+
+## Задачі для закріплення
+
+Двадцять задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в TypeScript Playground чи через tsc.
+
+### Рівень 1. Основи
+
+**1.** Що поверне `typeof` у JS для різних значень?
+
+```ts
+[typeof 1, typeof 'a', typeof null, typeof undefined, typeof [], typeof (() => 1)]
+```
+
+**2.** `typeof` у просторі типів для змінної.
+
+```ts
+const cfg = { host: 'x', port: 80 };
+type C = typeof cfg;
+```
+
+**3.** `typeof` для функції.
+
+```ts
+function f(a: number) { return a + 1; }
+type F = typeof f;
+```
+
+**4.** `keyof` для об'єкта.
+
+```ts
+type P = { a: number; b: string };
+type K = keyof P;
+```
+
+**5.** `keyof typeof` об'єкта значень.
+
+```ts
+const colors = { red: '#f00', blue: '#00f' };
+type K = keyof typeof colors;
+```
+
+### Рівень 2. Деталі й поведінка
+
+**6.** `keyof` для масиву.
+
+```ts
+type K = keyof string[];
+```
+
+**7.** `keyof` для індексної сигнатури.
+
+```ts
+type K = keyof { [k: string]: number };
+```
+
+**8.** Тип значення за ключем: `T[K]`.
+
+```ts
+type P = { a: number; b: string };
+type V = P['b'];
+```
+
+**9.** Union значень: `T[keyof T]`.
+
+```ts
+type P = { a: number; b: string };
+type V = P[keyof P];
+```
+
+**10.** Mapped type через `keyof`.
+
+```ts
+type P = { a: number; b: string };
+type R = { [K in keyof P]: boolean };
+```
+
+### Рівень 3. Нюанси та пастки
+
+**11.** Безпечний доступ за ключем.
+
+```ts
+function get<T, K extends keyof T>(o: T, k: K) { return o[k]; }
+get({ a: 1 }, 'a');
+```
+
+**12.** Недійсний ключ.
+
+```ts
+type P = { a: number };
+const k: keyof P = 'z';
+```
+
+**13.** `typeof` для enum-подібного об'єкта `as const`.
+
+```ts
+const D = { Up: 'u', Down: 'd' } as const;
+type V = (typeof D)[keyof typeof D];
+```
+
+**14.** `typeof` для класу (конструктор) та `InstanceType`.
+
+```ts
+class A { x = 1 }
+type C = typeof A;
+type I = A;
+```
+
+**15.** `ReturnType<typeof fn>`.
+
+```ts
+const make = () => ({ id: 1, tags: ['a'] });
+type T = ReturnType<typeof make>;
+```
+
+### Рівень 4. Практика
+
+**16.** `keyof` для union типів (спільні ключі).
+
+```ts
+type A = { a: 1; c: 3 }; type B = { b: 2; c: 4 };
+type K = keyof (A | B);
+```
+
+**17.** `keyof` для intersection.
+
+```ts
+type A = { a: 1 }; type B = { b: 2 };
+type K = keyof (A & B);
+```
+
+**18.** Тип елемента кортежу за індексом.
+
+```ts
+type T = [string, number, boolean];
+type X = T[1];
+```
+
+**19.** Чим `typeof` у JS відрізняється від `typeof` у типах?
+
+**20.** Що повертає `keyof T`?
+
+### Відповіді
+
+1. `['number', 'string', 'object', 'undefined', 'object', 'function']`
+2. `{ host: string; port: number; }`
+3. `(a: number) => number`
+4. `keyof P`
+5. `"red" | "blue"`
+6. `keyof string[]`
+7. `string | number`
+8. `string`
+9. `string | number`
+10. `{ a: boolean; b: boolean; }`
+11. Компілюється без помилок
+12. Помилка: `TS2322: Type '"z"' is not assignable to type '"a"'.`
+13. `"u" | "d"`
+14. `A`
+15. `{ id: number; tags: string[]; }`
+16. `"c"`
+17. `"a" | "b"`
+18. `number`
+19. У виразах повертає рядок із назвою типу під час виконання; у позиції типу бере тип значення на етапі компіляції
+20. Union рядкових/числових/символьних літералів — імен ключів типу `T`

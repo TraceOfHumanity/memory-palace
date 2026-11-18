@@ -114,3 +114,185 @@ function selectionSort(a) {
    2. Для `j` від `i + 1` до `n − 1`: якщо `a[j] < a[min]` → `min = j`.
    3. Якщо `min ≠ i` — обміняй `a[i]` і `a[min]`.
 2. Складність: час `O(n²)` завжди, обмінів ≤ `n − 1`, пам'ять `O(1)`, нестабільне.
+
+## Задачі для закріплення
+
+25 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Що поверне алгоритм для `[5, 2, 9, 1, 5, 6]`?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; for (let i = 0; i < a.length - 1; i++) { let m = i; for (let j = i + 1; j < a.length; j++) { cmp++; if (a[j] < a[m]) m = j; } if (m !== i) { [a[i], a[m]] = [a[m], a[i]]; sw++; } } return { a, cmp, sw }; }; return S([5, 2, 9, 1, 5, 6]).a; })()
+```
+
+**2.** Що поверне сортування порожнього та одноелементного масивів?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; for (let i = 0; i < a.length - 1; i++) { let m = i; for (let j = i + 1; j < a.length; j++) { cmp++; if (a[j] < a[m]) m = j; } if (m !== i) { [a[i], a[m]] = [a[m], a[i]]; sw++; } } return { a, cmp, sw }; }; return [S([]).a, S([7]).a]; })()
+```
+
+**3.** Скільки порівнянь і обмінів/записів на вже відсортованому `[1, 2, 3, 4, 5]`?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; for (let i = 0; i < a.length - 1; i++) { let m = i; for (let j = i + 1; j < a.length; j++) { cmp++; if (a[j] < a[m]) m = j; } if (m !== i) { [a[i], a[m]] = [a[m], a[i]]; sw++; } } return { a, cmp, sw }; }; const r = S([1, 2, 3, 4, 5]); return [r.cmp, r.sw]; })()
+```
+
+**4.** Скільки порівнянь і обмінів/записів на зворотному `[5, 4, 3, 2, 1]`?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; for (let i = 0; i < a.length - 1; i++) { let m = i; for (let j = i + 1; j < a.length; j++) { cmp++; if (a[j] < a[m]) m = j; } if (m !== i) { [a[i], a[m]] = [a[m], a[i]]; sw++; } } return { a, cmp, sw }; }; const r = S([5, 4, 3, 2, 1]); return [r.cmp, r.sw]; })()
+```
+
+**5.** А на масиві з однакових елементів `[3, 3, 3, 3]`?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; for (let i = 0; i < a.length - 1; i++) { let m = i; for (let j = i + 1; j < a.length; j++) { cmp++; if (a[j] < a[m]) m = j; } if (m !== i) { [a[i], a[m]] = [a[m], a[i]]; sw++; } } return { a, cmp, sw }; }; const r = S([3, 3, 3, 3]); return [r.a, r.cmp, r.sw]; })()
+```
+
+**6.** Скільки порівнянь і обмінів на `[5, 2, 9, 1, 5, 6]`?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; for (let i = 0; i < a.length - 1; i++) { let m = i; for (let j = i + 1; j < a.length; j++) { cmp++; if (a[j] < a[m]) m = j; } if (m !== i) { [a[i], a[m]] = [a[m], a[i]]; sw++; } } return { a, cmp, sw }; }; const r = S([5, 2, 9, 1, 5, 6]); return [r.cmp, r.sw]; })()
+```
+
+**7.** Чи змінює алгоритм вхідний масив?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; for (let i = 0; i < a.length - 1; i++) { let m = i; for (let j = i + 1; j < a.length; j++) { cmp++; if (a[j] < a[m]) m = j; } if (m !== i) { [a[i], a[m]] = [a[m], a[i]]; sw++; } } return { a, cmp, sw }; }; const a = [3, 1, 2]; const r = S(a); return [a, r.a === a]; })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**8.** Що поверне сортування від'ємних і дробових чисел?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; for (let i = 0; i < a.length - 1; i++) { let m = i; for (let j = i + 1; j < a.length; j++) { cmp++; if (a[j] < a[m]) m = j; } if (m !== i) { [a[i], a[m]] = [a[m], a[i]]; sw++; } } return { a, cmp, sw }; }; return S([0.5, -3, 2, -0.5, 0, -3]).a; })()
+```
+
+**9.** Сортування рядків (лексикографічно)?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; for (let i = 0; i < a.length - 1; i++) { let m = i; for (let j = i + 1; j < a.length; j++) { cmp++; if (a[j] < a[m]) m = j; } if (m !== i) { [a[i], a[m]] = [a[m], a[i]]; sw++; } } return { a, cmp, sw }; }; return S(['pear', 'apple', 'fig', 'banana']).a; })()
+```
+
+**10.** Яка проблема числового сортування за допомогою `Array.prototype.sort()` без компаратора?
+
+```js
+[[10, 9, 1, 100].sort(), [10, 9, 1, 100].sort((a, b) => a - b)]
+```
+
+**11.** Скільки порівнянь для n = 4, 8, 16 зворотно відсортованих масивів?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; for (let i = 0; i < a.length - 1; i++) { let m = i; for (let j = i + 1; j < a.length; j++) { cmp++; if (a[j] < a[m]) m = j; } if (m !== i) { [a[i], a[m]] = [a[m], a[i]]; sw++; } } return { a, cmp, sw }; }; return [4, 8, 16].map(n => S(Array.from({ length: n }, (_, i) => n - i)).cmp); })()
+```
+
+**12.** Скільки порівнянь на відсортованому масиві для n = 4, 8, 16?
+
+```js
+(() => { const S = (a) => { let cmp = 0, sw = 0; for (let i = 0; i < a.length - 1; i++) { let m = i; for (let j = i + 1; j < a.length; j++) { cmp++; if (a[j] < a[m]) m = j; } if (m !== i) { [a[i], a[m]] = [a[m], a[i]]; sw++; } } return { a, cmp, sw }; }; return [4, 8, 16].map(n => S(Array.from({ length: n }, (_, i) => i)).cmp); })()
+```
+
+**13.** Який стан масиву після кожного вибору мінімуму для `[5, 2, 9, 1, 5, 6]`?
+
+```js
+(() => { const a = [5, 2, 9, 1, 5, 6]; const s = []; for (let i = 0; i < a.length - 1; i++) { let m = i; for (let j = i + 1; j < a.length; j++) if (a[j] < a[m]) m = j; [a[i], a[m]] = [a[m], a[i]]; s.push(a.join(' ')); } return s; })()
+```
+
+**14.** Чи стабільне сортування вибором?
+
+```js
+(() => { const a = [{ k: 2, n: 'a' }, { k: 2, n: 'b' }, { k: 1, n: 'c' }]; for (let i = 0; i < a.length - 1; i++) { let m = i; for (let j = i + 1; j < a.length; j++) if (a[j].k < a[m].k) m = j; [a[i], a[m]] = [a[m], a[i]]; } return a.map(x => x.k + x.n); })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**15.** Скільки обмінів максимум для масиву з n елементів? Перевірте для n = 10 зворотних.
+
+```js
+(() => { const a = Array.from({ length: 10 }, (_, i) => 10 - i); let sw = 0; for (let i = 0; i < a.length - 1; i++) { let m = i; for (let j = i + 1; j < a.length; j++) if (a[j] < a[m]) m = j; if (m !== i) { [a[i], a[m]] = [a[m], a[i]]; sw++; } } return sw; })()
+```
+
+**16.** Скільки порівнянь для n елементів: формула n(n−1)/2 для n = 10?
+
+```js
+[10 * 9 / 2, (() => { let c = 0; for (let i = 0; i < 9; i++) for (let j = i + 1; j < 10; j++) c++; return c; })()]
+```
+
+**17.** Чи залежить кількість порівнянь від початкового порядку?
+
+```js
+(() => { const cnt = (a) => { let c = 0; for (let i = 0; i < a.length - 1; i++) { let m = i; for (let j = i + 1; j < a.length; j++) { c++; if (a[j] < a[m]) m = j; } [a[i], a[m]] = [a[m], a[i]]; } return c; }; return [cnt([1, 2, 3, 4, 5, 6]), cnt([6, 5, 4, 3, 2, 1]), cnt([3, 1, 4, 1, 5, 9])]; })()
+```
+
+**18.** Напишіть `selectionSort(arr, cmp)` без мутації.
+
+```js
+const selectionSort = (arr, cmp = (a, b) => a - b) => { const a = [...arr]; for (let i = 0; i < a.length - 1; i++) { let m = i; for (let j = i + 1; j < a.length; j++) if (cmp(a[j], a[m]) < 0) m = j; [a[i], a[m]] = [a[m], a[i]]; } return a; }
+```
+
+**19.** Напишіть стабільний варіант сортування вибором (зсув замість обміну).
+
+```js
+const stableSel = (arr, key) => { const a = [...arr]; for (let i = 0; i < a.length - 1; i++) { let m = i; for (let j = i + 1; j < a.length; j++) if (key(a[j]) < key(a[m])) m = j; const t = a[m]; for (let k = m; k > i; k--) a[k] = a[k - 1]; a[i] = t; } return a; }
+```
+
+**20.** Напишіть двосторонній вибір (мінімум і максимум за прохід).
+
+```js
+const dual = (arr) => { const a = [...arr]; let lo = 0, hi = a.length - 1; while (lo < hi) { let mn = lo, mx = lo; for (let i = lo; i <= hi; i++) { if (a[i] < a[mn]) mn = i; if (a[i] > a[mx]) mx = i; } [a[lo], a[mn]] = [a[mn], a[lo]]; if (mx === lo) mx = mn; [a[hi], a[mx]] = [a[mx], a[hi]]; lo++; hi--; } return a; }
+```
+
+**21.** Знайдіть k найменших елементів частковим вибором (k проходів).
+
+```js
+const kSmallest = (arr, k) => { const a = [...arr]; for (let i = 0; i < k; i++) { let m = i; for (let j = i + 1; j < a.length; j++) if (a[j] < a[m]) m = j; [a[i], a[m]] = [a[m], a[i]]; } return a.slice(0, k); }
+```
+
+### Рівень 4. Практика
+
+**22.** Напишіть `kthLargest(arr, k)` частковим вибором.
+
+```js
+const kth = (arr, k) => { const a = [...arr]; for (let i = 0; i < k; i++) { let m = i; for (let j = i + 1; j < a.length; j++) if (a[j] > a[m]) m = j; [a[i], a[m]] = [a[m], a[i]]; } return a[k - 1]; }
+```
+
+**23.** Напишіть функцію, що повертає індекси обмінів для `[3, 1, 2]`.
+
+```js
+const swaps = (arr) => { const a = [...arr], r = []; for (let i = 0; i < a.length - 1; i++) { let m = i; for (let j = i + 1; j < a.length; j++) if (a[j] < a[m]) m = j; if (m !== i) { r.push([i, m]); [a[i], a[m]] = [a[m], a[i]]; } } return r; }
+```
+
+**24.** Які складності у сортування вибором і чим воно вигідне?
+
+**25.** Чому сортування вибором нестабільне?
+
+### Відповіді
+
+1. `[1, 2, 5, 5, 6, 9]`
+2. `[[], [7]]`
+3. `[10, 0]`
+4. `[10, 2]`
+5. `[[3, 3, 3, 3], 6, 0]`
+6. `[15, 4]`
+7. `[[1, 2, 3], true]`
+8. `[-3, -3, -0.5, 0, 0.5, 2]`
+9. `['apple', 'banana', 'fig', 'pear']`
+10. `[[1, 10, 100, 9], [1, 9, 10, 100]]`
+11. `[6, 28, 120]`
+12. `[6, 28, 120]`
+13. `['1 2 9 5 5 6', '1 2 9 5 5 6', '1 2 5 9 5 6', '1 2 5 5 9 6', '1 2 5 5 6 9']`
+14. `['1c', '2b', '2a']`
+15. `5`
+16. `[45, 45]`
+17. `[15, 15, 15]`
+18. Виклик `(() => { const x = [4, 2, 7, 1]; return [selectionSort(x), selectionSort(x, (a, b) => b - a), x]; })()` → `[[1, 2, 4, 7], [7, 4, 2, 1], [4, 2, 7, 1]]`
+19. Виклик `stableSel([{ k: 2, n: 'a' }, { k: 2, n: 'b' }, { k: 1, n: 'c' }], x => x.k).map(x => x.k + x.n)` → `['1c', '2a', '2b']`
+20. Виклик `dual([5, 2, 9, 1, 5, 6, 0])` → `[0, 1, 2, 5, 5, 6, 9]`
+21. Виклик `kSmallest([7, 3, 9, 1, 5, 2], 3)` → `[1, 2, 3]`
+22. Виклик `[kth([7, 3, 9, 1, 5, 2], 1), kth([7, 3, 9, 1, 5, 2], 3)]` → `[9, 5]`
+23. Виклик `[swaps([3, 1, 2]), swaps([1, 2, 3]), swaps([3, 2, 1])]` → `[[[0, 1], [1, 2]], [], [[0, 2]]]`
+24. O(n²) порівнянь завжди; обмінів не більше n−1, тому його вибирають, коли запис дорогий; нестабільне; пам'ять O(1)
+25. Обмін віддаленими елементами може перескочити через рівний елемент і змінити порядок рівних ключів

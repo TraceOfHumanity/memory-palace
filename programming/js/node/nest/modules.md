@@ -236,3 +236,208 @@ const controller = moduleRef.get(UsersController);
 - Dynamic modules (`forRoot()`/`register()`/`forFeature()`) дозволяють передати конфігурацію в модуль у рантаймі — саме на цьому патерні побудовані `TypeOrmModule`/`ConfigModule`/`MongooseModule` з реальної екосистеми Nest.
 - `@Global()` і `forwardRef()` — винятки із звичайних правил (інкапсуляція, лінійний граф залежностей), застосовуй їх обережно, а не за замовчуванням.
 - `Test.createTestingModule()` дає окремий, тестово-орієнтований спосіб зібрати модуль із підміненими (мок) provider'ами.
+
+## Задачі для закріплення
+
+18 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах усі експорти `@nestjs/common` і `NestFactory` імпортовані, `boot(Module)` запускає застосунок на вільному порту й повертає `{ url, close }`, а `get(url)` повертає `{ status, body }`.
+
+### Рівень 1. Основи
+
+**1.** `exports`: сервіс доступний в іншому модулі лише після експорту.
+
+```ts
+const first = (e: any) => String(e.message).split('\n')[0];
+@Injectable() class S { v() { return 1; } }
+@Module({ providers: [S] }) class Feature {}
+@Controller() class C { constructor(private s: S) {} @Get() g() { return this.s.v(); } }
+@Module({ imports: [Feature], controllers: [C] }) class App {}
+try { await boot(App); } catch (e) { return first(e).slice(0, 70); }
+```
+
+**2.** З `exports` той самий приклад працює.
+
+```ts
+@Injectable() class S { v() { return 1; } }
+@Module({ providers: [S], exports: [S] }) class Feature {}
+@Controller() class C { constructor(private s: S) {} @Get() g() { return this.s.v(); } }
+@Module({ imports: [Feature], controllers: [C] }) class App {}
+const a = await boot(App);
+const r = await get(a.url + '/');
+await a.close();
+return r.body;
+```
+
+**3.** Один модуль імпортований у двох місцях: чи створюється його провайдер двічі?
+
+```ts
+let created = 0;
+@Injectable() class S { constructor() { created++; } }
+@Module({ providers: [S], exports: [S] }) class Shared {}
+@Module({ imports: [Shared] }) class A {}
+@Module({ imports: [Shared] }) class B {}
+@Module({ imports: [A, B] }) class Root {}
+const a = await boot(Root);
+await a.close();
+return created;
+```
+
+**4.** Інкапсуляція: однакові класи в різних модулях — окремі екземпляри.
+
+```ts
+let created = 0;
+@Injectable() class S { constructor() { created++; } }
+@Module({ providers: [S] }) class A {}
+@Module({ providers: [S] }) class B {}
+@Module({ imports: [A, B] }) class Root {}
+const a = await boot(Root);
+await a.close();
+return created;
+```
+
+**5.** Реекспорт модуля: `exports: [OtherModule]`.
+
+```ts
+@Injectable() class S { v() { return 'deep'; } }
+@Module({ providers: [S], exports: [S] }) class Inner {}
+@Module({ imports: [Inner], exports: [Inner] }) class Mid {}
+@Controller() class C { constructor(private s: S) {} @Get() g() { return this.s.v(); } }
+@Module({ imports: [Mid], controllers: [C] }) class Root {}
+const a = await boot(Root);
+const r = await get(a.url + '/');
+await a.close();
+return r.body;
+```
+
+### Рівень 2. Деталі й поведінка
+
+**6.** Динамічний модуль: `forRoot(options)`.
+
+```ts
+@Module({}) class ConfigModule { static forRoot(opts: { name: string }): DynamicModule { return { module: ConfigModule, providers: [{ provide: 'OPTS', useValue: opts }], exports: ['OPTS'] }; } }
+@Controller() class C { constructor(@Inject('OPTS') private o: any) {} @Get() g() { return this.o.name; } }
+@Module({ imports: [ConfigModule.forRoot({ name: 'app-1' })], controllers: [C] }) class Root {}
+const a = await boot(Root);
+const r = await get(a.url + '/');
+await a.close();
+return r.body;
+```
+
+**7.** `forRoot` двічі з різними опціями: два різних динамічних модуля.
+
+```ts
+@Module({}) class M { static forRoot(v: string): DynamicModule { return { module: M, providers: [{ provide: 'V', useValue: v }], exports: ['V'] }; } }
+const a = M.forRoot('a'), b = M.forRoot('b');
+return [a.module === b.module, (a.providers as any)[0].useValue, (b.providers as any)[0].useValue];
+```
+
+**8.** `@Global()` модуль: сервіс доступний без явного імпорту.
+
+```ts
+@Injectable() class S { v() { return 'global'; } }
+@Global() @Module({ providers: [S], exports: [S] }) class G {}
+@Controller() class C { constructor(private s: S) {} @Get() g() { return this.s.v(); } }
+@Module({ imports: [G], controllers: [C] }) class Feature {}
+@Module({ imports: [G, Feature] }) class Root {}
+const a = await boot(Root);
+const r = await get(a.url + '/');
+await a.close();
+return r.body;
+```
+
+**9.** Метадані модуля: `@Module` зберігає поля через `Reflect`.
+
+```ts
+@Injectable() class S {}
+@Controller() class C {}
+@Module({ providers: [S], controllers: [C], exports: [S] }) class M {}
+return [Reflect.getMetadata('providers', M).length, Reflect.getMetadata('controllers', M)[0] === C, Reflect.getMetadata('exports', M).length, Reflect.getMetadata('imports', M)];
+```
+
+**10.** Циклічна залежність між провайдерами: помилка і розв'язання через `forwardRef`.
+
+```ts
+const first = (e: any) => String(e.message).split('\n')[0];
+@Injectable() class A { constructor(@Inject(forwardRef(() => B)) public b: any) {} }
+@Injectable() class B { constructor(@Inject(forwardRef(() => A)) public a: any) {} }
+@Module({ providers: [A, B] }) class M {}
+const app = await boot(M);
+const a = app.app.get(A);
+const ok = a.b instanceof B && a.b.a === a;
+await app.close();
+return ok;
+```
+
+### Рівень 3. Нюанси та пастки
+
+**11.** Без `forwardRef` циклічні залежності призводять до помилки.
+
+```ts
+const first = (e: any) => String(e.message).split('\n')[0];
+@Injectable() class A { constructor(public b: B) {} }
+@Injectable() class B { constructor(public a: A) {} }
+@Module({ providers: [A, B] }) class M {}
+try { await boot(M); } catch (e) { return first(e).slice(0, 80); }
+```
+
+**12.** `Test.createTestingModule` та підміна провайдера.
+
+```ts
+@Injectable() class Mail { send() { return 'real'; } }
+@Injectable() class Svc { constructor(private m: Mail) {} run() { return this.m.send(); } }
+const mod = await Test.createTestingModule({ providers: [Svc, Mail] }).overrideProvider(Mail).useValue({ send: () => 'mock' }).compile();
+return mod.get(Svc).run();
+```
+
+**13.** Отримання провайдера за класом із застосунку: `app.get`.
+
+```ts
+@Injectable() class S { id = 5; }
+@Module({ providers: [S] }) class M {}
+const a = await boot(M);
+const id = a.app.get(S).id;
+await a.close();
+return id;
+```
+
+**14.** Кореневий модуль і дерево імпортів: скільки модулів у графі?
+
+```ts
+@Module({}) class A {}
+@Module({ imports: [A] }) class B {}
+@Module({ imports: [A, B] }) class Root {}
+const a = await boot(Root);
+const n = [...(a.app as any).container.getModules().values()].length;
+await a.close();
+return n;
+```
+
+**15.** Для чого поле `exports` у `@Module`?
+
+### Рівень 4. Практика
+
+**16.** Чим `forRoot` відрізняється від `forFeature`?
+
+**17.** Коли використовувати `@Global()`?
+
+**18.** Що таке динамічний модуль?
+
+### Відповіді
+
+1. `'Nest can't resolve dependencies of the C (?). Please make sure that th'`
+2. `'1'`
+3. `1`
+4. `2`
+5. `'deep'`
+6. `'app-1'`
+7. `[true, 'a', 'b']`
+8. `'global'`
+9. `[1, true, 1, undefined]`
+10. `true`
+11. `ReferenceError: Cannot access 'B' before initialization`
+12. `'mock'`
+13. `5`
+14. `4`
+15. Робить провайдери доступними модулям, що імпортують цей модуль; без експорту провайдер лишається приватним для свого модуля
+16. `forRoot` налаштовує модуль один раз на рівні застосунку (з'єднання, конфіг); `forFeature` реєструє частину конфігурації для окремого фіче-модуля (наприклад, сутності)
+17. Для рідкісних наскрізних модулів (конфіг, логер), щоб не імпортувати їх у кожний модуль; надмірне застосування ховає залежності
+18. Модуль, що повертає опис (`DynamicModule`) залежно від параметрів, зазвичай статичним методом `forRoot`/`register`

@@ -115,3 +115,165 @@ await fs.rm(freshPath, { force: true });
 - `readFile()`/`writeFile()` завантажують увесь файл у пам'ять цілком — для великих файлів потрібні потоки.
 - Опція `{ flag: "wx" }` дає безпечне «створити, лише якщо ще не існує» замість тихого перезапису.
 - Для часткового читання чи запису (не всього файлу цілком) потрібен `fs.open()` і `FileHandle`.
+
+## Задачі для закріплення
+
+21 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в Node.js 24; `fs` — `node:fs`, `fsp` — `node:fs/promises`, `dir` — порожня тимчасова директорія, `path`, `os`, `stream`, `events` — відповідні `node:`-модулі.
+
+### Рівень 1. Основи
+
+**1.** Що поверне `writeFile` для нового файлу та чи перезаписує існуючий?
+
+```node
+(async () => { const f = path.join(dir, 'a.txt'); await fsp.writeFile(f, 'first'); await fsp.writeFile(f, 'second'); return await fsp.readFile(f, 'utf8'); })()
+```
+
+**2.** Що дасть `appendFile`?
+
+```node
+(async () => { const f = path.join(dir, 'a.txt'); await fsp.writeFile(f, 'a'); await fsp.appendFile(f, 'b'); await fsp.appendFile(f, 'c'); return await fsp.readFile(f, 'utf8'); })()
+```
+
+**3.** Чи створить `appendFile` файл, якого немає?
+
+```node
+(async () => { const f = path.join(dir, 'new.txt'); await fsp.appendFile(f, 'x'); return [fs.existsSync(f), await fsp.readFile(f, 'utf8')]; })()
+```
+
+**4.** Що поверне `readFile` без кодування для UTF-8 кирилиці та з кодуванням?
+
+```node
+(async () => { const f = path.join(dir, 'u.txt'); await fsp.writeFile(f, 'Привіт'); const b = await fsp.readFile(f); const s = await fsp.readFile(f, 'utf8'); return [b.length, s.length, s]; })()
+```
+
+**5.** Що запишеться, якщо передати об'єкт у `writeFile`?
+
+```node
+(async () => { try { await fsp.writeFile(path.join(dir, 'o.txt'), { a: 1 }); } catch (e) { return [e.name, e.code]; } })()
+```
+
+**6.** Що запишеться, якщо передати число?
+
+```node
+(async () => { try { await fsp.writeFile(path.join(dir, 'n.txt'), 123); } catch (e) { return e.code; } })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**7.** Як записати `Buffer` та `Uint8Array`?
+
+```node
+(async () => { const f = path.join(dir, 'b.bin'); await fsp.writeFile(f, new Uint8Array([104, 105])); return (await fsp.readFile(f)).toString(); })()
+```
+
+**8.** Що дає опція `flag: 'wx'` для існуючого файлу?
+
+```node
+(async () => { const f = path.join(dir, 'x.txt'); await fsp.writeFile(f, '1'); try { await fsp.writeFile(f, '2', { flag: 'wx' }); } catch (e) { return [e.code, await fsp.readFile(f, 'utf8')]; } })()
+```
+
+**9.** Що дає `flag: 'a'`?
+
+```node
+(async () => { const f = path.join(dir, 'x.txt'); await fsp.writeFile(f, '1'); await fsp.writeFile(f, '2', { flag: 'a' }); return await fsp.readFile(f, 'utf8'); })()
+```
+
+**10.** Що поверне `mode` для нового файлу (права)?
+
+```node
+(async () => { const f = path.join(dir, 'm.txt'); await fsp.writeFile(f, 'x', { mode: 0o600 }); return ((await fsp.stat(f)).mode & 0o777).toString(8); })()
+```
+
+**11.** Що станеться при запису у неіснуючу директорію?
+
+```node
+(async () => { try { await fsp.writeFile(path.join(dir, 'no', 'x.txt'), 'a'); } catch (e) { return e.code; } })()
+```
+
+**12.** Як записати вміст у вкладену директорію, що ще не існує?
+
+```node
+(async () => { const p = path.join(dir, 'a', 'b'); await fsp.mkdir(p, { recursive: true }); await fsp.writeFile(path.join(p, 'f.txt'), 'deep'); return await fsp.readFile(path.join(p, 'f.txt'), 'utf8'); })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**13.** Що поверне запис багаторядкового тексту та поділ на рядки?
+
+```node
+(async () => { const f = path.join(dir, 'l.txt'); await fsp.writeFile(f, ['a', 'b', 'c'].join('\n') + '\n'); return (await fsp.readFile(f, 'utf8')).split('\n'); })()
+```
+
+**14.** Що відбудеться з `readFile`, якщо файл — це директорія?
+
+```node
+(async () => { try { await fsp.readFile(dir); } catch (e) { return e.code; } })()
+```
+
+**15.** Чи атомарний `writeFile`? Що побачить читач під час перезапису порожнього файлу? (просто довжина після)
+
+```node
+(async () => { const f = path.join(dir, 'z.txt'); await fsp.writeFile(f, 'x'.repeat(1000)); await fsp.writeFile(f, ''); return (await fsp.readFile(f)).length; })()
+```
+
+**16.** Як прочитати лише перші 5 байтів через відкритий файл?
+
+```node
+(async () => { const f = path.join(dir, 'p.txt'); await fsp.writeFile(f, '0123456789'); const h = await fsp.open(f); const { bytesRead, buffer } = await h.read(Buffer.alloc(5), 0, 5, 0); await h.close(); return [bytesRead, buffer.toString()]; })()
+```
+
+**17.** Як записати з заданої позиції без обрізання файлу?
+
+```node
+(async () => { const f = path.join(dir, 'p.txt'); await fsp.writeFile(f, '0123456789'); const h = await fsp.open(f, 'r+'); await h.write('AB', 3); await h.close(); return await fsp.readFile(f, 'utf8'); })()
+```
+
+**18.** Як зчитати великий файл по частинах (скільки чанків дасть файл 100 КБ зі стандартним highWaterMark)?
+
+```node
+(async () => { const f = path.join(dir, 'big.bin'); await fsp.writeFile(f, Buffer.alloc(100 * 1024)); let n = 0; for await (const c of fs.createReadStream(f)) n++; return n; })()
+```
+
+### Рівень 4. Практика
+
+**19.** Що поверне `fsp.copyFile` та `rename`?
+
+```node
+(async () => { const a = path.join(dir, 'a'), b = path.join(dir, 'b'), c = path.join(dir, 'c'); await fsp.writeFile(a, 'data'); await fsp.copyFile(a, b); await fsp.rename(b, c); return [fs.existsSync(a), fs.existsSync(b), await fsp.readFile(c, 'utf8')]; })()
+```
+
+**20.** Що поверне `fsp.truncate`?
+
+```node
+(async () => { const f = path.join(dir, 't'); await fsp.writeFile(f, 'abcdef'); await fsp.truncate(f, 3); return await fsp.readFile(f, 'utf8'); })()
+```
+
+**21.** Як безпечно оновити файл через тимчасовий файл і `rename`?
+
+```node
+(async () => { const f = path.join(dir, 'conf.json'); await fsp.writeFile(f, '{"v":1}'); const tmp = f + '.tmp'; await fsp.writeFile(tmp, '{"v":2}'); await fsp.rename(tmp, f); return [JSON.parse(await fsp.readFile(f, 'utf8')), fs.existsSync(tmp)]; })()
+```
+
+### Відповіді
+
+1. `'second'`
+2. `'abc'`
+3. `[true, 'x']`
+4. `[12, 6, 'Привіт']`
+5. `['TypeError', 'ERR_INVALID_ARG_TYPE']`
+6. `'ERR_INVALID_ARG_TYPE'`
+7. `'hi'`
+8. `['EEXIST', '1']`
+9. `'12'`
+10. `'600'`
+11. `'ENOENT'`
+12. `'deep'`
+13. `['a', 'b', 'c', '']`
+14. `'EISDIR'`
+15. `0`
+16. `[5, '01234']`
+17. `'012AB56789'`
+18. `2`
+19. `[true, false, 'data']`
+20. `'abc'`
+21. `[{ v: 2 }, false]`

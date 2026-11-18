@@ -91,3 +91,95 @@ function SubmitButton() {
 3. `<form action={formAction}>`, поля з `name`.
 4. Кнопка: `disabled={pending}` або окремий компонент з `useFormStatus`.
 5. Показуй `state.error`/`state.ok`.
+
+## Задачі для закріплення
+
+9 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(el)` монтує елемент через `act`, `press(r)` викликає `onClick` кнопки, `text(r)` повертає текст результату; `create` і `act` беруться з `react-test-renderer`, `renderToString` — з `react-dom/server`, хуки — з `react`.
+
+### Рівень 1. Основи
+
+**1.** Початковий стан `useActionState` та форма масиву, що повертається.
+
+```jsx
+function C() { const r = useActionState(async (s, fd) => s + 1, 5); return <p>{[r.length, r[0], typeof r[1], r[2]].join(',')}</p>; }
+return renderToString(<C />);
+```
+
+**2.** Стан після виклику дії.
+
+```jsx
+function C() { const [s, act2] = useActionState(async (prev, n) => prev + n, 1); return <button onClick={() => startTransition(() => act2(10))}>{s}</button>; }
+const t = await mount(<C />);
+await press(t);
+await act(async () => { await new Promise(r => setTimeout(r, 10)); });
+return text(t);
+```
+
+**3.** `isPending` під час виконання дії.
+
+```jsx
+const log = [];
+function C() { const [s, a, pending] = useActionState(async (p) => { await new Promise(r => setTimeout(r, 10)); return p + 1; }, 0); log.push(pending); return <button onClick={() => startTransition(() => a())}>{s}</button>; }
+const t = await mount(<C />);
+await press(t);
+await act(async () => { await new Promise(r => setTimeout(r, 40)); });
+return [text(t), log.includes(true), log.at(-1)];
+```
+
+### Рівень 2. Деталі й поведінка
+
+**4.** Послідовні виклики: попередній стан передається у редюсер.
+
+```jsx
+const seen = [];
+function C() { const [s, a] = useActionState(async (p, x) => { seen.push(p); return p + x; }, 0); return <button onClick={() => { startTransition(() => a(1)); startTransition(() => a(2)); }}>{s}</button>; }
+const t = await mount(<C />);
+await press(t);
+await act(async () => { await new Promise(r => setTimeout(r, 20)); });
+return [text(t), seen];
+```
+
+**5.** Обробка помилки валідації як стану.
+
+```jsx
+function C() { const [s, a] = useActionState(async (_, v) => v.length < 3 ? { error: 'short' } : { ok: v }, null); return <button onClick={() => startTransition(() => a('ab'))}>{JSON.stringify(s)}</button>; }
+const t = await mount(<C />);
+await press(t);
+await act(async () => { await new Promise(r => setTimeout(r, 10)); });
+return text(t);
+```
+
+**6.** Синхронна дія (не async) також підтримується?
+
+```jsx
+function C() { const [s, a] = useActionState((p, x) => p + x, 0); return <button onClick={() => startTransition(() => a(3))}>{s}</button>; }
+const t = await mount(<C />);
+await press(t);
+await act(async () => { await new Promise(r => setTimeout(r, 10)); });
+return text(t);
+```
+
+### Рівень 3. Нюанси та пастки
+
+**7.** `<form action={fn}>` отримує FormData (перевірка через renderToString рядка).
+
+```jsx
+function C() { const [s, a] = useActionState(async () => 0, 0); return <form action={a}><button>go</button></form>; }
+return renderToString(<C />).startsWith('<form');
+```
+
+**8.** Яку задачу вирішує `useActionState`?
+
+**9.** Які аргументи отримує функція-дія?
+
+### Відповіді
+
+1. `'<p>3,5,function,false</p>'`
+2. `'11'`
+3. `['1', true, false]`
+4. `['3', [0, 1]]`
+5. `'{"error":"short"}'`
+6. `'3'`
+7. `true`
+8. Зберігає результат асинхронної дії (зазвичай відправки форми), передає попередній стан у дію та дає `isPending` без ручного керування станом
+9. Перший — попередній стан, далі — аргументи виклику (для форми — `FormData`)

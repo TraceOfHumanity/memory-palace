@@ -360,3 +360,284 @@ console.log(myCar.newMethod()); // I appeared AFTER myCar was created! — по�
 - Методи на прототипі — одна спільна копія; class field зі стрілкою — окрема копія на кожен екземпляр.
 - Множинного наслідування немає, але міксини (функції, що повертають клас-обгортку) емулюють його ланцюжком прототипів.
 - Зміна прототипу одразу впливає на всі об'єкти, що на нього посилаються, — навіть створені раніше.
+
+## Задачі для закріплення
+
+38 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Чим відрізняються `__proto__`, `[[Prototype]]` та `.prototype`?
+
+```js
+(() => { function F() {} const o = new F(); return [Object.getPrototypeOf(o) === F.prototype, o.__proto__ === F.prototype, typeof o.prototype, typeof F.prototype]; })()
+```
+
+**2.** Що поверне ланцюжок прототипів звичайного об'єкта?
+
+```js
+(() => { const o = {}; return [Object.getPrototypeOf(o) === Object.prototype, Object.getPrototypeOf(Object.prototype)]; })()
+```
+
+**3.** Як працює пошук властивості по ланцюжку?
+
+```js
+(() => { const a = { x: 1 }; const b = Object.create(a); const c = Object.create(b); c.y = 2; return [c.x, c.y, c.z, 'x' in c, c.hasOwnProperty('x')]; })()
+```
+
+**4.** Що дасть `Object.hasOwn` та `in` для успадкованої властивості?
+
+```js
+(() => { const p = { a: 1 }; const o = Object.create(p); o.b = 2; return [Object.hasOwn(o, 'a'), 'a' in o, Object.hasOwn(o, 'b')]; })()
+```
+
+**5.** Що поверне `for...in` по об'єкту із прототипом?
+
+```js
+(() => { const p = { a: 1 }; const o = Object.create(p); o.b = 2; const k = []; for (const x in o) k.push(x); return [k, Object.keys(o)]; })()
+```
+
+**6.** Що буде при запису у успадковану властивість (shadowing)?
+
+```js
+(() => { const p = { v: 1 }; const o = Object.create(p); o.v = 2; return [o.v, p.v, Object.hasOwn(o, 'v')]; })()
+```
+
+**7.** Що станеться при `delete` власної властивості, що затіняла прототипну?
+
+```js
+(() => { const p = { v: 1 }; const o = Object.create(p); o.v = 2; delete o.v; return o.v; })()
+```
+
+**8.** Що буде із записом, якщо у прототипі властивість лише для читання?
+
+```js
+(() => { 'use strict'; const p = Object.defineProperty({}, 'r', { value: 1, writable: false }); const o = Object.create(p); try { o.r = 2; } catch (e) { return e.name; } })()
+```
+
+**9.** Що буде із записом, якщо у прототипі є сетер?
+
+```js
+(() => { const p = { set v(x) { this._v = x; } }; const o = Object.create(p); o.v = 5; return [Object.hasOwn(o, 'v'), o._v, Object.hasOwn(p, '_v')]; })()
+```
+
+**10.** Чи ділять екземпляри методи з прототипу?
+
+```js
+(() => { function F() {} F.prototype.m = function () {}; const a = new F(), b = new F(); return [a.m === b.m, Object.hasOwn(a, 'm')]; })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**11.** А методи, оголошені в конструкторі?
+
+```js
+(() => { function F() { this.m = function () {}; } const a = new F(), b = new F(); return a.m === b.m; })()
+```
+
+**12.** Що поверне `constructor` екземпляра?
+
+```js
+(() => { function F() {} const o = new F(); return [o.constructor === F, F.prototype.constructor === F]; })()
+```
+
+**13.** Що станеться з `constructor`, якщо замінити `F.prototype` об'єктом?
+
+```js
+(() => { function F() {} F.prototype = { m() {} }; const o = new F(); return [o.constructor === F, o.constructor === Object]; })()
+```
+
+**14.** Як відновити `constructor` після заміни прототипу?
+
+```js
+(() => { function F() {} F.prototype = { constructor: F, m() {} }; return new F().constructor === F; })()
+```
+
+**15.** Що поверне `instanceof` для різних ланцюжків?
+
+```js
+(() => { class A {} class B extends A {} const b = new B(); return [b instanceof B, b instanceof A, b instanceof Object, [] instanceof Object, Object.create(null) instanceof Object]; })()
+```
+
+**16.** Чи залежить `instanceof` від зміни прототипу після створення?
+
+```js
+(() => { function F() {} const o = new F(); F.prototype = {}; return o instanceof F; })()
+```
+
+**17.** Що поверне `isPrototypeOf`?
+
+```js
+(() => { const a = {}; const b = Object.create(a); return [a.isPrototypeOf(b), b.isPrototypeOf(a), Object.prototype.isPrototypeOf(b)]; })()
+```
+
+**18.** Що дасть `Object.setPrototypeOf` і `Object.getPrototypeOf`?
+
+```js
+(() => { const a = { who: 'a' }; const o = {}; Object.setPrototypeOf(o, a); return [o.who, Object.getPrototypeOf(o) === a]; })()
+```
+
+**19.** Що дасть `Object.create(null)`?
+
+```js
+(() => { const o = Object.create(null); o.k = 1; return [typeof o.toString, 'toString' in o, Object.getPrototypeOf(o), Object.keys(o)]; })()
+```
+
+**20.** Що станеться при `String(Object.create(null))`?
+
+```js
+(() => { try { return String(Object.create(null)); } catch (e) { return e.name + ': ' + e.message; } })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**21.** Що дасть наслідування через `Object.create` з дескрипторами?
+
+```js
+(() => { const p = { hi() { return 'hi ' + this.n; } }; const o = Object.create(p, { n: { value: 'x', enumerable: true } }); return [o.hi(), Object.keys(o)]; })()
+```
+
+**22.** Що поверне наслідування функцій-конструкторів через `Parent.call(this)` та `Object.create`?
+
+```js
+(() => { function P(n) { this.n = n; } P.prototype.hi = function () { return 'hi ' + this.n; }; function C(n) { P.call(this, n); this.c = 1; } C.prototype = Object.create(P.prototype); C.prototype.constructor = C; const c = new C('z'); return [c.hi(), c instanceof P, c.c]; })()
+```
+
+**23.** Що поверне клас із `extends` та `super`?
+
+```js
+(() => { class A { hi() { return 'A'; } } class B extends A { hi() { return super.hi() + 'B'; } } return new B().hi(); })()
+```
+
+**24.** Чи класи — це синтаксичний цукор над прототипами?
+
+```js
+(() => { class A { m() {} } return [typeof A, A.prototype.m === new A().m, Object.getPrototypeOf(A) === Function.prototype]; })()
+```
+
+**25.** Чи методи класу enumerable?
+
+```js
+(() => { class A { m() {} } return [Object.keys(A.prototype), Object.getOwnPropertyNames(A.prototype), Object.keys(new A())]; })()
+```
+
+**26.** Що поверне `Object.getPrototypeOf(B) === A` для `class B extends A`?
+
+```js
+(() => { class A {} class B extends A {} return [Object.getPrototypeOf(B) === A, Object.getPrototypeOf(B.prototype) === A.prototype]; })()
+```
+
+**27.** Чи наслідуються статичні методи?
+
+```js
+(() => { class A { static s() { return 'static'; } } class B extends A {} return B.s(); })()
+```
+
+**28.** Що поверне `super` в об'єктному літералі?
+
+```js
+(() => { const p = { hi() { return 'p'; } }; const o = { __proto__: p, hi() { return super.hi() + 'o'; } }; return o.hi(); })()
+```
+
+**29.** Що дасть `__proto__` у літералі?
+
+```js
+(() => { const p = { v: 1 }; const o = { __proto__: p, w: 2 }; return [o.v, Object.keys(o)]; })()
+```
+
+**30.** Чому небезпечно писати `obj['__proto__'] = ...` з користувацьких ключів?
+
+```js
+(() => { const o = {}; o.__proto__ = { hacked: true }; return [o.hacked, Object.keys(o)]; })()
+```
+
+### Рівень 4. Практика
+
+**31.** Що поверне JSON.parse із `__proto__`?
+
+```js
+(() => { const o = JSON.parse('{"__proto__": {"x": 1}}'); return [o.x, Object.hasOwn(o, '__proto__')]; })()
+```
+
+**32.** Як міксин додає методи?
+
+```js
+(() => { const Fly = (B) => class extends B { fly() { return 'fly'; } }; const Swim = (B) => class extends B { swim() { return 'swim'; } }; class Duck extends Swim(Fly(Object)) {} const d = new Duck(); return [d.fly(), d.swim()]; })()
+```
+
+**33.** Що поверне `Object.assign(Class.prototype, mixin)`?
+
+```js
+(() => { class A {} Object.assign(A.prototype, { hi() { return 'hi'; } }); return new A().hi(); })()
+```
+
+**34.** Напишіть `extend(Child, Parent)` для функцій-конструкторів.
+
+```js
+const extend = (C, P) => { C.prototype = Object.create(P.prototype); C.prototype.constructor = C; return C; }
+```
+
+**35.** Напишіть `chain(obj)` — масив імен конструкторів вгору по ланцюжку.
+
+```js
+const chain = (o) => { const r = []; for (let p = Object.getPrototypeOf(o); p; p = Object.getPrototypeOf(p)) r.push(p.constructor.name); return r; }
+```
+
+**36.** Напишіть `myInstanceOf(obj, Ctor)` без `instanceof`.
+
+```js
+const myInstanceOf = (o, C) => { for (let p = Object.getPrototypeOf(o); p; p = Object.getPrototypeOf(p)) if (p === C.prototype) return true; return false; }
+```
+
+**37.** Напишіть `myNew(Ctor, ...args)` без `new`.
+
+```js
+const myNew = (C, ...a) => { const o = Object.create(C.prototype); const r = C.apply(o, a); return r !== null && (typeof r === 'object' || typeof r === 'function') ? r : o; }
+```
+
+**38.** Напишіть `ownAndInherited(obj)` — усі ключі з рівня їх власника.
+
+```js
+const oi = (o) => { const r = []; for (let p = o; p && p !== Object.prototype; p = Object.getPrototypeOf(p)) r.push(Object.keys(p)); return r; }
+```
+
+### Відповіді
+
+1. `[true, true, 'undefined', 'object']`
+2. `[true, null]`
+3. `[1, 2, undefined, true, false]`
+4. `[false, true, true]`
+5. `[['b', 'a'], ['b']]`
+6. `[2, 1, true]`
+7. `1`
+8. `'TypeError'`
+9. `[false, 5, false]`
+10. `[true, false]`
+11. `false`
+12. `[true, true]`
+13. `[false, true]`
+14. `true`
+15. `[true, true, true, true, false]`
+16. `false`
+17. `[true, false, true]`
+18. `['a', true]`
+19. `['undefined', false, null, ['k']]`
+20. `'TypeError: Cannot convert object to primitive value'`
+21. `['hi x', ['n']]`
+22. `['hi z', true, 1]`
+23. `'AB'`
+24. `['function', true, true]`
+25. `[[], ['constructor', 'm'], []]`
+26. `[true, true]`
+27. `'static'`
+28. `'po'`
+29. `[1, ['w']]`
+30. `[true, []]`
+31. `[undefined, true]`
+32. `['fly', 'swim']`
+33. `'hi'`
+34. Виклик `(() => { function P() {} P.prototype.p = () => 'p'; function C() {} extend(C, P); const c = new C(); return [c.p(), c instanceof P, c.constructor === C]; })()` → `['p', true, true]`
+35. Виклик `(() => { class A {} class B extends A {} return chain(new B()); })()` → `['B', 'A', 'Object']`
+36. Виклик `(() => { class A {} class B extends A {} return [myInstanceOf(new B(), A), myInstanceOf({}, A), myInstanceOf([], Object)]; })()` → `[true, false, true]`
+37. Виклик `(() => { function P(n) { this.n = n; } P.prototype.hi = function () { return this.n; }; const p = myNew(P, 'z'); return [p.hi(), p instanceof P]; })()` → `['z', true]`
+38. Виклик `(() => { const a = { x: 1 }; const b = Object.create(a); b.y = 2; return oi(b); })()` → `[['y'], ['x']]`

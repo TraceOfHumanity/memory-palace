@@ -354,3 +354,377 @@ export class UsersController {
 - «Стандартний» режим — просто `return` значення з handler'а, Nest сам серіалізує й відправляє відповідь; розуміє `async`/`await` нативно.
 - «Library-specific» режим (`@Res()`) дає повний контроль, але знімає з Nest відповідальність за відповідь — ти мусиш сам викликати `res.send()`/`.json()`, інакше запит «зависне»; `{ passthrough: true }` дозволяє скомбінувати обидва підходи.
 - Контролер має бути «тонким» (thin controller) — лише приймає запит і делегує роботу сервісу через dependency injection; уся реальна логіка (і кидання HTTP-виключень на кшталт `NotFoundException`) живе в Service, а не в Controller.
+
+## Задачі для закріплення
+
+26 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах усі експорти `@nestjs/common` і `NestFactory` імпортовані, `boot(Module)` запускає застосунок на вільному порту й повертає `{ url, close }`, а `get(url)` повертає `{ status, body }`.
+
+### Рівень 1. Основи
+
+**1.** Префікс контролера та шлях методу.
+
+```ts
+@Controller('items') class C {
+  @Get('all') all() { return 'all'; }
+  @Get() root() { return 'root'; }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const x = await get(a.url + '/items/all'), y = await get(a.url + '/items');
+return [x.body, y.body];
+await a.close();
+
+```
+
+**2.** Декоратори HTTP-методів: `GET`, `POST`, `PUT`, `DELETE` на одному шляху.
+
+```ts
+@Controller('items') class C {
+  @Get() g() { return 'get'; }
+  @Post() p() { return 'post'; }
+  @Put() u() { return 'put'; }
+  @Delete() d() { return 'delete'; }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const out = [];
+for (const m of ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']) { const r = await get(a.url + '/items', { method: m }); out.push(m + ' ' + r.status + ' ' + (r.status === 404 ? '-' : r.body)); }
+return out;
+await a.close();
+
+```
+
+**3.** Код статусу за замовчуванням для `POST` та `GET`.
+
+```ts
+@Controller('items') class C {
+  @Post() p() { return 'created'; }
+  @Get() g() { return 'ok'; }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const p = await get(a.url + '/items', { method: 'POST' }), g = await get(a.url + '/items');
+return [p.status, g.status];
+await a.close();
+
+```
+
+**4.** `@HttpCode` змінює код статусу.
+
+```ts
+@Controller('items') class C {
+  @Post() @HttpCode(204) p() {}
+  @Get() @HttpCode(202) g() { return 'x'; }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const p = await get(a.url + '/items', { method: 'POST' }), g = await get(a.url + '/items');
+return [p.status, g.status];
+await a.close();
+
+```
+
+**5.** `@Param`: параметр шляху завжди рядок.
+
+```ts
+@Controller('items') class C {
+  @Get(':id') one(@Param('id') id: string) { return typeof id + ':' + id; }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/items/42');
+return r.body;
+await a.close();
+
+```
+
+**6.** `ParseIntPipe` перетворює й валідує параметр.
+
+```ts
+@Controller('items') class C {
+  @Get(':id') one(@Param('id', ParseIntPipe) id: number) { return typeof id + ':' + (id + 1); }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const ok = await get(a.url + '/items/41'), bad = await get(a.url + '/items/abc');
+return [ok.body, bad.status, JSON.parse(bad.body).message];
+await a.close();
+
+```
+
+**7.** Усі параметри шляху об'єктом: `@Param()`.
+
+```ts
+@Controller('u') class C { @Get(':a/:b') g(@Param() p: any) { return p; } }
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/u/x/y');
+await a.close();
+return JSON.parse(r.body);
+```
+
+### Рівень 2. Деталі й поведінка
+
+**8.** `@Query`: query-параметри та відсутній параметр.
+
+```ts
+@Controller('items') class C {
+  @Get() list(@Query('page') page?: string, @Query('limit') limit = '10') { return { page: page ?? null, limit }; }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const a1 = await get(a.url + '/items?page=2&limit=5'), a2 = await get(a.url + '/items');
+return [JSON.parse(a1.body), JSON.parse(a2.body)];
+await a.close();
+
+```
+
+**9.** Масив у query: `?tag=a&tag=b` та `?tag=a`.
+
+```ts
+@Controller('items') class C {
+  @Get() list(@Query('tag') tag: string | string[]) { return Array.isArray(tag) ? 'array:' + tag.join(',') : 'string:' + tag; }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const x = await get(a.url + '/items?tag=a&tag=b'), y = await get(a.url + '/items?tag=a');
+return [x.body, y.body];
+await a.close();
+
+```
+
+**10.** `@Body`: JSON-тіло та клас DTO без валідації.
+
+```ts
+@Controller('items') class C {
+  @Post() create(@Body() dto: { name: string }) { return { got: dto.name, type: typeof dto }; }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/items', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'x', extra: 1 }) });
+return JSON.parse(r.body);
+await a.close();
+
+```
+
+**11.** `@Body('field')`: окреме поле.
+
+```ts
+@Controller('items') class C {
+  @Post() create(@Body('name') name: string) { return name; }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/items', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'only', other: 1 }) });
+return r.body;
+await a.close();
+
+```
+
+**12.** Некоректний JSON у тілі → 400.
+
+```ts
+@Controller('items') class C {
+  @Post() create(@Body() b: any) { return b; }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/items', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{bad json' });
+return r.status;
+await a.close();
+
+```
+
+**13.** `@Headers`: заголовок із запиту.
+
+```ts
+@Controller('items') class C {
+  @Get() h(@Headers('x-token') t: string, @Headers() all: any) { return [t, typeof all, 'host' in all]; }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/items', { headers: { 'X-Token': 'abc' } });
+return JSON.parse(r.body);
+await a.close();
+
+```
+
+**14.** `@Header` для відповіді та `@Redirect`.
+
+```ts
+@Controller('items') class C {
+  @Get('h') @Header('X-Custom', 'yes') h() { return 'x'; }
+  @Get('r') @Redirect('/items/h', 301) r() {}
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const h = await get(a.url + '/items/h');
+const r = await fetch(a.url + '/items/r', { redirect: 'manual' });
+return [h.headers.get('x-custom'), r.status, r.headers.get('location')];
+await a.close();
+
+```
+
+### Рівень 3. Нюанси та пастки
+
+**15.** Повернення `Promise`: Nest чекає на значення.
+
+```ts
+@Controller('items') class C {
+  @Get() async g() { await new Promise(r => setTimeout(r, 10)); return 'async-done'; }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/items');
+return r.body;
+await a.close();
+
+```
+
+**16.** Режим `@Res()`: ручне керування відповіддю.
+
+```ts
+@Controller('items') class C {
+  @Get() g(@Res() res: any) { res.status(418).send('teapot'); }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/items');
+return [r.status, r.body];
+await a.close();
+
+```
+
+**17.** `@Res({ passthrough: true })` зберігає стандартну поведінку.
+
+```ts
+@Controller('items') class C {
+  @Get() g(@Res({ passthrough: true }) res: any) { res.setHeader('X-A', '1'); return { ok: 1 }; }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/items');
+return [r.status, r.headers.get('x-a'), r.body];
+await a.close();
+
+```
+
+**18.** `@Req`: доступ до об'єкта запиту.
+
+```ts
+@Controller('items') class C {
+  @Get() g(@Req() req: any) { return [req.method, req.originalUrl, req.query.x]; }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/items?x=1');
+return JSON.parse(r.body);
+await a.close();
+
+```
+
+**19.** Вайлдкард у шляху: `@Get('files/*')`.
+
+```ts
+@Controller('items') class C {
+  @Get('files/*') f(@Req() req: any) { return req.path; }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/items/files/a/b.txt');
+return r.body;
+await a.close();
+
+```
+
+**20.** Порядок маршрутів: статичний шлях проти параметричного.
+
+```ts
+@Controller('items') class C {
+  @Get(':id') one(@Param('id') id: string) { return 'param ' + id; }
+  @Get('special') s() { return 'static'; }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/items/special');
+return r.body;
+await a.close();
+
+```
+
+**21.** Виняток `BadRequestException` із власним повідомленням.
+
+```ts
+@Controller('items') class C {
+  @Get() g() { throw new BadRequestException('oops'); }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/items');
+return [r.status, JSON.parse(r.body)];
+await a.close();
+
+```
+
+### Рівень 4. Практика
+
+**22.** `HttpException` із довільним статусом.
+
+```ts
+@Controller('items') class C {
+  @Get() g() { throw new HttpException('quota', HttpStatus.TOO_MANY_REQUESTS); }
+}
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/items');
+return [r.status, JSON.parse(r.body)];
+await a.close();
+
+```
+
+**23.** Сервіс у контролері: ін'єкція та виклик.
+
+```ts
+@Injectable() class Repo { all() { return ['a', 'b']; } }
+@Controller('r') class C { constructor(private repo: Repo) {} @Get() g() { return this.repo.all(); } }
+@Module({ controllers: [C], providers: [Repo] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/r');
+await a.close();
+return JSON.parse(r.body);
+```
+
+**24.** Яка роль контролера в Nest?
+
+**25.** Що змінюється при використанні `@Res()`?
+
+**26.** Чому статичні маршрути слід оголошувати раніше за параметричні?
+
+### Відповіді
+
+1. `['all', 'root']`
+2. `['GET 200 get', 'POST 201 post', 'PUT 200 put', 'DELETE 200 delete', 'PATCH 404 -']`
+3. `[201, 200]`
+4. `[204, 202]`
+5. `'string:42'`
+6. `['number:42', 400, 'Validation failed (numeric string is expected)']`
+7. `{ a: 'x', b: 'y' }`
+8. `[{ page: '2', limit: '5' }, { page: null, limit: '10' }]`
+9. `['array:a,b', 'string:a']`
+10. `{ got: 'x', type: 'object' }`
+11. `'only'`
+12. `400`
+13. `['abc', 'object', true]`
+14. `['yes', 301, '/items/h']`
+15. `'async-done'`
+16. `[418, 'teapot']`
+17. `[200, '1', '{"ok":1}']`
+18. `['GET', '/items?x=1', '1']`
+19. `'/items/files/a/b.txt'`
+20. `'param special'`
+21. `[400, { message: 'oops', error: 'Bad Request', statusCode: 400 }]`
+22. `[429, { statusCode: 429, message: 'quota' }]`
+23. `['a', 'b']`
+24. Приймає HTTP-запити, витягує дані (параметри, query, тіло, заголовки), викликає сервіси й повертає відповідь; бізнес-логіку тримають у провайдерах
+25. Nest перестає автоматично надсилати відповідь: розробник відповідає за `res.send`/`res.json`; `passthrough: true` повертає стандартну поведінку
+26. Express зіставляє маршрути в порядку оголошення; `:id` збігається з будь-яким сегментом і «перехоплює» статичні шляхи, оголошені нижче

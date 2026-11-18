@@ -193,3 +193,158 @@ other();
 - Function expression / стрілка: піднімається лише змінна-контейнер, не функція (`var` → `TypeError: ... is not a function`, `let`/`const` → TDZ).
 - При колізії `var` і `function` з однаковим ім'ям на старті перемагає функція, далі — звичайне присвоєння.
 - Hoisting відбувається окремо для глобального контексту і для кожного виклику кожної функції.
+
+## Задачі для закріплення
+
+Двадцять задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Що поверне function declaration, викликана до оголошення?
+
+```js
+(() => { return f(); function f() { return 'hoisted'; } })()
+```
+
+**2.** Що поверне `var` до оголошення?
+
+```js
+(() => { const r = v; var v = 1; return r; })()
+```
+
+**3.** Що поверне function expression у `var` до присвоєння?
+
+```js
+(() => { try { fe(); } catch (e) { return e.name + ': ' + e.message; } var fe = function () {}; })()
+```
+
+**4.** А стрілка у `const` до оголошення?
+
+```js
+(() => { try { ar(); } catch (e) { return e.name; } const ar = () => 1; })()
+```
+
+**5.** Що буде з `class` до оголошення?
+
+```js
+(() => { try { new K(); } catch (e) { return e.name; } class K {} })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**6.** Що переможе при колізії: function чи var?
+
+```js
+(() => { var a = 1; function a() {} return typeof a; })()
+```
+
+**7.** А якщо `var` без присвоєння?
+
+```js
+(() => { var a; function a() {} return typeof a; })()
+```
+
+**8.** Що дасть дві function declaration з однаковим іменем?
+
+```js
+(() => { function f() { return 1; } function f() { return 2; } return f(); })()
+```
+
+**9.** Що поверне `typeof` змінної `let` до оголошення у блоці?
+
+```js
+(() => { try { typeof z; let z; } catch (e) { return e.name; } })()
+```
+
+**10.** Що поверне `typeof` необ'явленої?
+
+```js
+typeof notDeclaredAnywhere
+```
+
+### Рівень 3. Нюанси та пастки
+
+**11.** Що виведе класичний приклад: змінна `a` у функції, що перекриває глобальну?
+
+```js
+(() => { var a = 'global'; function f() { const r = a; var a = 'local'; return r; } return f(); })()
+```
+
+**12.** Що дасть function declaration у блоці (sloppy)?
+
+```js
+(function () { { function inBlock() { return 1; } } return typeof inBlock; })()
+```
+
+**13.** А у strict?
+
+```js
+(function () { 'use strict'; { function inBlock() { return 1; } } return typeof inBlock; })()
+```
+
+**14.** Що дасть оголошення функції в `if` (sloppy)?
+
+```js
+(function () { if (true) { function g() { return 'g'; } } return g(); })()
+```
+
+**15.** Чи піднімається `import`-подібний параметр за замовчуванням?
+
+```js
+(() => { const f = (a = 1, b = a + 1) => [a, b]; return f(); })()
+```
+
+### Рівень 4. Практика
+
+**16.** Що дасть hoisting для вкладених функцій з однаковими змінними?
+
+```js
+(() => { var x = 1; function o() { var x = 2; function i() { return x; } return i(); } return o(); })()
+```
+
+**17.** Що поверне виклик функції, оголошеної після `return`?
+
+```js
+(() => { return h(); function h() { return 42; } })()
+```
+
+**18.** Що дасть `let` з тим самим ім'ям, що й параметр?
+
+```js
+(() => { try { eval('((a) => { let a; })()'); } catch (e) { return e.name; } })()
+```
+
+**19.** Що дасть IIFE із `var`, що піднімається у власну функцію?
+
+```js
+(function () { return typeof inner; var inner = 1; })()
+```
+
+**20.** Що поверне змінна, оголошена в `for (var ...)` перед циклом?
+
+```js
+(() => { const before = i; for (var i = 0; i < 1; i++); return [before, i]; })()
+```
+
+### Відповіді
+
+1. `'hoisted'`
+2. `undefined`
+3. `'TypeError: fe is not a function'`
+4. `'ReferenceError'`
+5. `'ReferenceError'`
+6. `'number'`
+7. `'function'`
+8. `2`
+9. `'ReferenceError'`
+10. `'undefined'`
+11. `undefined`
+12. `'function'`
+13. `'undefined'`
+14. `'g'`
+15. `[1, 2]`
+16. `2`
+17. `42`
+18. `'SyntaxError'`
+19. `'undefined'`
+20. `[undefined, 1]`

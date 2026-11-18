@@ -377,3 +377,333 @@ echo $?                                             # код завершенн�
 - Глобальні об'єкти створюються до `main` і знищуються після неї; між файлами порядок ініціалізації не визначений — використовуй локальні `static`.
 - `return` з `main` прибирає все; `std::exit` пропускає локальні деструктори; `abort` і необроблений виняток (код 134) не прибирають нічого.
 - Виняток краще ловити в `main` (`catch (const std::exception&)`) і завершуватися керовано, з повідомленням у `stderr`.
+
+## Задачі для закріплення
+
+24 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код компілюйте командою `clang++ -std=c++20 -Wall`.
+
+### Рівень 1. Основи
+
+**1.** Мінімальна програма без `return` у `main`: який код завершення?
+
+```cpp
+int main() {}
+
+```
+
+**2.** `return 3;` — який код завершення?
+
+```cpp
+int main() { return 3; }
+
+```
+
+**3.** Код завершення `259` та `-1` (залишок за модулем 256).
+
+```cpp
+int main(int argc, char**) { return argc == 1 ? 259 : -1; }
+
+```
+
+**4.** Код завершення -1 (запуск із аргументом).
+
+```cpp
+int main(int argc, char**) { return argc == 1 ? 259 : -1; }
+
+```
+
+**5.** `argc` та `argv` без аргументів.
+
+```cpp
+#include <iostream>
+int main(int argc, char* argv[]) {
+    std::cout << argc << ' ' << (argv[argc] == nullptr) << '\n';
+}
+
+```
+
+**6.** `argc` та `argv` з трьома аргументами.
+
+```cpp
+#include <iostream>
+int main(int argc, char* argv[]) {
+    std::cout << "argc=" << argc << '\n';
+    for (int i = 1; i < argc; ++i) std::cout << i << ':' << argv[i] << '\n';
+}
+
+```
+
+### Рівень 2. Деталі й поведінка
+
+**7.** Перетворення аргументу в число: `std::stoi` та помилка.
+
+```cpp
+#include <iostream>
+#include <string>
+int main(int argc, char* argv[]) {
+    try {
+        std::cout << std::stoi(argv[1]) * 2 << '\n';
+    } catch (const std::exception& e) {
+        std::cout << "error: " << e.what() << '\n';
+        return 2;
+    }
+}
+
+```
+
+**8.** Те саме з коректним числом.
+
+```cpp
+#include <iostream>
+#include <string>
+int main(int argc, char* argv[]) {
+    try {
+        std::cout << std::stoi(argv[1]) * 2 << '\n';
+    } catch (const std::exception& e) {
+        std::cout << "error: " << e.what() << '\n';
+        return 2;
+    }
+}
+
+```
+
+**9.** Перетворення `argv` у `std::vector<std::string>`.
+
+```cpp
+#include <iostream>
+#include <string>
+#include <vector>
+int main(int argc, char* argv[]) {
+    std::vector<std::string> args(argv + 1, argv + argc);
+    std::cout << args.size() << ' ' << (args.empty() ? "-" : args.back()) << '\n';
+}
+
+```
+
+**10.** Деструктори локальних об'єктів при `return` з `main`.
+
+```cpp
+#include <iostream>
+struct G { ~G() { std::cout << "dtor\n"; } };
+int main() {
+    G g;
+    std::cout << "body\n";
+    return 0;
+}
+
+```
+
+**11.** `std::exit` не викликає деструкторів локальних об'єктів.
+
+```cpp
+#include <cstdlib>
+#include <iostream>
+struct G { ~G() { std::cout << "dtor\n"; } };
+int main() {
+    G g;
+    std::cout << "before\n";
+    std::exit(5);
+}
+
+```
+
+**12.** Глобальні об'єкти: порядок до й після `main`.
+
+```cpp
+#include <iostream>
+struct G { G() { std::cout << "global ctor\n"; } ~G() { std::cout << "global dtor\n"; } } g;
+int main() { std::cout << "main\n"; }
+
+```
+
+### Рівень 3. Нюанси та пастки
+
+**13.** `std::atexit`: порядок виклику обробників (LIFO).
+
+```cpp
+#include <cstdlib>
+#include <iostream>
+int main() {
+    std::atexit([] { std::cout << "first registered\n"; });
+    std::atexit([] { std::cout << "second registered\n"; });
+    std::cout << "main\n";
+}
+
+```
+
+**14.** Що станеться з процесом при необробленому винятку з `main`?
+
+```cpp
+#include <stdexcept>
+int main() { throw std::runtime_error("x"); }
+
+```
+
+**15.** `void main` не дозволено.
+
+```cpp
+void main() {}
+
+```
+
+**16.** `main` із тілом `try`-блоку функції.
+
+```cpp
+#include <iostream>
+int main() try {
+    throw 1;
+} catch (int e) {
+    std::cout << "caught " << e << '\n';
+    return e;
+}
+
+```
+
+**17.** `return` через умову: коди успіху/помилки як константи.
+
+```cpp
+#include <cstdlib>
+#include <iostream>
+int run(bool ok) { return ok ? EXIT_SUCCESS : EXIT_FAILURE; }
+int main() { std::cout << EXIT_SUCCESS << ' ' << EXIT_FAILURE << ' ' << run(false) << '\n'; }
+
+```
+
+**18.** Читання змінної оточення в `main`.
+
+```cpp
+#include <cstdlib>
+#include <iostream>
+int main() {
+    const char* v = std::getenv("NO_SUCH_VAR_XYZ");
+    std::cout << (v ? v : "(unset)") << '\n';
+}
+
+```
+
+### Рівень 4. Практика
+
+**19.** Чи дозволяє компілятор рекурсивний виклик `main` (стандарт це забороняє)?
+
+```cpp
+int main(int argc, char**) { if (argc < 3) return main(argc + 1, nullptr); return argc; }
+
+```
+
+**20.** Статична ініціалізація `static` локальної змінної в `main`.
+
+```cpp
+#include <iostream>
+int f() { std::cout << "init\n"; return 7; }
+int main() {
+    static int x = f();
+    std::cout << x << '\n';
+}
+
+```
+
+**21.** `main` із третім параметром `envp` (нестандартно, але доступно).
+
+```cpp
+#include <iostream>
+int main(int, char**, char** envp) {
+    std::cout << (envp != nullptr) << '\n';
+}
+
+```
+
+**22.** Які сигнатури `main` дозволені стандартом?
+
+**23.** Що відбувається, якщо в `main` немає `return`?
+
+**24.** Чому код завершення ОС має лише 8 значущих біт?
+
+### Відповіді
+
+1. Вивід порожній, код завершення `0`
+2. Вивід порожній, код завершення `3`
+3. Вивід порожній, код завершення `3`
+4. Вивід порожній, код завершення `255`
+5. `1 1`
+6. Вивід:
+
+   ```text
+   argc=4
+   1:hello
+   2:two words
+   3:42
+   ```
+
+7. Вивід:
+
+   ```text
+   error: stoi: no conversion
+   [код завершення 2]
+   ```
+
+8. `42`
+9. `3 c`
+10. Вивід:
+
+   ```text
+   body
+   dtor
+   ```
+
+11. Вивід:
+
+   ```text
+   before
+   [код завершення 5]
+   ```
+
+12. Вивід:
+
+   ```text
+   global ctor
+   main
+   global dtor
+   ```
+
+13. Вивід:
+
+   ```text
+   main
+   second registered
+   first registered
+   ```
+
+14. Вивід:
+
+   ```text
+   libc++abi: terminating due to uncaught exception of type std::runtime_error: x
+   [завершено сигналом SIGABRT]
+   ```
+
+15. Помилка компіляції:
+
+   ```text
+   error: 'main' must return 'int'
+   ```
+
+16. Вивід:
+
+   ```text
+   caught 1
+   [код завершення 1]
+   ```
+
+17. `0 1 1`
+18. `(unset)`
+19. Вивід порожній, код завершення `3`
+20. Вивід:
+
+   ```text
+   init
+   7
+   ```
+
+21. `1`
+22. `int main()` та `int main(int argc, char* argv[])` (а також їх еквіваленти); інші реалізація може підтримувати додатково, але `void main` не дозволений
+23. Компілятор неявно додає `return 0;` лише для `main`; для інших функцій відсутній `return` — невизначена поведінка
+24. Процес повертає батьківському статус через `exit`-системний виклик, де значення обрізається до 0–255 (`259 % 256 = 3`, `-1` → `255`)

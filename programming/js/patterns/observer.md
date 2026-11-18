@@ -244,3 +244,101 @@ person.name = "Maria"; // name: Olya → Maria
 - `EventEmitter`: `emit("error")` без слухача кидає виняток; `once()` для одноразових реакцій; понад 10 слухачів — попередження.
 - Observer знає про підписників напряму, Pub/Sub — через брокера (event bus, черга повідомлень), тому видавець і підписники повністю розчеплені.
 - Не зловживайте: для простої залежності прямий виклик читабельніший за подію.
+
+## Задачі для закріплення
+
+13 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Реалізуйте `EventEmitter`: `on`, `off`, `emit`.
+
+```js
+class Em { h = new Map(); on(e, f) { (this.h.get(e) ?? this.h.set(e, []).get(e)).push(f); return this; } off(e, f) { this.h.set(e, (this.h.get(e) ?? []).filter(x => x !== f)); return this; } emit(e, ...a) { (this.h.get(e) ?? []).forEach(f => f(...a)); return this; } }
+```
+
+**2.** Додайте `once`.
+
+```js
+class Em { h = {}; on(e, f) { (this.h[e] ??= []).push(f); return this; } once(e, f) { const w = (...a) => { this.off(e, w); f(...a); }; return this.on(e, w); } off(e, f) { this.h[e] = (this.h[e] ?? []).filter(x => x !== f); return this; } emit(e, ...a) { [...(this.h[e] ?? [])].forEach(f => f(...a)); } }
+```
+
+**3.** Реалізуйте функцію відписки: `on` повертає `unsubscribe`.
+
+```js
+const subj = () => { const l = new Set(); return { sub: (f) => (l.add(f), () => l.delete(f)), pub: (v) => l.forEach(f => f(v)), get n() { return l.size; } }; }
+```
+
+**4.** Observable-значення: `Subject` із поточним значенням.
+
+```js
+class Obs { #v; #l = []; constructor(v) { this.#v = v; } get value() { return this.#v; } set(v) { if (v !== this.#v) { this.#v = v; this.#l.forEach(f => f(v)); } } sub(f) { this.#l.push(f); f(this.#v); } }
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Реалізуйте обчислювану підписку (derived): `map` для Observable.
+
+```js
+const store = (v) => { let l = []; return { get: () => v, set: (x) => { v = x; l.forEach(f => f(x)); }, sub: (f) => l.push(f), map(fn) { const d = store(fn(v)); this.sub(x => d.set(fn(x))); return d; } }; }
+```
+
+**6.** Реалізуйте канали подій із підстановкою `*`.
+
+```js
+class Bus { h = []; on(p, f) { this.h.push([new RegExp('^' + p.replace(/\*/g, '.*') + '$'), f]); } emit(e, d) { this.h.forEach(([r, f]) => r.test(e) && f(e, d)); } }
+```
+
+**7.** Порядок викликів слухачів і мутація списку під час `emit`.
+
+```js
+(() => { const { EventEmitter } = process.getBuiltinModule('node:events'); const e = new EventEmitter(); const log = []; e.on('x', () => { log.push(1); e.on('x', () => log.push('late')); }); e.on('x', () => log.push(2)); e.emit('x'); e.emit('x'); return log; })()
+```
+
+**8.** Що станеться при `emit('error')` без слухача у Node?
+
+```js
+(() => { const { EventEmitter } = process.getBuiltinModule('node:events'); try { new EventEmitter().emit('error', new Error('boom')); } catch (e) { return e.message; } })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Скільки слухачів дозволено до попередження та `listenerCount`?
+
+```js
+(() => { const { EventEmitter } = process.getBuiltinModule('node:events'); const e = new EventEmitter(); e.on('a', () => {}); e.on('a', () => {}); return [EventEmitter.defaultMaxListeners, e.listenerCount('a'), e.eventNames()]; })()
+```
+
+**10.** `EventTarget` у Node: `addEventListener` і `dispatchEvent`.
+
+```js
+(() => { const t = new EventTarget(); const log = []; t.addEventListener('ping', (e) => log.push(e.type)); t.dispatchEvent(new Event('ping')); return log; })()
+```
+
+**11.** Запобіжник від витоку: слухач, що відписується після N подій.
+
+```js
+const take = (n, f) => { let c = 0; return (...a) => { if (c++ < n) return f(...a); }; }
+```
+
+**12.** Яку проблему вирішує Observer?
+
+### Рівень 4. Практика
+
+**13.** Які ризики Observer?
+
+### Відповіді
+
+1. Виклик `(() => { const log = []; const e = new Em(); const a = (x) => log.push('a' + x); e.on('t', a).on('t', (x) => log.push('b' + x)); e.emit('t', 1); e.off('t', a); e.emit('t', 2); return log; })()` → `['a1', 'b1', 'b2']`
+2. Виклик `(() => { let n = 0; const e = new Em(); e.once('x', () => n++); e.emit('x'); e.emit('x'); return n; })()` → `1`
+3. Виклик `(() => { const s = subj(); const log = []; const un = s.sub(v => log.push(v)); s.pub(1); un(); s.pub(2); return [log, s.n]; })()` → `[[1], 0]`
+4. Виклик `(() => { const log = []; const o = new Obs(1); o.sub(v => log.push(v)); o.set(2); o.set(2); o.set(3); return log; })()` → `[1, 2, 3]`
+5. Виклик `(() => { const a = store(2); const b = a.map(x => x * 10); a.set(5); return [a.get(), b.get()]; })()` → `[5, 50]`
+6. Виклик `(() => { const log = []; const b = new Bus(); b.on('user.*', (e) => log.push(e)); b.on('*', (e) => log.push('all:' + e)); b.emit('user.created'); b.emit('order.paid'); return log; })()` → `['user.created', 'all:user.created', 'all:order.paid']`
+7. `[1, 2, 1, 2, 'late']`
+8. `'boom'`
+9. `[10, 2, ['a']]`
+10. `['ping']`
+11. Виклик `(() => { const log = []; const f = take(2, x => log.push(x)); [1, 2, 3, 4].forEach(f); return log; })()` → `[1, 2]`
+12. Дозволяє одному об'єкту (суб'єкту) сповіщати багатьох підписників про зміни, не знаючи їхніх деталей — слабка зв'язність
+13. Витоки пам'яті через забуті підписки, неочікуваний порядок викликів, каскадні оновлення та складність налагодження

@@ -93,3 +93,559 @@ print([n * n for n in range(5)])          # [0, 1, 4, 9, 16]
 - Lutz M. *Learning Python*. O'Reilly.
 - Офіційний посібник та документація на docs.python.org.
 - PEP 8 (стиль коду), PEP 20 (Дзен Python).
+
+## Задачі для закріплення
+
+Сорок задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в Python 3.
+
+### Рівень 1. Основи
+
+**1.** Що виведе `type` для різних значень та чи можна змінити тип змінної?
+
+```py
+x = 5
+print(type(x).__name__)
+x = 'five'
+print(type(x).__name__)
+print(type(3.0).__name__, type(None).__name__, type([]).__name__, type({}).__name__)
+```
+
+**2.** Ділення: `/`, `//`, `%`, `**` для від'ємних.
+
+```py
+print(7 / 2, 7 // 2, -7 // 2, 7 % 3, -7 % 3, 2 ** 10, 2 ** -1)
+```
+
+**3.** Цілі числа необмеженої довжини.
+
+```py
+print(2 ** 100)
+print(len(str(2 ** 1000)))
+```
+
+**4.** Точність `float` та `round`.
+
+```py
+print(0.1 + 0.2)
+print(0.1 + 0.2 == 0.3)
+print(round(2.5), round(3.5), round(-2.5))
+```
+
+**5.** Сильна типізація: що станеться при `5 + '1'`?
+
+```py
+try:
+    5 + '1'
+except TypeError as e:
+    print(type(e).__name__)
+print('5' + '1', 5 * '1')
+```
+
+**6.** Truthy/falsy значення.
+
+```py
+print([bool(x) for x in [0, 1, '', 'a', [], [0], None, 0.0]])
+```
+
+**7.** `is` проти `==`.
+
+```py
+a = [1, 2]
+b = [1, 2]
+c = a
+print(a == b, a is b, a is c)
+print(None is None, 256 is 256)
+```
+
+**8.** Змінювані та незмінні типи: що станеться з `+=`?
+
+```py
+a = (1, 2)
+b = a
+b += (3,)
+print(a, b)
+x = [1, 2]
+y = x
+y += [3]
+print(x, y)
+```
+
+**9.** Пастка: змінюваний аргумент за замовчуванням.
+
+```py
+def add(x, acc=[]):
+    acc.append(x)
+    return acc
+print(add(1), add(2), add(3))
+```
+
+**10.** Правильна версія з `None`.
+
+```py
+def add(x, acc=None):
+    if acc is None:
+        acc = []
+    acc.append(x)
+    return acc
+print(add(1), add(2))
+```
+
+### Рівень 2. Деталі й поведінка
+
+**11.** Копіювання: присвоєння, `copy`, `deepcopy`.
+
+```py
+import copy
+a = [[1], [2]]
+b = a
+c = copy.copy(a)
+d = copy.deepcopy(a)
+a[0].append(9)
+print(b[0], c[0], d[0])
+```
+
+**12.** Лічильник посилань та `sys.getrefcount`.
+
+```py
+import sys
+x = object()
+base = sys.getrefcount(x)
+y = x
+print(sys.getrefcount(x) - base)
+del y
+print(sys.getrefcount(x) - base)
+```
+
+**13.** Циклічні посилання й збирач сміття.
+
+```py
+import gc
+class N:
+    pass
+a = N(); b = N()
+a.o = b; b.o = a
+del a, b
+print(gc.collect() >= 2)
+```
+
+**14.** Списки: зрізи, крок, від'ємні індекси.
+
+```py
+s = [0, 1, 2, 3, 4, 5]
+print(s[1:4], s[::2], s[::-1], s[-2:], s[:-1])
+```
+
+**15.** Список включень (comprehension) та генераторний вираз.
+
+```py
+print([x * x for x in range(6) if x % 2 == 0])
+g = (x for x in range(3))
+print(next(g), next(g), list(g))
+```
+
+**16.** Словники: порядок вставки та `get`.
+
+```py
+d = {'b': 1, 'a': 2}
+d['c'] = 3
+print(list(d), d.get('z', 'none'), d.pop('a'))
+```
+
+**17.** Множини та операції.
+
+```py
+a = {1, 2, 3}; b = {3, 4}
+print(a | b, a & b, a - b, a ^ b)
+```
+
+**18.** Розпакування та `*`.
+
+```py
+a, *mid, z = [1, 2, 3, 4, 5]
+print(a, mid, z)
+x, y = 1, 2
+x, y = y, x
+print(x, y)
+```
+
+**19.** Замикання: пізнє зв'язування в циклі.
+
+```py
+fs = [lambda: i for i in range(3)]
+print([f() for f in fs])
+gs = [lambda i=i: i for i in range(3)]
+print([g() for g in gs])
+```
+
+**20.** `nonlocal` та лічильник.
+
+```py
+def counter():
+    n = 0
+    def inc():
+        nonlocal n
+        n += 1
+        return n
+    return inc
+c = counter()
+c(); c()
+print(c())
+```
+
+### Рівень 3. Нюанси та пастки
+
+**21.** Генератор: ледаче обчислення.
+
+```py
+def count(n):
+    for i in range(n):
+        print('yield', i)
+        yield i
+g = count(3)
+print('created')
+print(next(g))
+```
+
+**22.** Декоратор.
+
+```py
+def twice(f):
+    def w(*a):
+        return f(f(*a))
+    return w
+@twice
+def inc(x):
+    return x + 1
+print(inc(5))
+```
+
+**23.** Класи: атрибути класу та екземпляра.
+
+```py
+class A:
+    n = 0
+    def __init__(self):
+        A.n += 1
+        self.id = A.n
+a, b = A(), A()
+print(a.id, b.id, A.n)
+```
+
+**24.** Спадкування та `super()`, порядок MRO.
+
+```py
+class A: pass
+class B(A): pass
+class C(A): pass
+class D(B, C): pass
+print([k.__name__ for k in D.__mro__])
+```
+
+**25.** Ліниві властивості та `@property`.
+
+```py
+class C:
+    def __init__(self):
+        self._v = 1
+    @property
+    def v(self):
+        return self._v * 10
+c = C()
+print(c.v)
+try:
+    c.v = 2
+except AttributeError as e:
+    print('AttributeError')
+```
+
+**26.** Магічні методи `__repr__`, `__eq__`, `__len__`.
+
+```py
+class V:
+    def __init__(self, *a): self.a = a
+    def __repr__(self): return f'V{self.a}'
+    def __eq__(self, o): return self.a == o.a
+    def __len__(self): return len(self.a)
+print(V(1, 2), V(1, 2) == V(1, 2), len(V(1, 2, 3)))
+```
+
+**27.** Контекстний менеджер `with`.
+
+```py
+class Ctx:
+    def __enter__(self):
+        print('enter'); return self
+    def __exit__(self, *e):
+        print('exit', e[0].__name__ if e[0] else None); return True
+with Ctx():
+    print('body')
+    raise ValueError
+```
+
+**28.** Винятки: `else` та `finally`.
+
+```py
+def f(x):
+    try:
+        r = 10 / x
+    except ZeroDivisionError:
+        return 'zero'
+    else:
+        return r
+    finally:
+        print('finally')
+print(f(2))
+print(f(0))
+```
+
+**29.** GIL: чи пришвидшують потоки CPU-задачу? (порівняння коректності, не часу)
+
+```py
+import threading
+n = 0
+def work():
+    global n
+    for _ in range(100000):
+        n += 1
+ts = [threading.Thread(target=work) for _ in range(2)]
+for t in ts: t.start()
+for t in ts: t.join()
+print(n <= 200000, n > 0)
+```
+
+**30.** `__slots__` та словник атрибутів.
+
+```py
+class A:
+    pass
+class B:
+    __slots__ = ('x',)
+a, b = A(), B()
+a.y = 1
+try:
+    b.y = 1
+except AttributeError:
+    print('no dict')
+print(hasattr(a, '__dict__'), hasattr(b, '__dict__'))
+```
+
+### Рівень 4. Практика
+
+**31.** `dataclass`.
+
+```py
+from dataclasses import dataclass
+@dataclass
+class P:
+    x: int
+    y: int = 0
+print(P(1), P(1) == P(1, 0))
+```
+
+**32.** Підказки типів не перевіряються під час виконання.
+
+```py
+def f(x: int) -> int:
+    return x * 2
+print(f('ab'))
+print(f.__annotations__)
+```
+
+**33.** f-рядки та форматування.
+
+```py
+name, pi = 'Ann', 3.14159
+print(f'{name:>6}|{pi:.2f}|{255:#x}|{1000000:,}|{0.5:.0%}')
+```
+
+**34.** `sorted` зі `key` та стабільність.
+
+```py
+words = ['bb', 'a', 'cc', 'd']
+print(sorted(words, key=len), sorted(words, key=len, reverse=True))
+```
+
+**35.** `zip`, `enumerate`, `map`.
+
+```py
+a = ['x', 'y']
+print(list(zip(a, [1, 2, 3])), list(enumerate(a, 1)), list(map(str.upper, a)))
+```
+
+**36.** Мутація списку під час ітерації.
+
+```py
+a = [1, 2, 3, 4]
+for x in a:
+    if x % 2 == 0:
+        a.remove(x)
+print(a)
+```
+
+**37.** Рядки незмінні: що станеться з `s[0] = 'x'`?
+
+```py
+s = 'abc'
+try:
+    s[0] = 'x'
+except TypeError as e:
+    print(type(e).__name__)
+print(s.upper(), s)
+```
+
+**38.** Що означає, що Python — інтерпретована мова з динамічною типізацією?
+
+**39.** Що таке GIL?
+
+**40.** Як CPython керує пам'яттю?
+
+### Відповіді
+
+1. Вивід:
+
+   ```text
+   int
+   str
+   float NoneType list dict
+   ```
+
+2. `3.5 3 -4 1 2 1024 0.5`
+3. Вивід:
+
+   ```text
+   1267650600228229401496703205376
+   302
+   ```
+
+4. Вивід:
+
+   ```text
+   0.30000000000000004
+   False
+   2 4 -2
+   ```
+
+5. Вивід:
+
+   ```text
+   TypeError
+   51 11111
+   ```
+
+6. `[False, True, False, True, False, True, False, False]`
+7. Вивід:
+
+   ```text
+   True False True
+   True True
+   ```
+
+8. Вивід:
+
+   ```text
+   (1, 2) (1, 2, 3)
+   [1, 2, 3] [1, 2, 3]
+   ```
+
+9. `[1, 2, 3] [1, 2, 3] [1, 2, 3]`
+10. `[1] [2]`
+11. `[1, 9] [1, 9] [1]`
+12. Вивід:
+
+   ```text
+   1
+   0
+   ```
+
+13. `True`
+14. `[1, 2, 3] [0, 2, 4] [5, 4, 3, 2, 1, 0] [4, 5] [0, 1, 2, 3, 4]`
+15. Вивід:
+
+   ```text
+   [0, 4, 16]
+   0 1 [2]
+   ```
+
+16. `['b', 'a', 'c'] none 2`
+17. `{1, 2, 3, 4} {3} {1, 2} {1, 2, 4}`
+18. Вивід:
+
+   ```text
+   1 [2, 3, 4] 5
+   2 1
+   ```
+
+19. Вивід:
+
+   ```text
+   [2, 2, 2]
+   [0, 1, 2]
+   ```
+
+20. `3`
+21. Вивід:
+
+   ```text
+   created
+   yield 0
+   0
+   ```
+
+22. `7`
+23. `1 2 2`
+24. `['D', 'B', 'C', 'A', 'object']`
+25. Вивід:
+
+   ```text
+   10
+   AttributeError
+   ```
+
+26. `V(1, 2) True 3`
+27. Вивід:
+
+   ```text
+   enter
+   body
+   exit ValueError
+   ```
+
+28. Вивід:
+
+   ```text
+   finally
+   5.0
+   finally
+   zero
+   ```
+
+29. `True True`
+30. Вивід:
+
+   ```text
+   no dict
+   True False
+   ```
+
+31. `P(x=1, y=0) True`
+32. Вивід:
+
+   ```text
+   abab
+   {'x': <class 'int'>, 'return': <class 'int'>}
+   ```
+
+33. `   Ann|3.14|0xff|1,000,000|50%`
+34. `['a', 'd', 'bb', 'cc'] ['bb', 'cc', 'a', 'd']`
+35. `[('x', 1), ('y', 2)] [(1, 'x'), (2, 'y')] ['X', 'Y']`
+36. `[1, 3]`
+37. Вивід:
+
+   ```text
+   TypeError
+   ABC abc
+   ```
+
+38. Код виконується інтерпретатором (CPython компілює в байткод і виконує на віртуальній машині); тип належить значенню, а не змінній, і перевіряється під час виконання
+39. Глобальне блокування інтерпретатора CPython: лише один потік одночасно виконує байткод Python; CPU-задачі розпаралелюють процесами, I/O — потоками чи asyncio
+40. Підрахунком посилань плюс збирачем циклічних посилань (gc); об'єкт видаляється, коли лічильник стає нульовим

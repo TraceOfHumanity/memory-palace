@@ -227,3 +227,161 @@ try {
 - Discriminated union (поле-мітка, напр. `status`) — найпоширеніший практичний патерн: TS автоматично звужує тип усередині `if`/`switch`.
 - `(A | B)[]` (масив змішаних елементів) і `A[] | B[]` (однорідний масив одного з типів) — різні типи.
 - Для «функції з властивостями» краще `Object.assign`, ніж `as`: приведення типу мовчки пропустить забуту властивість.
+
+## Задачі для закріплення
+
+Двадцять задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в TypeScript Playground чи через tsc.
+
+### Рівень 1. Основи
+
+**1.** Union у параметрі.
+
+```ts
+function f(x: string | number) { return x; }
+f('a'); f(1);
+```
+
+**2.** Виклик методу, що є не в усіх членах union.
+
+```ts
+function f(x: string | number) { return x.toUpperCase(); }
+```
+
+**3.** Спільний метод union доступний.
+
+```ts
+function f(x: string | string[]) { return x.length; }
+```
+
+**4.** Union літералів.
+
+```ts
+type D = 'up' | 'down' | 'left';
+```
+
+**5.** Значення поза union літералів.
+
+```ts
+type D = 'up' | 'down';
+const d: D = 'left';
+```
+
+### Рівень 2. Деталі й поведінка
+
+**6.** Дискримінований union.
+
+```ts
+type R = { ok: true; v: number } | { ok: false; e: string };
+function f(r: R) { if (r.ok) return r.v; return r.e; }
+const x = f({ ok: true, v: 1 });
+```
+
+**7.** Intersection об'єктів.
+
+```ts
+type A = { a: number }; type B = { b: string };
+type C = A & B;
+```
+
+**8.** Intersection несумісних примітивів.
+
+```ts
+type X = string & number;
+```
+
+**9.** Intersection union-типів (розподіл).
+
+```ts
+type X = (1 | 2) & (2 | 3);
+```
+
+**10.** Union із `never`.
+
+```ts
+type X = string | never;
+```
+
+### Рівень 3. Нюанси та пастки
+
+**11.** Intersection із `unknown` та `any`.
+
+```ts
+type A = string & unknown; type B = string | unknown;
+```
+
+**12.** Union з `unknown`.
+
+```ts
+type B = string | unknown;
+```
+
+**13.** Присвоєння об'єкта intersection-типу.
+
+```ts
+type A = { a: number }; type B = { b: string };
+const c: A & B = { a: 1, b: 'x' };
+```
+
+**14.** Відсутня властивість у intersection.
+
+```ts
+type A = { a: number }; type B = { b: string };
+const c: A & B = { a: 1 };
+```
+
+**15.** Union функцій: параметр — intersection.
+
+```ts
+type F = ((a: string) => void) | ((a: number) => void);
+type P = Parameters<F>[0];
+```
+
+### Рівень 4. Практика
+
+**16.** `Exclude` і `Extract` для union.
+
+```ts
+type U = 'a' | 'b' | 'c';
+type X = Exclude<U, 'a'>;
+```
+
+**17.** `NonNullable` для union.
+
+```ts
+type X = NonNullable<string | null | undefined>;
+```
+
+**18.** Mixin-подібний intersection типів-класів.
+
+```ts
+type Timestamped = { createdAt: Date };
+type User = { name: string } & Timestamped;
+type K = keyof User;
+```
+
+**19.** Чим union відрізняється від intersection?
+
+**20.** Чому `string & number` — `never`?
+
+### Відповіді
+
+1. Компілюється без помилок
+2. Помилка: `TS2339: Property 'toUpperCase' does not exist on type 'string | number'.   Property 'toUpperCase' does not exist on type 'number'.`
+3. Компілюється без помилок
+4. `"up" | "down" | "left"`
+5. Помилка: `TS2322: Type '"left"' is not assignable to type 'D'.`
+6. `string | number`
+7. `A & B`
+8. `never`
+9. `2`
+10. `string`
+11. `string`
+12. `unknown`
+13. Компілюється без помилок
+14. Помилка: `TS2322: Type '{ a: number; }' is not assignable to type 'A & B'.   Property 'b' is missing in type '{ a: number; }' but required in type 'B'.`
+15. `string | number`
+16. `"b" | "c"`
+17. `string`
+18. `"name" | "createdAt"`
+19. Union (`A | B`) — значення типу A або B (доступні лише спільні члени, поки не звужено); intersection (`A & B`) — значення, що має всі властивості і A, і B
+20. Не існує значення, яке одночасно є і рядком, і числом, тож перетин порожній

@@ -309,3 +309,100 @@ console.log(buildSalesReport(new TextReportBuilder()));
 - Пастка: мутабельний білдер зберігає стан між збірками — повторне використання «просочує» поля; рішення: новий білдер на кожну збірку, `reset()` або імутабельний білдер (кожен крок — новий об'єкт).
 - Director — готові рецепти послідовності кроків; один процес може давати різні представлення (HTML/текст) через різні білдери.
 - У JS для простих випадків вистачає options-об'єкта з деструктуризацією; білдер — для складної валідації, багатьох кроків і представлень (Knex, TypeORM QueryBuilder, Nest DocumentBuilder).
+
+## Задачі для закріплення
+
+14 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Реалізуйте `QueryBuilder` із ланцюжком `select/from/where/limit` і методом `build()`.
+
+```js
+class QB { #s = '*'; #f = ''; #w = []; #l = null; select(...c) { this.#s = c.join(', '); return this; } from(t) { this.#f = t; return this; } where(c) { this.#w.push(c); return this; } limit(n) { this.#l = n; return this; } build() { let q = `SELECT ${this.#s} FROM ${this.#f}`; if (this.#w.length) q += ' WHERE ' + this.#w.join(' AND '); if (this.#l !== null) q += ` LIMIT ${this.#l}`; return q; } }
+```
+
+**2.** Додайте перевірку: `build()` без `from` кидає помилку.
+
+```js
+class QB { #f = null; from(t) { this.#f = t; return this; } build() { if (!this.#f) throw new Error('table required'); return 'SELECT * FROM ' + this.#f; } }
+```
+
+**3.** Напишіть незмінний builder: кожен метод повертає новий екземпляр.
+
+```js
+class Req { constructor(o = {}) { this.o = Object.freeze(o); } url(u) { return new Req({ ...this.o, url: u }); } header(k, v) { return new Req({ ...this.o, headers: { ...this.o.headers, [k]: v } }); } build() { return this.o; } }
+```
+
+**4.** Створіть builder об'єкта-конфігурації з `Object.assign` і значеннями за замовчуванням.
+
+```js
+const build = (o = {}) => Object.freeze({ port: 80, host: 'localhost', tls: false, ...o })
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Створіть builder з вкладеним «director»: `Director.makeAdmin(builder)`.
+
+```js
+class UB { u = { roles: [] }; name(n) { this.u.name = n; return this; } role(r) { this.u.roles.push(r); return this; } build() { return this.u; } } const Director = { admin: (b) => b.name('root').role('admin').role('user').build() }
+```
+
+**6.** Реалізуйте `HtmlBuilder` для вкладених тегів.
+
+```js
+class H { constructor(t) { this.t = t; this.c = []; } add(x) { this.c.push(x); return this; } toString() { return `<${this.t}>${this.c.join('')}</${this.t}>`; } }
+```
+
+**7.** Додайте `reset()` і повторне використання builder.
+
+```js
+class B { #a = []; add(x) { this.#a.push(x); return this; } build() { const r = [...this.#a]; this.#a = []; return r; } }
+```
+
+**8.** Реалізуйте builder, що валідує тип аргументу в методі.
+
+```js
+class B { #n = 0; count(n) { if (!Number.isInteger(n) || n < 0) throw new RangeError('bad count'); this.#n = n; return this; } build() { return this.#n; } }
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Побудуйте URL через builder: `host`, `path`, `query`.
+
+```js
+class UB { #h = ''; #p = '/'; #q = new URLSearchParams(); host(h) { this.#h = h; return this; } path(p) { this.#p = p; return this; } query(k, v) { this.#q.append(k, v); return this; } build() { const s = this.#q.toString(); return `https://${this.#h}${this.#p}${s ? '?' + s : ''}`; } }
+```
+
+**10.** Побудуйте SQL INSERT через builder із екрануванням лапок.
+
+```js
+class Ins { #t; #v = {}; into(t) { this.#t = t; return this; } set(k, v) { this.#v[k] = v; return this; } build() { const ks = Object.keys(this.#v); const vs = ks.map(k => typeof this.#v[k] === 'string' ? `'${this.#v[k].replace(/'/g, "''")}'` : this.#v[k]); return `INSERT INTO ${this.#t} (${ks.join(', ')}) VALUES (${vs.join(', ')})`; } }
+```
+
+**11.** Яку проблему вирішує Builder?
+
+**12.** Чим Builder відрізняється від Factory?
+
+### Рівень 4. Практика
+
+**13.** Коли Builder зайвий у JavaScript?
+
+**14.** Для чого метод `build()` у builder?
+
+### Відповіді
+
+1. Виклик `[new QB().select('id', 'name').from('users').where('age > 18').where('active = 1').limit(10).build(), new QB().from('t').build()]` → `['SELECT id, name FROM users WHERE age > 18 AND active = 1 LIMIT 10', 'SELECT * FROM t']`
+2. Виклик `(() => { let e; try { new QB().build(); } catch (x) { e = x.message; } return [new QB().from('a').build(), e]; })()` → `['SELECT * FROM a', 'table required']`
+3. Виклик `(() => { const base = new Req().url('/a'); const a = base.header('X', '1'); const b = base.header('Y', '2'); return [base.build(), a.build(), b.build()]; })()` → `[{ url: '/a' }, { url: '/a', headers: { X: '1' } }, { url: '/a', headers: { Y: '2' } }]`
+4. Виклик `[build(), build({ port: 443, tls: true })]` → `[{ port: 80, host: 'localhost', tls: false }, { port: 443, host: 'localhost', tls: true }]`
+5. Виклик `Director.admin(new UB())` → `{ roles: ['admin', 'user'], name: 'root' }`
+6. Виклик `String(new H('ul').add(new H('li').add('a')).add(new H('li').add('b')))` → `'<ul><li>a</li><li>b</li></ul>'`
+7. Виклик `(() => { const b = new B().add(1).add(2); return [b.build(), b.add(3).build(), b.build()]; })()` → `[[1, 2], [3], []]`
+8. Виклик `(() => { let e; try { new B().count(-1); } catch (x) { e = x.name; } return [new B().count(5).build(), e]; })()` → `[5, 'RangeError']`
+9. Виклик `new UB().host('a.com').path('/s').query('q', 'x y').query('p', 2).build()` → `'https://a.com/s?q=x+y&p=2'`
+10. Виклик `new Ins().into('u').set('name', "O'Neil").set('age', 30).build()` → `'INSERT INTO u (name, age) VALUES ('O''Neil', 30)'`
+11. Покрокове створення складного об'єкта з багатьма необов'язковими параметрами, замість конструктора з довгим списком аргументів і `undefined`
+12. Factory створює об'єкт одним викликом залежно від типу; Builder збирає один складний об'єкт поступово, дозволяючи керувати кроками
+13. Коли достатньо об'єкта-опцій із значеннями за замовчуванням (`{ ...defaults, ...opts }`); builder корисний за валідації між кроками та незмінності
+14. Фіксує результат: перевіряє повноту даних і повертає готовий (часто незмінний) об'єкт

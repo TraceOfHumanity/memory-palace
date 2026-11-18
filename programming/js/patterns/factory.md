@@ -286,3 +286,94 @@ console.log(parserFor("data.csv").parse("a,b\n1,2"));
 - У JS фабрика часто просто функція, що повертає об'єкт: без `new`, без проблем із `this`, приватний стан у замиканні (ціна — власні копії методів і немає `instanceof`).
 - Фабрика вміє те, чого не вміє `new`: кешувати/перевикористовувати екземпляри, повертати різні типи, створювати асинхронно (статичний `async create`, бо конструктор не може бути `async`).
 - Не ускладнюй: для одного класу без варіацій достатньо `new`; у Nest роль фабрики виконує provider з `useFactory`.
+
+## Задачі для закріплення
+
+12 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Реалізуйте Simple Factory: `createShape(type, ...args)`.
+
+```js
+class Circle { constructor(r) { this.r = r; } area() { return +(Math.PI * this.r ** 2).toFixed(2); } } class Rect { constructor(w, h) { this.w = w; this.h = h; } area() { return this.w * this.h; } } const createShape = (t, ...a) => { const m = { circle: Circle, rect: Rect }; if (!m[t]) throw new Error('unknown ' + t); return new m[t](...a); }
+```
+
+**2.** Реєстр фабрик: `register(type, fn)` без зміни коду.
+
+```js
+const reg = new Map(); const register = (t, f) => reg.set(t, f); const create = (t, ...a) => reg.get(t)(...a)
+```
+
+**3.** Factory Method: базовий клас із абстрактним `create`.
+
+```js
+class Dialog { render() { return this.create().draw(); } create() { throw new Error('abstract'); } } class WinBtn { draw() { return 'win'; } } class MacBtn { draw() { return 'mac'; } } class WinDialog extends Dialog { create() { return new WinBtn(); } } class MacDialog extends Dialog { create() { return new MacBtn(); } }
+```
+
+### Рівень 2. Деталі й поведінка
+
+**4.** Abstract Factory: сімейства об'єктів (темна/світла тема).
+
+```js
+const dark = { button: () => 'dark-btn', input: () => 'dark-input' }; const light = { button: () => 'light-btn', input: () => 'light-input' }; const ui = (f) => [f.button(), f.input()]
+```
+
+**5.** Фабрика функцій: `makeAdder(n)`.
+
+```js
+const makeAdder = (n) => (x) => x + n
+```
+
+**6.** Фабрика з пулом: повторне використання об'єктів.
+
+```js
+const pool = () => { const free = []; let made = 0; return { get: () => free.pop() ?? { id: ++made }, release: (o) => free.push(o), get made() { return made; } }; }
+```
+
+### Рівень 3. Нюанси та пастки
+
+**7.** Фабрика парсерів за розширенням файлу.
+
+```js
+const parsers = { json: JSON.parse, csv: (s) => s.split(',') }; const parse = (name, s) => parsers[name.split('.').pop()](s)
+```
+
+**8.** Фабрика з валідацією аргументів та замороженим результатом.
+
+```js
+const makeUser = (n, a) => { if (!n) throw new Error('name'); return Object.freeze({ n, a: a ?? 0 }); }
+```
+
+**9.** Статичні фабричні методи класу: `Money.usd`, `Money.eur`.
+
+```js
+class Money { constructor(a, c) { this.a = a; this.c = c; } static usd(a) { return new Money(a, 'USD'); } static eur(a) { return new Money(a, 'EUR'); } toString() { return `${this.a} ${this.c}`; } }
+```
+
+### Рівень 4. Практика
+
+**10.** Фабрика обробників помилок за кодом.
+
+```js
+class NotFound extends Error { constructor() { super('nf'); this.status = 404; } } class Forbidden extends Error { constructor() { super('fb'); this.status = 403; } } const err = (c) => new ({ 404: NotFound, 403: Forbidden }[c] ?? Error)()
+```
+
+**11.** Чим Factory Method відрізняється від Abstract Factory?
+
+**12.** Яку проблему вирішує Factory?
+
+### Відповіді
+
+1. Виклик `(() => { let e; try { createShape('x'); } catch (x) { e = x.message; } return [createShape('circle', 1).area(), createShape('rect', 2, 3).area(), e]; })()` → `[3.14, 6, 'unknown x']`
+2. Виклик `(() => { register('num', x => x * 2); register('str', s => s + '!'); return [create('num', 4), create('str', 'hi')]; })()` → `[8, 'hi!']`
+3. Виклик `[new WinDialog().render(), new MacDialog().render()]` → `['win', 'mac']`
+4. Виклик `[ui(dark), ui(light)]` → `[['dark-btn', 'dark-input'], ['light-btn', 'light-input']]`
+5. Виклик `[makeAdder(5)(10), makeAdder(-1)(1)]` → `[15, 0]`
+6. Виклик `(() => { const p = pool(); const a = p.get(); p.release(a); const b = p.get(); return [a === b, p.made]; })()` → `[true, 1]`
+7. Виклик `[parse('a.json', '[1,2]'), parse('b.csv', 'x,y')]` → `[[1, 2], ['x', 'y']]`
+8. Виклик `(() => { const u = makeUser('A'); u.a = 5; return [u, Object.isFrozen(u)]; })()` → `[{ n: 'A', a: 0 }, true]`
+9. Виклик `[String(Money.usd(5)), String(Money.eur(7))]` → `['5 USD', '7 EUR']`
+10. Виклик `[err(404).status, err(403).message, err(500) instanceof Error]` → `[404, 'fb', true]`
+11. Factory Method — метод, що створює один продукт і перевизначається в підкласах; Abstract Factory — інтерфейс для створення цілих сімейств пов'язаних об'єктів
+12. Ізолює код від конкретних класів: клієнт просить об'єкт за ім'ям або контрактом, а створення зосереджене в одному місці

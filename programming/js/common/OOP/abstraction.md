@@ -146,3 +146,124 @@ console.log(new Square(2).describe()); // Square: area=4.0, perimeter=8.0
 - Код, що приймає абстракцію (`Shape[]`), працює з будь-якою новою реалізацією без змін — основа принципів Open/Closed і Dependency Inversion ([open-closed.md](../SOLID/open-closed.md), [dependency-inversion.md](../SOLID/dependency-inversion.md)).
 - Типізація в TS структурна: об'єкт потрібної форми підходить і без `implements`.
 - `abstract class` поєднує контракт і спільний код; його не можна інстанціювати, а наслідуватись можна лише від одного.
+
+## Задачі для закріплення
+
+18 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Опишіть абстрактний контракт `Shape` (метод `area`) і функцію `totalArea(shapes)`, що залежить лише від контракту.
+
+```js
+class Shape { area() { throw new Error('not implemented'); } } class Circle extends Shape { constructor(r) { super(); this.r = r; } area() { return Math.PI * this.r ** 2; } } class Rect extends Shape { constructor(w, h) { super(); this.w = w; this.h = h; } area() { return this.w * this.h; } } const totalArea = (s) => s.reduce((a, x) => a + x.area(), 0)
+```
+
+**2.** Що станеться при виклику абстрактного методу, що не реалізований у нащадку?
+
+```js
+(() => { class Base { run() { throw new Error('not implemented'); } } class Child extends Base {} try { new Child().run(); } catch (e) { return e.message; } })()
+```
+
+**3.** Як заборонити створення абстрактного класу через `new`?
+
+```js
+(() => { class Abstract { constructor() { if (new.target === Abstract) throw new TypeError('abstract'); } } class Impl extends Abstract {} try { new Abstract(); } catch (e) { return [e.name, new Impl() instanceof Abstract]; } })()
+```
+
+**4.** Що поверне `duck typing`: чи потрібен `extends` для виклику методу?
+
+```js
+(() => { const notifier = { send(m) { return 'sent ' + m; } }; const notify = (n, m) => n.send(m); return notify(notifier, 'hi'); })()
+```
+
+**5.** Чи можна підмінити залежність об'єктом-заглушкою (абстракція)?
+
+```js
+(() => { const real = { fetch: () => 'net' }; const stub = { fetch: () => 'stub' }; const svc = (api) => ({ get: () => api.fetch() }); return [svc(real).get(), svc(stub).get()]; })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**6.** Чи перевіряє JS наявність методу інтерфейсу до виклику?
+
+```js
+(() => { const o = {}; try { o.send('x'); } catch (e) { return e.name; } })()
+```
+
+**7.** Як програмно перевірити, що об'єкт відповідає «інтерфейсу»?
+
+```js
+(() => { const impl = (o, ...m) => m.every(k => typeof o[k] === 'function'); return [impl({ a() {}, b() {} }, 'a', 'b'), impl({ a() {} }, 'a', 'b')]; })()
+```
+
+**8.** Що поверне поліморфний виклик через масив різних реалізацій?
+
+```js
+(() => { const a = [{ speak: () => 'woof' }, { speak: () => 'meow' }]; return a.map(x => x.speak()); })()
+```
+
+**9.** Чому абстракція зменшує зв'язність: що буде, якщо додати третю реалізацію?
+
+```js
+(() => { const render = (items) => items.map(i => i.draw()); const items = [{ draw: () => 'circle' }, { draw: () => 'square' }, { draw: () => 'triangle' }]; return render(items); })()
+```
+
+**10.** Чим абстрактний клас відрізняється від інтерфейсу (TypeScript)?
+
+### Рівень 3. Нюанси та пастки
+
+**11.** Коли краще інтерфейс, а коли абстрактний клас?
+
+**12.** Що означає «залежати від абстракції, а не від реалізації»?
+
+**13.** Що таке структурна типізація в TypeScript?
+
+**14.** Чи обов'язковий `implements` у TypeScript?
+
+**15.** Напишіть абстрактний `Storage` із шаблонним методом `save(k, v)` (викликає `validate` і `write`).
+
+```js
+class Storage { save(k, v) { this.validate(k); return this.write(k, v); } validate(k) { if (!k) throw new Error('empty key'); } write() { throw new Error('abstract'); } } class MemStorage extends Storage { m = new Map(); write(k, v) { this.m.set(k, v); return this.m.size; } }
+```
+
+### Рівень 4. Практика
+
+**16.** Напишіть `makeLogger(sink)` — абстракція `sink.write(line)`; перевірте з двома реалізаціями.
+
+```js
+const makeLogger = (sink) => ({ info: (m) => sink.write('[info] ' + m) })
+```
+
+**17.** Напишіть `Comparable`-подібний контракт: `max(items)` приймає об'єкти з `compareTo`.
+
+```js
+const max = (a) => a.reduce((m, x) => x.compareTo(m) > 0 ? x : m); class Num { constructor(v) { this.v = v; } compareTo(o) { return this.v - o.v; } }
+```
+
+**18.** Напишіть фабрику, що повертає реалізацію за ім'ям (стратегія).
+
+```js
+const strategies = { add: (a, b) => a + b, mul: (a, b) => a * b }; const calc = (op, a, b) => strategies[op](a, b)
+```
+
+### Відповіді
+
+1. Виклик `Math.round(totalArea([new Rect(2, 3), new Circle(1)]) * 100) / 100` → `9.14`
+2. `'not implemented'`
+3. `['TypeError', true]`
+4. `'sent hi'`
+5. `['net', 'stub']`
+6. `'TypeError'`
+7. `[true, false]`
+8. `['woof', 'meow']`
+9. `['circle', 'square', 'triangle']`
+10. Інтерфейс описує лише форму й зникає після компіляції; абстрактний клас може містити реалізацію й стан, існує в рантаймі та підтримує `instanceof`
+11. Інтерфейс — коли потрібен контракт без спільного коду або клас має виконувати кілька ролей; абстрактний клас — коли є спільна поведінка, яку наслідують
+12. Код оперує інтерфейсом/контрактом (`send`, `area`), тож реалізації можна підміняти без змін клієнтського коду
+13. Сумісність типів визначається формою (набором полів/методів), а не явним `implements`; об'єкт з потрібними членами підходить під інтерфейс
+14. Ні, він лише змушує компілятор перевірити відповідність і дає раннє повідомлення про помилку; без нього працює структурна сумісність
+15. Виклик `(() => { const s = new MemStorage(); let e; try { s.save('', 1); } catch (x) { e = x.message; } return [s.save('a', 1), s.save('b', 2), e]; })()` → `[1, 2, 'empty key']`
+16. Виклик `(() => { const a = []; const logger1 = makeLogger({ write: (l) => a.push(l) }); logger1.info('x'); const logger2 = makeLogger({ write: (l) => l.toUpperCase() }); return [a, logger2.info('y')]; })()` → `[['[info] x'], '[INFO] Y']`
+17. Виклик `max([new Num(3), new Num(9), new Num(5)]).v` → `9`
+18. Виклик `[calc('add', 3, 4), calc('mul', 3, 4)]` → `[7, 12]`

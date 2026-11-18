@@ -82,3 +82,100 @@ function Tooltip({ children }) {
 2. Потрібно **прочитати розмір/позицію** і **виправити** вигляд без мерехтіння → `useLayoutEffect`.
 3. Пишеш бібліотеку CSS-in-JS, що вставляє `<style>` → `useInsertionEffect`.
 4. SSR → ізоморфна заміна (React 18).
+
+## Задачі для закріплення
+
+10 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(el)` монтує елемент через `act`, `press(r)` викликає `onClick` кнопки, `text(r)` повертає текст результату; `create` і `act` беруться з `react-test-renderer`, `renderToString` — з `react-dom/server`, хуки — з `react`.
+
+### Рівень 1. Основи
+
+**1.** Порядок: рендер, layout-ефект, звичайний ефект.
+
+```jsx
+const log = [];
+function C() { log.push('render'); useLayoutEffect(() => { log.push('layout'); return () => log.push('layout-clean'); }); useEffect(() => { log.push('effect'); return () => log.push('effect-clean'); }); return <p>x</p>; }
+const t = await mount(<C />);
+await act(async () => { t.unmount(); });
+return log;
+```
+
+**2.** Скільки рендерів, якщо `setState` у `useLayoutEffect`, і що побачить користувач?
+
+```jsx
+let renders = 0;
+function C() { renders++; const [n, setN] = useState(0); useLayoutEffect(() => { setN(1); }, []); return <p>{n}</p>; }
+const t = await mount(<C />);
+return [text(t), renders];
+```
+
+**3.** SSR: чи виконується layout-ефект на сервері?
+
+```jsx
+let ran = false;
+function C() { useLayoutEffect(() => { ran = true; }); return <p>s</p>; }
+const h = renderToString(<C />);
+return [h, ran];
+```
+
+### Рівень 2. Деталі й поведінка
+
+**4.** Чи завершується layout-ефект до наступного звичайного ефекту при оновленні?
+
+```jsx
+const log = [];
+function C({ v }) { useLayoutEffect(() => { log.push('L' + v); return () => log.push('Lc' + v); }, [v]); useEffect(() => { log.push('E' + v); return () => log.push('Ec' + v); }, [v]); return <p>{v}</p>; }
+const t = await mount(<C v={1} />);
+log.length = 0;
+await act(async () => { t.update(<C v={2} />); });
+return log;
+```
+
+**5.** Layout-ефект із порожніми залежностями: скільки запусків?
+
+```jsx
+let n = 0;
+function C({ v }) { useLayoutEffect(() => { n++; }, []); return <p>{v}</p>; }
+const t = await mount(<C v={1} />);
+await act(async () => { t.update(<C v={2} />); });
+return n;
+```
+
+**6.** Вимірювання через ref у layout-ефекті (createNodeMock).
+
+```jsx
+function C() { const r = useRef(null); const [w, setW] = useState(0); useLayoutEffect(() => { setW(r.current.width); }, []); return <p ref={r}>{w}</p>; }
+let t; await act(async () => { t = TR.create(<C />, { createNodeMock: () => ({ width: 120 }) }); });
+return text(t);
+```
+
+### Рівень 3. Нюанси та пастки
+
+**7.** StrictMode: подвійний запуск layout-ефекту.
+
+```jsx
+const log = [];
+function C() { useLayoutEffect(() => { log.push('mount'); return () => log.push('cleanup'); }, []); return <p>x</p>; }
+await mount(<React.StrictMode><C /></React.StrictMode>);
+return log;
+```
+
+**8.** Чим `useLayoutEffect` відрізняється від `useEffect`?
+
+**9.** Чому слід уникати `useLayoutEffect` без потреби?
+
+### Рівень 4. Практика
+
+**10.** Типовий випадок застосування?
+
+### Відповіді
+
+1. `['render', 'layout', 'effect', 'layout-clean', 'effect-clean']`
+2. `['1', 2]`
+3. `['<p>s</p>', false]`
+4. `['Lc1', 'L2', 'Ec1', 'E2']`
+5. `1`
+6. `'120'`
+7. `['mount', 'cleanup', 'mount']`
+8. Виконується синхронно після оновлення DOM, але до малювання; блокує малювання, тому годиться для вимірювань і правок без мигання; `useEffect` — після малювання
+9. Він блокує відображення кадру та не працює на сервері (попередження); для більшості побічних ефектів достатньо `useEffect`
+10. Вимірювання розмірів/позиції елемента та синхронне позиціювання (тултипи, випадаючі списки), запобігання «стрибку» інтерфейсу

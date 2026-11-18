@@ -65,3 +65,115 @@ const onSave = useCallback(() => save(id), [id]);
 2. Так → `useCallback(fn, [усі значення з замикання])`.
 3. Не хочеш залежності від стану → функціональне оновлення (`setX(prev => ...)`) або ref.
 4. Перевір Profiler'ом, що зайві рендери зникли.
+
+## Задачі для закріплення
+
+10 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(el)` монтує елемент через `act`, `press(r)` викликає `onClick` кнопки, `text(r)` повертає текст результату; `create` і `act` беруться з `react-test-renderer`, `renderToString` — з `react-dom/server`, хуки — з `react`.
+
+### Рівень 1. Основи
+
+**1.** Чи зберігається посилання на функцію між рендерами з `useCallback`?
+
+```jsx
+const seen = new Set();
+function C({ n }) { const f = useCallback(() => 1, []); seen.add(f); return <p>{n}</p>; }
+const t = await mount(<C n={1} />);
+await act(async () => { t.update(<C n={2} />); });
+return seen.size;
+```
+
+**2.** А без `useCallback`?
+
+```jsx
+const seen = new Set();
+function C({ n }) { const f = () => 1; seen.add(f); return <p>{n}</p>; }
+const t = await mount(<C n={1} />);
+await act(async () => { t.update(<C n={2} />); });
+return seen.size;
+```
+
+**3.** Скільки разів рендериться `React.memo`-дитина зі стабільним колбеком?
+
+```jsx
+let kid = 0;
+const Kid = React.memo(function Kid({ onX }) { kid++; return <i>k</i>; });
+function P({ n }) { const onX = useCallback(() => {}, []); return <div><Kid onX={onX} />{n}</div>; }
+const t = await mount(<P n={1} />);
+await act(async () => { t.update(<P n={2} />); });
+await act(async () => { t.update(<P n={3} />); });
+return kid;
+```
+
+### Рівень 2. Деталі й поведінка
+
+**4.** А з нестабільним колбеком?
+
+```jsx
+let kid = 0;
+const Kid = React.memo(function Kid({ onX }) { kid++; return <i>k</i>; });
+function P({ n }) { const onX = () => {}; return <div><Kid onX={onX} />{n}</div>; }
+const t = await mount(<P n={1} />);
+await act(async () => { t.update(<P n={2} />); });
+await act(async () => { t.update(<P n={3} />); });
+return kid;
+```
+
+**5.** Застаріле замикання: `useCallback` з порожніми залежностями.
+
+```jsx
+let out;
+function C({ v }) { const f = useCallback(() => v, []); out = f; return <p>{v}</p>; }
+const t = await mount(<C v={1} />);
+await act(async () => { t.update(<C v={2} />); });
+return out();
+```
+
+**6.** Правильні залежності: актуальне значення.
+
+```jsx
+let out;
+function C({ v }) { const f = useCallback(() => v, [v]); out = f; return <p>{v}</p>; }
+const t = await mount(<C v={1} />);
+await act(async () => { t.update(<C v={2} />); });
+return out();
+```
+
+### Рівень 3. Нюанси та пастки
+
+**7.** `useCallback(fn, deps)` еквівалентний `useMemo(() => fn, deps)`?
+
+```jsx
+const seen = [];
+function C() { const a = useCallback(() => 1, []); const b = useMemo(() => () => 1, []); seen.push(typeof a, typeof b); return <p>x</p>; }
+await mount(<C />);
+return seen;
+```
+
+**8.** Функціональне оновлення стану дозволяє стабілізувати колбек без залежності від стану.
+
+```jsx
+const seen = new Set();
+function C() { const [n, setN] = useState(0); const inc = useCallback(() => setN(p => p + 1), []); seen.add(inc); return <button onClick={inc}>{n}</button>; }
+const t = await mount(<C />);
+await press(t); await press(t);
+return [text(t), seen.size];
+```
+
+**9.** Навіщо `useCallback`?
+
+### Рівень 4. Практика
+
+**10.** Коли `useCallback` марний?
+
+### Відповіді
+
+1. `1`
+2. `2`
+3. `1`
+4. `3`
+5. `1`
+6. `2`
+7. `['function', 'function']`
+8. `['2', 1]`
+9. Зберігає посилання на функцію між рендерами, щоб не ламати `React.memo` дітей і не запускати зайві ефекти, що залежать від цієї функції
+10. Коли функція передається звичайним DOM-елементам або дітям без `memo`, або коли залежності змінюються щоразу

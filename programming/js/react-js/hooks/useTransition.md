@@ -68,3 +68,82 @@ List render q=a                                    (список оновлен�
 3. Нетермінове → `startTransition(() => setState(...))`.
 4. Покажи `isPending` (спінер/приглушення).
 5. Дорогий дочірній компонент — додатково `React.memo`.
+
+## Задачі для закріплення
+
+8 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(el)` монтує елемент через `act`, `press(r)` викликає `onClick` кнопки, `text(r)` повертає текст результату; `create` і `act` беруться з `react-test-renderer`, `renderToString` — з `react-dom/server`, хуки — з `react`.
+
+### Рівень 1. Основи
+
+**1.** Що повертає `useTransition`?
+
+```jsx
+function C() { const r = useTransition(); return <p>{[Array.isArray(r), r.length, typeof r[0], typeof r[1]].join(',')}</p>; }
+return renderToString(<C />);
+```
+
+**2.** Значення `isPending` до і під час переходу.
+
+```jsx
+const log = [];
+function C() { const [p, start] = useTransition(); const [n, setN] = useState(0); log.push(p); return <button onClick={() => start(() => setN(x => x + 1))}>{n}</button>; }
+const t = await mount(<C />);
+await press(t);
+return [text(t), log];
+```
+
+### Рівень 2. Деталі й поведінка
+
+**3.** Чи застосовується оновлення стану всередині `startTransition`?
+
+```jsx
+function C() { const [n, setN] = useState(0); return <button onClick={() => startTransition(() => setN(5))}>{n}</button>; }
+const t = await mount(<C />);
+await press(t);
+return text(t);
+```
+
+**4.** Тип `startTransition` без хука та без `isPending`.
+
+```jsx
+return [typeof startTransition, typeof React.startTransition];
+```
+
+### Рівень 3. Нюанси та пастки
+
+**5.** Асинхронна дія в transition (React 19).
+
+```jsx
+function C() { const [p, start] = useTransition(); const [n, setN] = useState(0); return <button onClick={() => start(async () => { await new Promise(r => setTimeout(r, 5)); setN(7); })}>{n}</button>; }
+const t = await mount(<C />);
+await press(t);
+await act(async () => { await new Promise(r => setTimeout(r, 30)); });
+return text(t);
+```
+
+**6.** Помилка в transition: де вона з'являється?
+
+```jsx
+function C() { const [p, start] = useTransition(); return <button onClick={() => start(() => { throw new Error('boom'); })}>x</button>; }
+const t = await mount(<C />);
+let err = 'none';
+try { await press(t); } catch (e) { err = e.message; }
+return err;
+```
+
+### Рівень 4. Практика
+
+**7.** Що робить `useTransition`?
+
+**8.** Чим перехід відрізняється від `setTimeout`/debounce?
+
+### Відповіді
+
+1. `'<p>true,2,boolean,function</p>'`
+2. `['1', [false, true, false]]`
+3. `'5'`
+4. `['function', 'function']`
+5. `'7'`
+6. `'boom'`
+7. Позначає оновлення стану як неюрґентне (переривне): інтерфейс лишається чуйним, а `isPending` дозволяє показати індикатор
+8. Не додає штучної затримки; React готує нове дерево у фоні та може перервати його через термінові оновлення (ввід тексту)

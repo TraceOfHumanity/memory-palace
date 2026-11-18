@@ -63,3 +63,94 @@ function useEventListener(target, name, handler) {
 2. У композаблі прибирай ресурси через `onScopeDispose`.
 3. Поза компонентом — `const scope = effectScope(); scope.run(…); scope.stop()`.
 4. Асинхронні ефекти — власний scope або `stop()`.
+
+## Задачі для закріплення
+
+12 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(Component)` монтує компонент у тестове дерево без DOM, `html(r)` серіалізує його, `click(node)` викликає `onClick`, `tick()` — це `nextTick`, `sleep(ms)` — пауза; API Vue (`ref`, `watch`, `h` та інші) імпортуються з `vue`.
+
+### Рівень 1. Основи
+
+**1.** Зупинка всіх ефектів області через `scope.stop()`.
+
+```js
+const n = ref(0); let a = 0, b = 0; const scope = effectScope(); scope.run(() => { watchEffect(() => { n.value; a++; }); watchEffect(() => { n.value; b++; }); }); n.value = 1; await tick(); scope.stop(); n.value = 2; await tick(); return [a, b];
+```
+
+**2.** `scope.run` повертає значення колбека.
+
+```js
+const scope = effectScope(); const r = scope.run(() => 42); return [r, scope.active];
+```
+
+**3.** Після `stop` `run` повертає `undefined`.
+
+```js
+const scope = effectScope(); scope.stop(); return [scope.run(() => 1), scope.active];
+```
+
+### Рівень 2. Деталі й поведінка
+
+**4.** `onScopeDispose` викликається при зупинці області.
+
+```js
+const log = []; const scope = effectScope(); scope.run(() => { onScopeDispose(() => log.push('disposed')); }); log.push('before'); scope.stop(); return log;
+```
+
+**5.** Computed усередині scope зупиняється разом із областю.
+
+```js
+const a = ref(1); const scope = effectScope(); let d; scope.run(() => { d = computed(() => a.value * 2); watchEffect(() => d.value); }); a.value = 2; scope.stop(); a.value = 3; return d.value;
+```
+
+**6.** Вкладені області: батьківський `stop` зупиняє дочірні.
+
+```js
+const n = ref(0); let inner = 0; const outer = effectScope(); outer.run(() => { const s = effectScope(); s.run(() => { watchEffect(() => { n.value; inner++; }); }); }); outer.stop(); n.value = 1; await tick(); return inner;
+```
+
+### Рівень 3. Нюанси та пастки
+
+**7.** Незалежна (detached) область переживає батьківську.
+
+```js
+const n = ref(0); let runs = 0; const outer = effectScope(); let inner; outer.run(() => { inner = effectScope(true); inner.run(() => { watchEffect(() => { n.value; runs++; }); }); }); outer.stop(); n.value = 1; await tick(); return runs;
+```
+
+**8.** `getCurrentScope`.
+
+```js
+const scope = effectScope(); let inside, outside = getCurrentScope(); scope.run(() => { inside = getCurrentScope() === scope; }); return [inside, outside === undefined];
+```
+
+**9.** Ефект, створений поза областю, не зупиняється `scope.stop()`.
+
+```js
+const n = ref(0); let runs = 0; watchEffect(() => { n.value; runs++; }); const scope = effectScope(); scope.stop(); n.value = 1; await tick(); return runs;
+```
+
+### Рівень 4. Практика
+
+**10.** `scope.pause()` / `resume()` (3.5+).
+
+```js
+const n = ref(0); let runs = 0; const scope = effectScope(); scope.run(() => { watchEffect(() => { n.value; runs++; }); }); scope.pause(); n.value = 1; await tick(); const paused = runs; scope.resume(); await tick(); return [paused, runs];
+```
+
+**11.** Навіщо `effectScope`?
+
+**12.** Що робить `onScopeDispose`?
+
+### Відповіді
+
+1. `[2, 2]`
+2. `[42, true]`
+3. `[undefined, false]`
+4. `['before', 'disposed']`
+5. `6`
+6. `1`
+7. `2`
+8. `[true, true]`
+9. `2`
+10. `[1, 2]`
+11. Групує реактивні ефекти (watch, computed) для спільного знищення, наприклад у композаблах поза компонентом або у спільних сторах
+12. Реєструє функцію очищення, що виконується при зупинці активної області (аналог `onUnmounted` для scope)

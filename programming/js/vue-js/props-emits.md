@@ -80,3 +80,108 @@ Parent ◀─ emits ─── Child
 3. Потрібна локальна копія → `ref(props.x)` + `watch(() => props.x, …)` або `computed`.
 4. Дві сторони → `v-model`.
 5. Оголоси всі emits (і валідуй за потреби).
+
+## Задачі для закріплення
+
+14 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(Component)` монтує компонент у тестове дерево без DOM, `html(r)` серіалізує його, `click(node)` викликає `onClick`, `tick()` — це `nextTick`, `sleep(ms)` — пауза; API Vue (`ref`, `watch`, `h` та інші) імпортуються з `vue`.
+
+### Рівень 1. Основи
+
+**1.** Передача props вниз.
+
+```js
+const Kid = defineComponent({ props: { title: String, n: { type: Number, default: 5 } }, setup(p) { return () => h('p', p.title + ':' + p.n); } }); return html(mount(Kid, { title: 'hi' }));
+```
+
+**2.** Значення за замовчуванням та обов'язковий prop.
+
+```js
+const Kid = defineComponent({ props: { a: { type: Number, default: 1 }, b: { type: String, required: true } }, setup(p) { return () => h('p', [p.a, p.b ?? 'none'].join(',')); } }); return html(mount(Kid));
+```
+
+**3.** Реактивність props: зміна батьківського стану оновлює дитину.
+
+```js
+const t = ref('a'); const Kid = defineComponent({ props: ['t'], setup(p) { return () => h('i', p.t); } }); const r = mount(defineComponent({ setup() { return () => h(Kid, { t: t.value }); } })); t.value = 'b'; await tick(); return html(r);
+```
+
+**4.** Props лише для читання: спроба змінити.
+
+```js
+const Kid = defineComponent({ props: ['n'], setup(p) { p.n = 5; return () => h('p', p.n); } }); return html(mount(Kid, { n: 1 }));
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** `emit`: подія вгору та payload.
+
+```js
+const log = []; const Kid = defineComponent({ emits: ['pick'], setup(_, { emit }) { return () => h('button', { onClick: () => emit('pick', 42, 'x') }, 'go'); } }); const r = mount(defineComponent({ setup() { return () => h(Kid, { onPick: (...a) => log.push(a) }); } })); click(find(r, 'button')); return log;
+```
+
+**6.** Подія без оголошення в `emits`: чи спрацьовує обробник?
+
+```js
+const log = []; const Kid = defineComponent({ setup(_, { emit }) { return () => h('button', { onClick: () => emit('ping') }, 'go'); } }); const r = mount(defineComponent({ setup() { return () => h(Kid, { onPing: () => log.push('got') }); } })); click(find(r, 'button')); return log;
+```
+
+**7.** Валідація емітованої події (об'єктний синтаксис `emits`).
+
+```js
+const Kid = defineComponent({ emits: { save: (v) => typeof v === 'number' }, setup(_, { emit }) { return () => h('button', { onClick: () => emit('save', 'not-number') }, 'x'); } }); const log = []; const r = mount(defineComponent({ setup() { return () => h(Kid, { onSave: (v) => log.push(v) }); } })); click(find(r, 'button')); return log;
+```
+
+**8.** Нормалізація імен: `kebab-case` та `camelCase` у props.
+
+```js
+const Kid = defineComponent({ props: ['userName'], setup(p) { return () => h('p', p.userName); } }); return [html(mount(Kid, { userName: 'a' })), html(mount(Kid, { 'user-name': 'b' }))];
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Булеві props: наявність без значення.
+
+```js
+const Kid = defineComponent({ props: { on: Boolean }, setup(p) { return () => h('p', String(p.on)); } }); return [html(mount(Kid)), html(mount(Kid, { on: '' })), html(mount(Kid, { on: true }))];
+```
+
+**10.** Attrs (неоголошені атрибути) потрапляють у кореневий елемент.
+
+```js
+const Kid = defineComponent({ props: ['a'], setup() { return () => h('div', 'x'); } }); return html(mount(Kid, { a: 1, id: 'main', title: 't' }));
+```
+
+**11.** `toRefs(props)` і реактивна деструктуризація.
+
+```js
+const t = ref('a'); const Kid = defineComponent({ props: ['t'], setup(p) { const { t: tt } = toRefs(p); return () => h('i', tt.value); } }); const r = mount(defineComponent({ setup() { return () => h(Kid, { t: t.value }); } })); t.value = 'z'; await tick(); return html(r);
+```
+
+**12.** Об'єкт-проп: мутація батьківського об'єкта оновлює дитину.
+
+```js
+const o = reactive({ n: 1 }); const Kid = defineComponent({ props: ['o'], setup(p) { return () => h('i', p.o.n); } }); const r = mount(defineComponent({ setup() { return () => h(Kid, { o }); } })); o.n = 2; await tick(); return html(r);
+```
+
+### Рівень 4. Практика
+
+**13.** Чому не можна змінювати props у дочірньому компоненті?
+
+**14.** Для чого оголошувати `emits`?
+
+### Відповіді
+
+1. `'<p>hi:5</p>'`
+2. `'<p>1,none</p>'`
+3. `'<i>b</i>'`
+4. `'<p>1</p>'`
+5. `[[42, 'x']]`
+6. `['got']`
+7. `['not-number']`
+8. `['<p>a</p>', '<p>b</p>']`
+9. `['<p>false</p>', '<p>true</p>', '<p>true</p>']`
+10. `'<div id="main" title="t">x</div>'`
+11. `'<i>z</i>'`
+12. `'<i>2</i>'`
+13. Це односпрямований потік даних: стан належить батькові; дитина повідомляє про зміни через `emit`, а батько оновлює проп
+14. Документує події компонента, дає валідацію та запобігає тому, що слухачі потраплять у `attrs` кореневого елемента

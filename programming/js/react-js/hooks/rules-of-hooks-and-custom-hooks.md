@@ -96,3 +96,143 @@ function useDebounce(value, ms) {
 3. Повторювана логіка зі станом → `useНазва`.
 4. Повертай стабільні значення (`useCallback`/`useMemo`).
 5. Увімкни `eslint-plugin-react-hooks` (rules-of-hooks, exhaustive-deps).
+
+## Задачі для закріплення
+
+13 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(el)` монтує елемент через `act`, `press(r)` викликає `onClick` кнопки, `text(r)` повертає текст результату; `create` і `act` беруться з `react-test-renderer`, `renderToString` — з `react-dom/server`, хуки — з `react`.
+
+### Рівень 1. Основи
+
+**1.** Що станеться, якщо викликати хук умовно, і умова змінюється?
+
+```jsx
+function C({ on }) { if (on) { useState(0); } useState('b'); return <p>x</p>; }
+const orig = console.error; console.error = () => {};
+const t = await mount(<C on={false} />);
+let err = 'none';
+try { await act(async () => { t.update(<C on={true} />); }); } catch (e) { err = e.message.slice(0, 60); }
+console.error = orig;
+return err;
+```
+
+**2.** Порядок викликів хуків важливий: чи збережуться стани при стабільному порядку?
+
+```jsx
+function C() { const [a, setA] = useState('A'); const [b, setB] = useState('B'); return <button onClick={() => setA('A2')}>{a}{b}</button>; }
+const t = await mount(<C />);
+await press(t);
+return text(t);
+```
+
+**3.** Власний хук `useCounter`: окремий стан для кожного виклику.
+
+```jsx
+function useCounter(init) { const [n, setN] = useState(init); return [n, () => setN(n + 1)]; }
+function C() { const [a, incA] = useCounter(0); const [b] = useCounter(10); return <button onClick={incA}>{a}-{b}</button>; }
+const t = await mount(<C />);
+await press(t);
+return text(t);
+```
+
+**4.** Два компоненти з тим самим хуком не діляться станом.
+
+```jsx
+function useCounter() { const [n, setN] = useState(0); return [n, () => setN(n + 1)]; }
+function A() { const [n, inc] = useCounter(); return <button onClick={inc}>{n}</button>; }
+function P() { return <div><A /><A /></div>; }
+const t = await mount(<P />);
+const btns = t.root.findAllByType('button');
+await act(async () => { btns[0].props.onClick(); });
+return t.root.findAllByType('button').map(b => b.children.join(''));
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Хук у циклі зі змінною кількістю ітерацій.
+
+```jsx
+function C({ n }) { for (let i = 0; i < n; i++) useState(i); return <p>{n}</p>; }
+const orig = console.error; console.error = () => {};
+const t = await mount(<C n={1} />);
+let err = 'none';
+try { await act(async () => { t.update(<C n={2} />); }); } catch (e) { err = e.message.slice(0, 55); }
+console.error = orig;
+return err;
+```
+
+**6.** Хук після раннього `return` (спершу рендер без раннього виходу, потім із ним).
+
+```jsx
+function C({ skip }) { const [a] = useState(0); if (skip) return <p>skip</p>; const [n] = useState(1); return <p>{a}{n}</p>; }
+const orig = console.error; console.error = () => {};
+const t = await mount(<C skip={false} />);
+let err = 'none';
+try { await act(async () => { t.update(<C skip={true} />); }); } catch (e) { err = e.message.slice(0, 55); }
+console.error = orig;
+return err;
+```
+
+**7.** Кастомний хук `useToggle`.
+
+```jsx
+function useToggle(i = false) { const [v, set] = useState(i); return [v, () => set(x => !x)]; }
+function C() { const [on, toggle] = useToggle(); return <button onClick={toggle}>{String(on)}</button>; }
+const t = await mount(<C />);
+await press(t); await press(t); await press(t);
+return text(t);
+```
+
+**8.** Кастомний хук `usePrevious`.
+
+```jsx
+function usePrevious(v) { const r = useRef(); useEffect(() => { r.current = v; }); return r.current; }
+function C({ v }) { const p = usePrevious(v); return <p>{String(p)}-{v}</p>; }
+const t = await mount(<C v={1} />);
+await act(async () => { t.update(<C v={2} />); });
+return text(t);
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Кастомний хук `useLocalStorage`-подібний із початковим значенням із «сховища».
+
+```jsx
+const store = { k: 'saved' };
+function useStored(k, d) { const [v, set] = useState(() => store[k] ?? d); useEffect(() => { store[k] = v; }, [k, v]); return [v, set]; }
+function C() { const [v, set] = useStored('k', 'def'); return <button onClick={() => set('new')}>{v}</button>; }
+const t = await mount(<C />);
+await press(t);
+return [text(t), store.k];
+```
+
+**10.** Кастомний хук може викликати інші хуки; назва повинна починатися з `use` — чи перевіряє це React у рантаймі?
+
+```jsx
+function notAHook() { return useState(1)[0]; }
+function C() { return <p>{notAHook()}</p>; }
+return renderToString(<C />);
+```
+
+**11.** Основні правила хуків?
+
+**12.** Чому порядок хуків має бути сталим?
+
+### Рівень 4. Практика
+
+**13.** Що таке кастомний хук?
+
+### Відповіді
+
+1. `'Rendered more hooks than during the previous render.'`
+2. `'A2B'`
+3. `'1-10'`
+4. `['1', '0']`
+5. `'Rendered more hooks than during the previous render.'`
+6. `'Rendered fewer hooks than expected. This may be caused '`
+7. `'true'`
+8. `'1-2'`
+9. `['new', 'new']`
+10. `'<p>1</p>'`
+11. 1) Викликати лише на верхньому рівні (не в умовах, циклах, вкладених функціях); 2) викликати лише з компонентів або кастомних хуків
+12. React зіставляє стан із хуками за порядком виклику; зміна порядку призводить до плутанини станів або помилки «Rendered more hooks than during the previous render»
+13. Функція з префіксом `use`, що викликає інші хуки та інкапсулює повторювану логіку стану й ефектів; кожен виклик має власний ізольований стан

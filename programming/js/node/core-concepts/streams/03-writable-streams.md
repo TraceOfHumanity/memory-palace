@@ -163,3 +163,123 @@ main().catch((err) => console.error("Demo failed:", err));
 - Ігнорування backpressure — необмежене зростання буфера в пам'яті.
 - `pipe()`/`pipeline()` роблять це автоматично — рекомендований спосіб з'єднувати потоки.
 - `cork()`/`uncork()` накопичують кілька `write()` і відправляють їх одним пакетом.
+
+## Задачі для закріплення
+
+15 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в Node.js 24; `fs` — `node:fs`, `fsp` — `node:fs/promises`, `dir` — порожня тимчасова директорія, `path`, `os`, `stream`, `events` — відповідні `node:`-модулі.
+
+### Рівень 1. Основи
+
+**1.** Що повертає `write()` для малого та великого чанка (highWaterMark 10)?
+
+```node
+(() => { const w = new Writable({ highWaterMark: 10, write(c, e, cb) { setTimeout(cb, 5); } }); return [w.write('abc'), w.write('x'.repeat(20)), w.writableLength, w.writableNeedDrain]; })()
+```
+
+**2.** Що означає `false` з `write()` і коли виникає `drain`?
+
+```node
+(async () => { const w = new Writable({ highWaterMark: 4, write(c, e, cb) { setTimeout(cb, 5); } }); const r = w.write('12345'); const t = Date.now(); await events.once(w, 'drain'); return [r, w.writableLength, Date.now() - t >= 4]; })()
+```
+
+**3.** Що виведе порядок: `write`, `end`, `finish`, `close`?
+
+```node
+(async () => { const L = []; const w = new Writable({ write(c, e, cb) { L.push('write ' + c); cb(); } }); w.on('finish', () => L.push('finish')); w.on('close', () => L.push('close')); w.write('a'); w.end('b'); await events.once(w, 'close'); return L; })()
+```
+
+**4.** Що станеться, якщо викликати `write` після `end`?
+
+```node
+(async () => { const w = new Writable({ write(c, e, cb) { cb(); } }); w.end(); const err = events.once(w, 'error'); w.write('x'); const [e] = await err; return e.code; })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Чи є `end(chunk)` скороченням `write(chunk); end()`?
+
+```node
+(async () => { const out = []; const w = new Writable({ write(c, e, cb) { out.push(c.toString()); cb(); } }); w.end('last'); await events.once(w, 'finish'); return out; })()
+```
+
+**6.** Що станеться при помилці в `write` (колбек з `err`)?
+
+```node
+(async () => { const w = new Writable({ write(c, e, cb) { cb(new Error('disk full')); } }); const p = events.once(w, 'error'); w.write('x'); const [e] = await p; return [e.message, w.destroyed]; })()
+```
+
+**7.** Що поверне `writable.writableHighWaterMark` за замовчуванням?
+
+```node
+[new Writable().writableHighWaterMark, new Writable({ objectMode: true }).writableHighWaterMark]
+```
+
+**8.** Запис у файл через `createWriteStream` та перевірка вмісту.
+
+```node
+(async () => { const f = path.join(dir, 'o.txt'); const w = fs.createWriteStream(f); w.write('hello '); w.end('world'); await events.once(w, 'finish'); return fs.readFileSync(f, 'utf8'); })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Що станеться з бекпрешером при ігноруванні `false` (кількість у пам'яті)?
+
+```node
+(async () => { const w = new Writable({ highWaterMark: 16, write(c, e, cb) { setTimeout(cb, 1); } }); let falses = 0; for (let i = 0; i < 100; i++) if (!w.write('x'.repeat(8))) falses++; const len = w.writableLength; w.destroy(); return [falses > 0, len]; })()
+```
+
+**10.** Правильний цикл запису з очікуванням `drain`.
+
+```node
+(async () => { let slow = 0; const out = []; const w = new Writable({ highWaterMark: 16, write(c, e, cb) { out.push(c.length); setTimeout(cb, 1); } }); for (let i = 0; i < 20; i++) { if (!w.write('x'.repeat(8))) { slow++; await events.once(w, 'drain'); } } w.end(); await events.once(w, 'finish'); return [out.length, slow > 0, w.writableLength]; })()
+```
+
+**11.** Що дає `cork()` та `uncork()`: скільки викликів `_writev`?
+
+```node
+(async () => { let writev = 0, writes = 0; const w = new Writable({ write(c, e, cb) { writes++; cb(); }, writev(chunks, cb) { writev++; cb(); } }); w.cork(); w.write('a'); w.write('b'); w.write('c'); w.uncork(); w.end(); await events.once(w, 'finish'); return [writev, writes]; })()
+```
+
+**12.** Чи може `final` виконатися перед `finish`?
+
+```node
+(async () => { const L = []; const w = new Writable({ write(c, e, cb) { cb(); }, final(cb) { L.push('final'); cb(); } }); w.on('finish', () => L.push('finish')); w.end('x'); await events.once(w, 'close'); return L; })()
+```
+
+### Рівень 4. Практика
+
+**13.** Що повертає `writable.writableFinished` та `writableEnded`?
+
+```node
+(async () => { const w = new Writable({ write(c, e, cb) { cb(); } }); const a = [w.writableEnded, w.writableFinished]; w.end(); const b = [w.writableEnded, w.writableFinished]; await events.once(w, 'finish'); return [a, b, [w.writableEnded, w.writableFinished]]; })()
+```
+
+**14.** Що відбудеться з `decodeStrings: false`?
+
+```node
+(async () => { const t = []; const w = new Writable({ decodeStrings: false, write(c, e, cb) { t.push(typeof c); cb(); } }); w.write('str'); w.write(Buffer.from('b')); w.end(); await events.once(w, 'finish'); return t; })()
+```
+
+**15.** Запис об'єктів у `objectMode` потік.
+
+```node
+(async () => { const out = []; const w = new Writable({ objectMode: true, write(o, e, cb) { out.push(o.n * 2); cb(); } }); w.write({ n: 1 }); w.end({ n: 2 }); await events.once(w, 'finish'); return out; })()
+```
+
+### Відповіді
+
+1. `[true, false, 23, true]`
+2. `[false, 0, true]`
+3. `['write a', 'write b', 'finish', 'close']`
+4. `'ERR_STREAM_WRITE_AFTER_END'`
+5. `['last']`
+6. `['disk full', true]`
+7. `[65536, 16]`
+8. `'hello world'`
+9. `[true, 800]`
+10. `[20, true, 0]`
+11. `[1, 0]`
+12. `['final', 'finish']`
+13. `[[false, false], [true, false], [true, true]]`
+14. `['string', 'object']`
+15. `[2, 4]`

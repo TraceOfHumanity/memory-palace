@@ -359,3 +359,108 @@ const total = computed(() => price.value * qty.value);
 - **Мутація результату:** `mutate.value.list.push(2)` змінює закешований об'єкт (довжина 2), доки не перерахується — результат computed слід вважати **лише для читання**.
 - **Побічний ефект у геттері** (`sideEff.value++` усередині) — геттер читає й пише одне й те саме джерело → перераховується при кожному читанні (`2` виклики за 2 читання). Не роби так.
 - **У шаблоні:** вираз `{{ method() }}` двічі + `{{ comp }}` двічі в одному рендері: метод викликався **2 рази**, `computed` — **1**.
+
+## Задачі для закріплення
+
+14 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(Component)` монтує компонент у тестове дерево без DOM, `html(r)` серіалізує його, `click(node)` викликає `onClick`, `tick()` — це `nextTick`, `sleep(ms)` — пауза; API Vue (`ref`, `watch`, `h` та інші) імпортуються з `vue`.
+
+### Рівень 1. Основи
+
+**1.** Скільки разів обчислюється `computed` при кількох зчитуваннях?
+
+```js
+let calls = 0; const a = ref(1); const d = computed(() => { calls++; return a.value * 2; }); d.value; d.value; d.value; return calls;
+```
+
+**2.** Лінивість: чи обчислюється без зчитування?
+
+```js
+let calls = 0; const a = ref(1); const d = computed(() => { calls++; return a.value; }); a.value = 2; a.value = 3; return calls;
+```
+
+**3.** Перерахунок після зміни залежності.
+
+```js
+let calls = 0; const a = ref(1); const d = computed(() => { calls++; return a.value * 2; }); d.value; a.value = 5; const v = d.value; return [v, calls];
+```
+
+**4.** Скільки перерахунків при зміні, не пов'язаній із залежностями?
+
+```js
+let calls = 0; const a = ref(1), b = ref(1); const d = computed(() => { calls++; return a.value; }); d.value; b.value = 9; d.value; return calls;
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Залежності динамічні (умовні).
+
+```js
+let calls = 0; const on = ref(true), a = ref(1), b = ref(2); const d = computed(() => { calls++; return on.value ? a.value : b.value; }); d.value; b.value = 9; d.value; const c1 = calls; on.value = false; const v = d.value; return [c1, calls, v];
+```
+
+**6.** Writable computed.
+
+```js
+const first = ref('A'), last = ref('B'); const full = computed({ get: () => first.value + ' ' + last.value, set: (v) => { [first.value, last.value] = v.split(' '); } }); full.value = 'X Y'; return [first.value, last.value, full.value];
+```
+
+**7.** Присвоєння readonly computed.
+
+```js
+const d = computed(() => 1); d.value = 5; return d.value;
+```
+
+**8.** Computed від computed: ланцюжок.
+
+```js
+let c1 = 0, c2 = 0; const a = ref(1); const d1 = computed(() => { c1++; return a.value + 1; }); const d2 = computed(() => { c2++; return d1.value * 2; }); d2.value; a.value = 2; d2.value; return [c1, c2, d2.value];
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Computed не перераховується, якщо результат той самий (3.4+).
+
+```js
+let runs = 0; const a = ref(1); const parity = computed(() => a.value % 2); watchEffect(() => { parity.value; runs++; }); a.value = 3; await tick(); return runs;
+```
+
+**10.** Побічні ефекти в computed — антипатерн: кількість викликів залежить від використання.
+
+```js
+const log = []; const a = ref(1); const d = computed(() => { log.push('calc'); return a.value; }); d.value; d.value; a.value = 2; d.value; return log;
+```
+
+**11.** `computed` з `watch`: що отримає колбек?
+
+```js
+const a = ref(1); const d = computed(() => a.value * 10); const log = []; watch(d, (n, o) => log.push([o, n])); a.value = 2; await tick(); return log;
+```
+
+**12.** Повернення об'єкта з computed: нове посилання щоразу.
+
+```js
+const a = ref(1); const d = computed(() => ({ v: a.value })); const x = d.value; const y = d.value; a.value = 2; return [x === y, d.value === x];
+```
+
+### Рівень 4. Практика
+
+**13.** Чим `computed` відрізняється від методу?
+
+**14.** Чому computed не повинен мати побічних ефектів?
+
+### Відповіді
+
+1. `1`
+2. `0`
+3. `[10, 2]`
+4. `1`
+5. `[1, 2, 9]`
+6. `['X', 'Y', 'X Y']`
+7. `1`
+8. `[2, 2, 6]`
+9. `1`
+10. `['calc', 'calc']`
+11. `[[10, 20]]`
+12. `[true, false]`
+13. Результат кешується й перераховується лише при зміні залежностей; метод виконується при кожному виклику
+14. Vue може викликати його довільну кількість разів або пропустити; він має бути чистою функцією від реактивних залежностей

@@ -82,3 +82,115 @@ Vue рекомендує **`ref` за замовчуванням** (працює
 3. Деструктурувати → `toRefs`.
 4. Заборонити запис вниз → `readonly`.
 5. Великі/сторонні об'єкти → `markRaw` / `shallowReactive` / `shallowRef`.
+
+## Задачі для закріплення
+
+15 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(Component)` монтує компонент у тестове дерево без DOM, `html(r)` серіалізує його, `click(node)` викликає `onClick`, `tick()` — це `nextTick`, `sleep(ms)` — пауза; API Vue (`ref`, `watch`, `h` та інші) імпортуються з `vue`.
+
+### Рівень 1. Основи
+
+**1.** Чи реактивний вкладений об'єкт у `reactive`?
+
+```js
+const s = reactive({ a: { b: 1 } }); const log = []; watchEffect(() => log.push(s.a.b)); s.a.b = 2; await tick(); return log;
+```
+
+**2.** Ідентичність проксі: чи дорівнює `reactive(obj)` оригіналові?
+
+```js
+const o = { a: 1 }; const p = reactive(o); return [p === o, reactive(o) === p, reactive(p) === p, toRaw(p) === o];
+```
+
+**3.** Що станеться, якщо замінити весь `reactive`-об'єкт змінною (втрата реактивності)?
+
+```js
+let s = reactive({ n: 1 }); const log = []; watchEffect(() => log.push(s.n)); s = reactive({ n: 2 }); await tick(); return log;
+```
+
+**4.** Деструктуризація втрачає реактивність.
+
+```js
+const s = reactive({ n: 1 }); let { n } = s; const log = []; watchEffect(() => log.push(s.n)); n = 5; s.n = 9; await tick(); return [n, log];
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Додавання нової властивості до `reactive`.
+
+```js
+const s = reactive({}); const log = []; watchEffect(() => log.push(s.x)); s.x = 1; await tick(); return log;
+```
+
+**6.** Видалення властивості.
+
+```js
+const s = reactive({ a: 1 }); const log = []; watchEffect(() => log.push('a' in s)); delete s.a; await tick(); return log;
+```
+
+**7.** Реактивний масив: `push` та індекс.
+
+```js
+const a = reactive([1, 2]); const log = []; watchEffect(() => log.push(a.length)); a.push(3); a[0] = 9; await tick(); return [log, [...a]];
+```
+
+**8.** Реактивний `Map` та `Set`.
+
+```js
+const m = reactive(new Map()); const s = reactive(new Set()); const log = []; watchEffect(() => log.push(m.size + ':' + s.size)); m.set('a', 1); s.add(1); await tick(); return log;
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** `readonly`: спроба змінити.
+
+```js
+const r = readonly(reactive({ a: 1 })); r.a = 2; return [r.a, isReadonly(r)];
+```
+
+**10.** `shallowReactive`: лише верхній рівень.
+
+```js
+const s = shallowReactive({ a: { b: 1 } }); let runs = 0; watchEffect(() => { s.a.b; runs++; }); s.a.b = 2; await tick(); const x = runs; s.a = { b: 3 }; await tick(); return [x, runs];
+```
+
+**11.** `markRaw` виводить об'єкт зі спостереження.
+
+```js
+const raw = markRaw({ n: 1 }); const s = reactive({ raw }); let runs = 0; watchEffect(() => { s.raw.n; runs++; }); s.raw.n = 2; await tick(); return [runs, isReactive(s.raw)];
+```
+
+**12.** `isReactive`, `isProxy`, `toRaw`.
+
+```js
+const o = { a: 1 }; const p = reactive(o); return [isReactive(p), isProxy(p), isReactive(o), toRaw(p) === o];
+```
+
+### Рівень 4. Практика
+
+**13.** Реактивність класу: методи й `this`.
+
+```js
+class C { n = 1; inc() { this.n++; } } const c = reactive(new C()); const log = []; watchEffect(() => log.push(c.n)); c.inc(); await tick(); return log;
+```
+
+**14.** Які обмеження має `reactive`?
+
+**15.** Як працює `reactive` усередині?
+
+### Відповіді
+
+1. `[1, 2]`
+2. `[false, true, true, true]`
+3. `[1]`
+4. `[5, [1, 9]]`
+5. `[undefined, 1]`
+6. `[true, false]`
+7. `[[2, 3], [9, 2, 3]]`
+8. `['0:0', '1:1']`
+9. `[1, true]`
+10. `[1, 2]`
+11. `[1, false]`
+12. `[true, true, false, true]`
+13. `[1, 2]`
+14. Працює лише з об'єктами; не можна замінити весь об'єкт без втрати реактивності; деструктуризація властивостей розриває зв'язок
+15. Обгортає об'єкт у `Proxy`: `get` збирає залежності (track), `set`/`delete` сповіщають ефекти (trigger)

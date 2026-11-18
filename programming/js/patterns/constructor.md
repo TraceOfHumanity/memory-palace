@@ -341,3 +341,108 @@ console.log(new Boolean(false) ? "truthy" : "falsy"); // truthy — об'єкт 
 - Конструктор має або створити валідний об'єкт, або кинути помилку; він не може бути `async` і не перевантажується — для цього статичні фабричні методи (`fromString`, `create`).
 - Не викликайте з конструктора перевизначувані методи: поля підкласу ще не ініціалізовані.
 - Не використовуйте `new String`/`Number`/`Boolean` — це об'єкти-обгортки.
+
+## Задачі для закріплення
+
+14 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Що робить конструктор-функція при виклику з `new`?
+
+```js
+(() => { function P(n) { this.n = n; } const p = new P('a'); return [p.n, Object.getPrototypeOf(p) === P.prototype, p instanceof P]; })()
+```
+
+**2.** Що станеться при виклику конструктора без `new` (strict)?
+
+```js
+(() => { 'use strict'; function P(n) { this.n = n; } try { P('a'); } catch (e) { return e.name; } })()
+```
+
+**3.** Додайте захист від виклику без `new` через `new.target`.
+
+```js
+function P(n) { if (!new.target) return new P(n); this.n = n; }
+```
+
+**4.** Реалізуйте конструктор із методом у прототипі і порівняйте з методом у конструкторі.
+
+```js
+function A() { this.own = function () {}; } A.prototype.shared = function () {};
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Побудуйте клас-аналог із `static` фабрикою `from`.
+
+```js
+class User { constructor(n, a) { this.n = n; this.a = a; } static from({ name, age }) { return new User(name, age); } }
+```
+
+**6.** Побудуйте конструктор із приватним станом через замикання.
+
+```js
+function Counter() { let c = 0; this.inc = () => ++c; this.get = () => c; }
+```
+
+**7.** Побудуйте конструктор із параметрами за замовчуванням і деструктуризацією.
+
+```js
+class Cfg { constructor({ host = 'localhost', port = 80 } = {}) { this.host = host; this.port = port; } }
+```
+
+**8.** Покажіть `Object.create` як альтернативу конструктору.
+
+```js
+const proto = { hi() { return 'hi ' + this.n; } }; const mk = (n) => Object.assign(Object.create(proto), { n })
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Реалізуйте конструктор, що повертає той самий об'єкт для однакового ключа (кеш).
+
+```js
+class Sym { static #c = new Map(); constructor(k) { if (Sym.#c.has(k)) return Sym.#c.get(k); this.k = k; Sym.#c.set(k, this); } }
+```
+
+**10.** Що поверне `constructor.name` та властивість `constructor` у прототипі?
+
+```js
+(() => { function Animal() {} const a = new Animal(); return [a.constructor.name, Animal.prototype.constructor === Animal]; })()
+```
+
+**11.** Що станеться, якщо конструктор повертає об'єкт?
+
+```js
+(() => { function P() { this.a = 1; return { b: 2 }; } return new P(); })()
+```
+
+**12.** Як працює `Reflect.construct` із `newTarget`?
+
+```js
+(() => { class A { constructor() { this.t = new.target.name; } } class B {} return [Reflect.construct(A, [], B).t, Reflect.construct(A, []).t]; })()
+```
+
+### Рівень 4. Практика
+
+**13.** Чим конструктор-функція відрізняється від `class`?
+
+**14.** Яку роль виконує `new.target`?
+
+### Відповіді
+
+1. `['a', true, true]`
+2. `'TypeError'`
+3. Виклик `[P('a').n, new P('b').n, P('c') instanceof P]` → `['a', 'b', true]`
+4. Виклик `(() => { const a = new A(), b = new A(); return [a.own === b.own, a.shared === b.shared]; })()` → `[false, true]`
+5. Виклик `User.from({ name: 'A', age: 3 })` → `{ n: 'A', a: 3 }`
+6. Виклик `(() => { const x = new Counter(); x.inc(); x.inc(); return [x.get(), x.c]; })()` → `[2, undefined]`
+7. Виклик `[new Cfg(), new Cfg({ port: 8080 }), new Cfg({ host: 'x', port: 1 })]` → `[{ host: 'localhost', port: 80 }, { host: 'localhost', port: 8080 }, { host: 'x', port: 1 }]`
+8. Виклик `[mk('a').hi(), Object.getPrototypeOf(mk('b')) === proto]` → `['hi a', true]`
+9. Виклик `[new Sym('a') === new Sym('a'), new Sym('a') === new Sym('b')]` → `[true, false]`
+10. `['Animal', true]`
+11. `{ b: 2 }`
+12. `['B', 'A']`
+13. Клас не можна викликати без `new`, методи не enumerable, тіло — у strict mode, є `extends`/`super` та приватні поля; функція-конструктор гнучкіша, але схильна до помилок
+14. Показує, чи функцію викликали через `new` і з яким конструктором; використовують для захисту й абстрактних класів

@@ -127,3 +127,97 @@ await fsPromises.rm(demoFilePath, { force: true });
 - `eventType` має лише два значення: `"change"` (змінився вміст/метадані) і `"rename"` (створення, видалення й перейменування — усі три під однією назвою!) — щоб розрізнити видалення від перейменування, треба додатково перевірити, чи файл ще існує.
 - Для реальних проєктів (build-тули, hot-reload) типово використовують сторонню бібліотеку (chokidar), що згладжує міжплатформні розбіжності й додає debouncing, а не `fs.watch()` напряму.
 - `fs/promises.watch()` дає той самий механізм як асинхронний ітератор (`for await...of`) — зупиняється через `AbortController`, природніше поєднується з `async`/`await`-кодом.
+
+## Задачі для закріплення
+
+13 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в Node.js 24; `fs` — `node:fs`, `fsp` — `node:fs/promises`, `dir` — порожня тимчасова директорія, `path`, `os`, `stream`, `events` — відповідні `node:`-модулі.
+
+### Рівень 1. Основи
+
+**1.** Що отримає слухач `fs.watch` після запису у файл?
+
+```node
+(async () => { const f = path.join(dir, 'w.txt'); fs.writeFileSync(f, 'a'); const ev = []; const w = fs.watch(f, (t, n) => ev.push([t, n])); await new Promise(r => setTimeout(r, 50)); fs.writeFileSync(f, 'b'); await new Promise(r => setTimeout(r, 200)); w.close(); return [ev.length > 0, ev[0]]; })()
+```
+
+**2.** Що відбудеться при створенні файлу у спостережуваній директорії?
+
+```node
+(async () => { const ev = []; const w = fs.watch(dir, (t, n) => ev.push([t, n])); await new Promise(r => setTimeout(r, 50)); fs.writeFileSync(path.join(dir, 'new.txt'), 'x'); await new Promise(r => setTimeout(r, 200)); w.close(); return [ev.some(e => e[1] === 'new.txt'), [...new Set(ev.map(e => e[0]))].sort()]; })()
+```
+
+**3.** Що відбудеться при видаленні файлу?
+
+```node
+(async () => { const f = path.join(dir, 'd.txt'); fs.writeFileSync(f, ''); const ev = []; const w = fs.watch(dir, (t, n) => ev.push([t, n])); await new Promise(r => setTimeout(r, 50)); fs.unlinkSync(f); await new Promise(r => setTimeout(r, 200)); w.close(); return ev.map(e => e[0]); })()
+```
+
+**4.** Що відбудеться при перейменуванні файлу?
+
+```node
+(async () => { const f = path.join(dir, 'a.txt'); fs.writeFileSync(f, ''); const ev = []; const w = fs.watch(dir, (t, n) => ev.push([t, n])); await new Promise(r => setTimeout(r, 50)); fs.renameSync(f, path.join(dir, 'b.txt')); await new Promise(r => setTimeout(r, 200)); w.close(); return [ev.map(e => e[0]), ev.map(e => e[1]).sort()]; })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Скільки подій приходить за один `writeFile`?
+
+```node
+(async () => { const f = path.join(dir, 'w.txt'); fs.writeFileSync(f, ''); let n = 0; const w = fs.watch(f, () => n++); await new Promise(r => setTimeout(r, 50)); fs.writeFileSync(f, 'x'.repeat(100000)); await new Promise(r => setTimeout(r, 200)); w.close(); return n >= 1; })()
+```
+
+**6.** Як зупинити спостереження і що станеться після `close()`?
+
+```node
+(async () => { const f = path.join(dir, 'w.txt'); fs.writeFileSync(f, ''); let n = 0; const w = fs.watch(f, () => n++); w.close(); fs.writeFileSync(f, 'x'); await new Promise(r => setTimeout(r, 100)); return n; })()
+```
+
+**7.** Що станеться при `watch` неіснуючого шляху?
+
+```node
+(() => { try { fs.watch(path.join(dir, 'ghost')); } catch (e) { return e.code; } })()
+```
+
+**8.** Як працює `watch` через async-ітератор і `AbortController`?
+
+```node
+(async () => { const f = path.join(dir, 'a.txt'); fs.writeFileSync(f, ''); const ac = new AbortController(); const got = []; const p = (async () => { try { for await (const e of fsp.watch(dir, { signal: ac.signal })) { got.push(e.filename); ac.abort(); } } catch (e) { return e.name; } })(); await new Promise(r => setTimeout(r, 50)); fs.writeFileSync(f, 'z'); const r = await p; return [got.length, r]; })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Що повертає `fs.watchFile` — і чим він відрізняється від `watch` (опитування)?
+
+```node
+(async () => { const f = path.join(dir, 'p.txt'); fs.writeFileSync(f, '1'); const seen = []; fs.watchFile(f, { interval: 20 }, (cur, prev) => seen.push([cur.size, prev.size])); await new Promise(r => setTimeout(r, 60)); fs.writeFileSync(f, '12345'); await new Promise(r => setTimeout(r, 150)); fs.unwatchFile(f); return seen.length > 0 && seen[0]; })()
+```
+
+**10.** Чи генерує `watch` рядки `filename` завжди?
+
+```node
+(() => { const w = fs.watch(dir); const r = [typeof w.close, w.constructor.name]; w.close(); return r; })()
+```
+
+**11.** Чому `fs.watch` не завжди стабільний між платформами?
+
+**12.** Чим `eventType` `change` відрізняється від `rename`?
+
+### Рівень 4. Практика
+
+**13.** Як уникнути дублювання подій (debounce)?
+
+### Відповіді
+
+1. `[true, ['change', 'w.txt']]`
+2. `[true, ['rename']]`
+3. `['rename']`
+4. `[['rename', 'rename'], ['a.txt', 'b.txt']]`
+5. `true`
+6. `0`
+7. `'ENOENT'`
+8. `[1, 'AbortError']`
+9. `[5, 1]`
+10. `['function', 'FSWatcher']`
+11. Він спирається на механізми ОС (inotify, FSEvents, ReadDirectoryChangesW); кількість і тип подій, доступність `filename` та поведінка при перейменуваннях різняться; для надійності використовують бібліотеки на кшталт chokidar
+12. `change` — змінився вміст; `rename` — файл з'явився, зник чи перейменований (у спостережуваній директорії також створення/видалення)
+13. Скидати таймер при кожній події й обробляти зміну лише після паузи (наприклад, 50–100 мс)

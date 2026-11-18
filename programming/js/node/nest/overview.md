@@ -209,3 +209,197 @@ nest generate service users
 - Запит проходить через конвеєр: middleware → guards → pipes → controller handler → interceptors → exception filters (кожен — тема окремої майбутньої нотатки).
 - `NestFactory.create(AppModule)` у `main.ts` — момент, коли весь цей граф реально будується й застосунок «оживає».
 - Вибір Nest vs «голий» Express — компроміс між архітектурною дисципліною (яка окупається на великих, довгострокових проєктах) і швидкістю написання простого коду (де зручніший мінімалізм Express).
+
+## Задачі для закріплення
+
+17 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах усі експорти `@nestjs/common` і `NestFactory` імпортовані, `boot(Module)` запускає застосунок на вільному порту й повертає `{ url, close }`, а `get(url)` повертає `{ status, body }`.
+
+### Рівень 1. Основи
+
+**1.** Мінімальний застосунок: контролер, сервіс, модуль і запит `GET /hello`.
+
+```ts
+@Injectable() class Svc { greet() { return 'hello'; } }
+@Controller() class Ctl { constructor(private s: Svc) {} @Get('hello') h() { return this.s.greet(); } }
+@Module({ controllers: [Ctl], providers: [Svc] }) class AppModule {}
+const a = await boot(AppModule);
+const r = await get(a.url + '/hello');
+await a.close();
+return [r.status, r.body];
+```
+
+**2.** Що поверне Nest, якщо маршруту не існує?
+
+```ts
+@Controller() class Ctl { @Get('a') a() { return 'a'; } }
+@Module({ controllers: [Ctl] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/nope');
+await a.close();
+return [r.status, JSON.parse(r.body)];
+```
+
+**3.** Об'єкт у відповіді серіалізується в JSON із заголовком `Content-Type`.
+
+```ts
+@Controller() class Ctl { @Get() a() { return { ok: true, n: [1, 2] }; } }
+@Module({ controllers: [Ctl] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/');
+await a.close();
+return [r.body, r.headers.get('content-type')];
+```
+
+**4.** Рядок у відповіді: `Content-Type` і тіло.
+
+```ts
+@Controller() class Ctl { @Get() a() { return 'plain'; } }
+@Module({ controllers: [Ctl] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/');
+await a.close();
+return [r.body, r.headers.get('content-type')];
+```
+
+**5.** Метаданні декораторів: що зберігає `@Controller('cats')`?
+
+```ts
+@Controller('cats') class C {}
+return [Reflect.getMetadata('path', C), Reflect.getMetadata('__controller__', C) ?? 'не вказано'];
+```
+
+### Рівень 2. Деталі й поведінка
+
+**6.** Метадані методу-обробника: шлях і HTTP-метод.
+
+```ts
+@Controller() class C { @Post('create') make() {} }
+const proto = C.prototype.make;
+return [Reflect.getMetadata('path', proto), Reflect.getMetadata('method', proto)];
+```
+
+**7.** Метадані параметрів конструктора (`design:paramtypes`).
+
+```ts
+@Injectable() class A {}
+@Injectable() class B { constructor(public a: A) {} }
+const types = Reflect.getMetadata('design:paramtypes', B);
+return [types.length, types[0] === A, types[0].name];
+```
+
+**8.** Один екземпляр сервісу в різних контролерах (singleton).
+
+```ts
+@Injectable() class S { id = Math.random(); }
+@Controller('a') class A { constructor(public s: S) {} @Get() g() { return this.s.id; } }
+@Controller('b') class B { constructor(public s: S) {} @Get() g() { return this.s.id; } }
+@Module({ controllers: [A, B], providers: [S] }) class M {}
+const a = await boot(M);
+const x = await get(a.url + '/a'), y = await get(a.url + '/b');
+await a.close();
+return x.body === y.body;
+```
+
+**9.** Що станеться, якщо провайдер не зареєстровано в модулі?
+
+```ts
+const first = (e: any) => String(e.message).split('\n')[0];
+@Injectable() class S {}
+@Controller() class C { constructor(private s: S) {} @Get() g() { return 1; } }
+@Module({ controllers: [C] }) class M {}
+try { await boot(M); } catch (e) { return first(e); }
+```
+
+**10.** Порядок життєвого циклу: `onModuleInit`, `onApplicationBootstrap`, `onModuleDestroy`.
+
+```ts
+const log: string[] = [];
+@Injectable() class S implements OnModuleInit, OnApplicationBootstrap, OnModuleDestroy { constructor() { log.push('constructor'); } onModuleInit() { log.push('init'); } onApplicationBootstrap() { log.push('bootstrap'); } onModuleDestroy() { log.push('destroy'); } }
+@Module({ providers: [S] }) class M {}
+const a = await boot(M);
+log.push('listening');
+await a.close();
+return log;
+```
+
+### Рівень 3. Нюанси та пастки
+
+**11.** Глобальний префікс `setGlobalPrefix`.
+
+```ts
+@Controller('users') class U { @Get() l() { return 'users'; } }
+@Module({ controllers: [U] }) class M {}
+const app = await NestFactory.create(M, { logger: false });
+app.setGlobalPrefix('api');
+await app.listen(0, '127.0.0.1');
+const url = 'http://127.0.0.1:' + app.getHttpServer().address().port;
+const a = await get(url + '/api/users'), b = await get(url + '/users');
+await app.close();
+return [a.status, b.status];
+```
+
+**12.** Кількість шарів: middleware → guard → pipe → handler: порядок виконання.
+
+```ts
+const log: string[] = [];
+@Injectable() class G implements CanActivate { canActivate() { log.push('guard'); return true; } }
+@Injectable() class P implements PipeTransform { transform(v: any) { log.push('pipe'); return v; } }
+@Controller() class C { @UseGuards(G) @Get(':id') h(@Param('id', P) id: string) { log.push('handler'); return id; } }
+@Module({ controllers: [C] }) class M {}
+const app = await NestFactory.create(M, { logger: false });
+app.use((req: any, res: any, next: any) => { log.push('middleware'); next(); });
+await app.listen(0, '127.0.0.1');
+await get('http://127.0.0.1:' + app.getHttpServer().address().port + '/7');
+await app.close();
+return log;
+```
+
+**13.** Виняток `NotFoundException` перетворюється на HTTP 404 із тілом.
+
+```ts
+@Controller() class C { @Get() g() { throw new NotFoundException('no cat'); } }
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/');
+await a.close();
+return [r.status, JSON.parse(r.body)];
+```
+
+**14.** Необроблена помилка → 500.
+
+```ts
+@Controller() class C { @Get() g() { throw new Error('boom'); } }
+@Module({ controllers: [C] }) class M {}
+const a = await boot(M);
+const r = await get(a.url + '/');
+await a.close();
+return [r.status, JSON.parse(r.body)];
+```
+
+**15.** Які три базові будівельні блоки Nest-застосунку?
+
+### Рівень 4. Практика
+
+**16.** Чим Nest відрізняється від голого Express?
+
+**17.** Для чого `reflect-metadata`?
+
+### Відповіді
+
+1. `[200, 'hello']`
+2. `[404, { message: 'Cannot GET /nope', error: 'Not Found', statusCode: 404 }]`
+3. `['{"ok":true,"n":[1,2]}', 'application/json; charset=utf-8']`
+4. `['plain', 'text/html; charset=utf-8']`
+5. `['cats', true]`
+6. `['create', 1]`
+7. `[1, true, 'A']`
+8. `true`
+9. `'Nest can't resolve dependencies of the C (?). Please make sure that the argument S at index [0] is available in the M context.'`
+10. `['constructor', 'init', 'bootstrap', 'listening', 'destroy']`
+11. `[200, 404]`
+12. `['middleware', 'guard', 'pipe', 'handler']`
+13. `[404, { message: 'no cat', error: 'Not Found', statusCode: 404 }]`
+14. `[500, { statusCode: 500, message: 'Internal server error' }]`
+15. Модулі (організація), контролери (маршрути й обробка запитів) та провайдери/сервіси (бізнес-логіка, що впроваджується через DI)
+16. Додає архітектуру: модулі, DI, декоратори, guards/pipes/interceptors, типізацію й тестування; Express залишається HTTP-шаром під капотом
+17. Зберігає метадані декораторів і типів (шляхи, параметри конструкторів), з яких Nest будує маршрути й граф залежностей

@@ -425,3 +425,97 @@ node --trace-gc myfile.js
 - [ ] Чи створюю проміжні об'єкти у циклі?
 - [ ] Чи можу я використати typed arrays?
 - [ ] Чи я профілював GC-паузи?
+
+## Задачі для закріплення
+
+13 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Реалізуйте object pool для частинок і порахуйте створені екземпляри.
+
+```js
+class Pool { constructor(mk) { this.mk = mk; this.free = []; this.created = 0; } get() { return this.free.pop() ?? (this.created++, this.mk()); } put(o) { this.free.push(o); } }
+```
+
+**2.** Скільки об'єктів створить наївний цикл на 1000 ітерацій з 2 об'єктами?
+
+```js
+(() => { let n = 0; for (let i = 0; i < 1000; i++) { n++; n++; } return n; })()
+```
+
+**3.** Скільки пам'яті займає `Float32Array` для 1e6 елементів та масив чисел (оцінка розміру елементів)?
+
+```js
+[new Float32Array(1e6).byteLength, new Float64Array(1e6).byteLength, new Uint8Array(1e6).byteLength]
+```
+
+**4.** Як упакувати 1000 точок (x, y) у один typed array замість об'єктів?
+
+```js
+(() => { const n = 1000; const pts = new Float32Array(n * 2); for (let i = 0; i < n; i++) { pts[2 * i] = i; pts[2 * i + 1] = i * 2; } let sx = 0, sy = 0; for (let i = 0; i < n; i++) { sx += pts[2 * i]; sy += pts[2 * i + 1]; } return [pts.length, pts.byteLength, sx, sy]; })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Що поверне `buffer.byteLength` і спільне використання між `Float32Array` та `Uint32Array`?
+
+```js
+(() => { const b = new ArrayBuffer(8); const f = new Float32Array(b); const u = new Uint32Array(b); f[0] = 1; return [b.byteLength, f.length, u[0].toString(16)]; })()
+```
+
+**6.** Рядок як `join` проти конкатенації в циклі: чи однаковий результат?
+
+```js
+(() => { let s = ''; const p = []; for (let i = 0; i < 5; i++) { s += i + ','; p.push(i); } return [s, p.join(',') + ',']; })()
+```
+
+**7.** Чи звільняє `arr.length = 0` масив для GC (посилання)?
+
+```js
+(() => { const a = [{ x: 1 }, { x: 2 }]; const n = a.length; a.length = 0; return [n, a.length]; })()
+```
+
+**8.** WeakRef та FinalizationRegistry: чи доступний `deref` одразу?
+
+```js
+(() => { let o = { a: 1 }; const r = new WeakRef(o); return [typeof r.deref(), r.deref() === o]; })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** Що поверне `process.memoryUsage()` за структурою ключів?
+
+```js
+Object.keys(process.memoryUsage()).sort()
+```
+
+**10.** Утримання пам'яті: скільки елементів лишається в кеші з лімітом LRU 3 після 10 вставок?
+
+```js
+(() => { const m = new Map(); for (let i = 0; i < 10; i++) { m.set(i, i); if (m.size > 3) m.delete(m.keys().next().value); } return [...m.keys()]; })()
+```
+
+**11.** Чому часті малі алокації навантажують GC?
+
+**12.** Коли object pool виправданий?
+
+### Рівень 4. Практика
+
+**13.** Чому typed arrays зменшують навантаження GC?
+
+### Відповіді
+
+1. Виклик `(() => { const p = new Pool(() => ({ x: 0 })); for (let i = 0; i < 1000; i++) { const a = p.get(); const b = p.get(); p.put(a); p.put(b); } return [p.created, p.free.length]; })()` → `[2, 2]`
+2. `2000`
+3. `[4000000, 8000000, 1000000]`
+4. `[2000, 8000, 499500, 999000]`
+5. `[8, 2, '3f800000']`
+6. `['0,1,2,3,4,', '0,1,2,3,4,']`
+7. `[2, 0]`
+8. `['object', true]`
+9. `['arrayBuffers', 'external', 'heapTotal', 'heapUsed', 'rss']`
+10. `[7, 8, 9]`
+11. Молоде покоління (scavenge) наповнюється швидко, частіші збірки; об'єкти, що вижили, переносяться в старе покоління, де збірка дорожча (mark-sweep-compact)
+12. Для дуже частих короткоживучих однотипних об'єктів (частинки, події, вектори) у гарячих циклах; у решті випадків ускладнює код без виграшу
+13. Дані лежать в одному безперервному буфері без окремих об'єктів на елемент; GC відстежує один об'єкт замість мільйонів

@@ -968,3 +968,700 @@ Closes #123
 - Віддалені: `clone`, `remote`, `fetch` (безпечно), `pull` (= fetch + merge/rebase), `push`, upstream tracking, `--force-with-lease`.
 - Інструменти: `stash`, `tag`, `.gitignore`, `bisect`, `blame`, `worktree`, hooks.
 - Практики: невеликі атомарні коміти з осмисленими повідомленнями, feature-гілки + PR, секрети не комітити.
+
+## Задачі для закріплення
+
+47 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Команди виконуйте в порожній директорії: у ній виконано `git init -b main`, налаштовано `user.name`, `user.email` та зафіксовано дати комітів, тому хеші повторювані.
+
+### Рівень 1. Основи
+
+**1.** Який стан показує `git status -s` для нового, зміненого та проіндексованого файлів?
+
+```bash
+echo a > new.txt
+echo b > staged.txt && git add staged.txt
+echo base > tracked.txt && git add tracked.txt && git commit -qm base
+echo changed >> tracked.txt
+git status -s
+```
+
+**2.** Що виведе `git status` у порожньому репозиторії?
+
+```bash
+git status | head -3
+```
+
+**3.** Додайте до індексу лише один файл із двох: що покаже `git status -s`?
+
+```bash
+echo 1 > a; echo 2 > b
+git add a
+git status -s
+```
+
+**4.** Як виглядає `git diff` та `git diff --staged`?
+
+```bash
+echo one > f; git add f; git commit -qm c1
+echo two >> f
+git diff --stat
+git add f
+git diff --stat
+git diff --staged --stat
+```
+
+**5.** Що показує `git log --oneline` для трьох комітів?
+
+```bash
+for i in 1 2 3; do echo $i > f; git add f; git commit -qm "commit $i"; done
+git log --oneline
+```
+
+**6.** `git log --oneline --graph` для гілки зі злиттям.
+
+```bash
+echo a > f; git add f; git commit -qm A
+git switch -q -c feat; echo b > g; git add g; git commit -qm B
+git switch -q main; echo c > h; git add h; git commit -qm C
+git merge -q --no-ff feat -m M
+git log --oneline --graph
+```
+
+**7.** Що таке `HEAD`, і що поверне `git rev-parse HEAD~1`?
+
+```bash
+for i in 1 2 3; do echo $i > f; git add f; git commit -qm "c$i"; done
+for r in HEAD HEAD~1 HEAD~2; do git rev-parse --short $r; done
+git log -1 --format=%s HEAD~2
+```
+
+**8.** Які об'єкти створює один коміт (blob, tree, commit)?
+
+```bash
+echo hello > f
+git add f
+git commit -qm init
+git cat-file -t HEAD
+git cat-file -t HEAD^{tree}
+git cat-file -t HEAD:f
+git cat-file -p HEAD:f
+```
+
+**9.** Вміст об'єкта-коміту.
+
+```bash
+echo hello > f; git add f; git commit -qm init
+git cat-file -p HEAD
+```
+
+**10.** Одинаковий вміст = один blob: хеш для `hello`.
+
+```bash
+echo hello | git hash-object --stdin
+printf 'hello\n' > a; printf 'hello\n' > b
+git hash-object a b
+```
+
+**11.** `git ls-tree` для каталогу з файлами.
+
+```bash
+mkdir d; echo 1 > d/x; echo 2 > y
+git add .; git commit -qm c
+git ls-tree HEAD
+```
+
+**12.** Скасування: `git restore` повертає зміни у робочій копії.
+
+```bash
+echo base > f; git add f; git commit -qm c
+echo dirty > f
+git restore f
+cat f
+```
+
+### Рівень 2. Деталі й поведінка
+
+**13.** `git restore --staged` знімає з індексу.
+
+```bash
+echo base > f; git add f; git commit -qm c
+echo new >> f; git add f
+git restore --staged f
+git status -s
+```
+
+**14.** `git reset --soft`, `--mixed`, `--hard`: що лишається?
+
+```bash
+for i in 1 2; do echo $i > f; git add f; git commit -qm c$i; done
+echo 3 > f; git add f; git commit -qm c3
+git reset -q --soft HEAD~1; git status -s
+git reset -q --mixed HEAD; git status -s
+git reset -q --hard HEAD~1; cat f; git log --oneline | wc -l | tr -d ' '
+```
+
+**15.** `git revert` створює новий коміт.
+
+```bash
+echo a > f; git add f; git commit -qm A
+echo b > f; git add f; git commit -qm B
+git revert --no-edit HEAD >/dev/null
+cat f
+git log --oneline | wc -l | tr -d ' '
+```
+
+**16.** `git commit --amend` змінює повідомлення та хеш.
+
+```bash
+echo a > f; git add f; git commit -qm old
+before=$(git rev-parse --short HEAD)
+git commit -q --amend -m new
+after=$(git rev-parse --short HEAD)
+[ "$before" != "$after" ] && echo hash-changed
+git log -1 --format=%s
+```
+
+**17.** `git reflog` після `reset --hard`.
+
+```bash
+echo 1 > f; git add f; git commit -qm c1
+echo 2 > f; git add f; git commit -qm c2
+git reset -q --hard HEAD~1
+git reflog | sed 's/^[0-9a-f]* //'
+```
+
+**18.** Відновлення «втраченого» коміту через `reflog`.
+
+```bash
+echo 1 > f; git add f; git commit -qm c1
+echo 2 > f; git add f; git commit -qm c2
+lost=$(git rev-parse HEAD)
+git reset -q --hard HEAD~1
+git reset -q --hard $lost
+cat f
+```
+
+**19.** Гілки: створення, перемикання та список.
+
+```bash
+echo a > f; git add f; git commit -qm A
+git branch feature
+git switch -q -c hotfix
+git branch
+```
+
+**20.** Fast-forward злиття.
+
+```bash
+echo a > f; git add f; git commit -qm A
+git switch -q -c feat; echo b >> f; git commit -qam B
+git switch -q main
+git merge feat | head -2
+git log --oneline | wc -l | tr -d ' '
+```
+
+**21.** Злиття з конфліктом: маркери в файлі.
+
+```bash
+echo base > f; git add f; git commit -qm base
+git switch -q -c a; echo from-a > f; git commit -qam A
+git switch -q main; echo from-main > f; git commit -qam M
+git merge a 2>&1 | tail -2
+cat f
+git status -s
+```
+
+**22.** Вирішення конфлікту та завершення злиття.
+
+```bash
+echo base > f; git add f; git commit -qm base
+git switch -q -c a; echo from-a > f; git commit -qam A
+git switch -q main; echo from-main > f; git commit -qam M
+git merge a >/dev/null 2>&1
+echo resolved > f; git add f; git commit -qm merged
+git log --oneline | wc -l | tr -d ' '
+cat f
+```
+
+**23.** `git merge --abort`.
+
+```bash
+echo base > f; git add f; git commit -qm base
+git switch -q -c a; echo A > f; git commit -qam A
+git switch -q main; echo M > f; git commit -qam M
+git merge a >/dev/null 2>&1
+git merge --abort
+cat f; git status -s
+```
+
+**24.** `git rebase` вирівнює історію.
+
+```bash
+echo a > f; git add f; git commit -qm A
+git switch -q -c feat; echo b > g; git add g; git commit -qm B
+git switch -q main; echo c > h; git add h; git commit -qm C
+git switch -q feat
+git rebase -q main
+git log --oneline | sed 's/^[0-9a-f]* //'
+```
+
+### Рівень 3. Нюанси та пастки
+
+**25.** `git cherry-pick`.
+
+```bash
+echo a > f; git add f; git commit -qm A
+git switch -q -c feat; echo b > g; git add g; git commit -qm B
+git switch -q main
+git cherry-pick feat >/dev/null
+git log --oneline | sed 's/^[0-9a-f]* //'
+ls
+```
+
+**26.** `git stash`: збереження й відновлення.
+
+```bash
+echo a > f; git add f; git commit -qm A
+echo dirty >> f
+git stash -q
+cat f
+git stash list | sed 's/^stash@{0}: //'
+git stash pop -q
+cat f
+```
+
+**27.** Теги: легкі та анотовані.
+
+```bash
+echo a > f; git add f; git commit -qm A
+git tag v1
+git tag -a v2 -m 'release 2'
+git tag
+git cat-file -t v1
+git cat-file -t v2
+```
+
+**28.** `git show` для тега та коміту (рядок теми).
+
+```bash
+echo a > f; git add f; git commit -qm 'first commit'
+git show --stat --format=%s HEAD | head -3
+```
+
+**29.** `.gitignore` та `git status`.
+
+```bash
+echo '*.log' > .gitignore
+touch a.log b.txt
+git status -s
+```
+
+**30.** `git check-ignore` показує правило.
+
+```bash
+echo '*.log' > .gitignore
+git check-ignore -v a.log | sed 's/\t/ /'
+```
+
+**31.** `git rm --cached`: перестати відстежувати файл, залишивши на диску.
+
+```bash
+echo a > f; git add f; git commit -qm A
+git rm -q --cached f
+git status -s
+ls
+```
+
+**32.** `git mv` і виявлення перейменування.
+
+```bash
+echo content > old.txt; git add old.txt; git commit -qm A
+git mv old.txt new.txt
+git status -s
+```
+
+**33.** `git blame` для рядків різних комітів (скільки різних комітів у авторстві рядків).
+
+```bash
+printf 'a\n' > f; git add f; git commit -qm A
+printf 'a\nb\n' > f; git commit -qam B
+git blame -s f | awk '{print $1}' | sort -u | wc -l | tr -d ' '
+```
+
+**34.** `git log -S` — пошук рядка в історії.
+
+```bash
+echo 'x = 1' > f; git add f; git commit -qm 'add x'
+echo 'y = 2' >> f; git commit -qam 'add y'
+git log --oneline -S'y = 2' | sed 's/^[0-9a-f]* //'
+```
+
+**35.** `git bisect` для пошуку поганого коміту (автоматично).
+
+```bash
+for i in 1 2 3 4 5; do echo $i > v; git add v; git commit -qm "c$i"; done
+git bisect start HEAD HEAD~4 >/dev/null
+git bisect run sh -c '[ $(cat v) -lt 3 ]' >/dev/null 2>&1
+git log -1 --format=%s refs/bisect/bad
+```
+
+**36.** `git shortlog -sn`.
+
+```bash
+for i in 1 2 3; do echo $i > f; git add f; git commit -qm c$i; done
+git shortlog -sn HEAD | sed 's/^ *//'
+```
+
+### Рівень 4. Практика
+
+**37.** Віддалений репозиторій: `clone`, `fetch`, `push` між локальними папками.
+
+```bash
+R=$(mktemp -d)
+git init -q --bare -b main $R/remote.git
+echo a > f; git add f; git commit -qm A
+git remote add origin $R/remote.git
+git push -q -u origin main
+git branch -vv | sed 's/^\* main *[0-9a-f]* /main /'
+git ls-remote origin | wc -l | tr -d ' '
+```
+
+**38.** Відмова push без актуальної історії (non-fast-forward).
+
+```bash
+R=$(mktemp -d)
+git init -q --bare -b main $R/r.git
+echo a > f; git add f; git commit -qm A
+git remote add origin $R/r.git; git push -q origin main
+git clone -q $R/r.git $R/other; (cd $R/other; echo x > x; git add x; git commit -qm X; git push -q origin main)
+echo b >> f; git commit -qam B
+git push origin main 2>&1 | /usr/bin/grep rejected | head -1 | sed 's/^ *//'
+```
+
+**39.** `git config` рівні та читання значення.
+
+```bash
+git config user.name 'Local User'
+git config --get user.name
+git config --local --list | /usr/bin/grep -c user.name
+```
+
+**40.** `git worktree`: другий робочий каталог для гілки.
+
+```bash
+echo a > f; git add f; git commit -qm A
+R=$(mktemp -d)
+git worktree add -q $R/wt -b side
+git worktree list | wc -l | tr -d ' '
+ls $R/wt
+```
+
+**41.** `git clean -n` — що буде видалено.
+
+```bash
+echo a > f; git add f; git commit -qm A
+touch junk1 junk2
+git clean -n | sort
+```
+
+**42.** `git diff` між гілками та `--name-only`.
+
+```bash
+echo a > f; git add f; git commit -qm A
+git switch -q -c b; echo 1 > g; git add g; git commit -qm B; echo 2 >> f; git commit -qam C
+git diff main..b --name-only
+```
+
+**43.** `git log --format` із власним шаблоном.
+
+```bash
+echo 1 > f; git add f; git commit -qm 'first'
+echo 2 >> f; git commit -qam 'second'
+git log --format='%h|%an|%s' | sed 's/^[0-9a-f]*|//'
+```
+
+**44.** Які три області Git?
+
+**45.** Чим `git merge` відрізняється від `git rebase`?
+
+**46.** Чим `git reset --hard` небезпечний?
+
+**47.** Що таке `HEAD`?
+
+### Відповіді
+
+1. Вивід:
+
+   ```text
+    M tracked.txt
+   ?? new.txt
+   ```
+
+2. Вивід:
+
+   ```text
+   On branch main
+   
+   No commits yet
+   ```
+
+3. Вивід:
+
+   ```text
+   A  a
+   ?? b
+   ```
+
+4. Вивід:
+
+   ```text
+    f | 1 +
+    1 file changed, 1 insertion(+)
+    f | 1 +
+    1 file changed, 1 insertion(+)
+   ```
+
+5. Вивід:
+
+   ```text
+   d0923be commit 3
+   e9758c3 commit 2
+   7ea7702 commit 1
+   ```
+
+6. Вивід:
+
+   ```text
+   *   6f11e7f M
+   |\  
+   | * 458d8a9 B
+   * | 6df261b C
+   |/  
+   * 982de88 A
+   ```
+
+7. Вивід:
+
+   ```text
+   2b06ebb
+   76fd2f7
+   4fc62e5
+   c1
+   ```
+
+8. Вивід:
+
+   ```text
+   commit
+   tree
+   blob
+   hello
+   ```
+
+9. Вивід:
+
+   ```text
+   tree 10731d0b170b98481a00bdca161e874e0ab93377
+   author Dev <dev@example.com> 1704067200 +0000
+   committer Dev <dev@example.com> 1704067200 +0000
+   
+   init
+   ```
+
+10. Вивід:
+
+   ```text
+   ce013625030ba8dba906f756967f9e9ca394464a
+   ce013625030ba8dba906f756967f9e9ca394464a
+   ce013625030ba8dba906f756967f9e9ca394464a
+   ```
+
+11. Вивід:
+
+   ```text
+   040000 tree 1808145eca0a3bc7bbbd9ec1645e022e830c05eb	d
+   100644 blob 0cfbf08886fca9a91cb753ec8734c84fcbe52c9f	y
+   ```
+
+12. `base`
+13. ` M f`
+14. Вивід:
+
+   ```text
+   M  f
+    M f
+   1
+   1
+   ```
+
+15. Вивід:
+
+   ```text
+   a
+   3
+   ```
+
+16. Вивід:
+
+   ```text
+   hash-changed
+   new
+   ```
+
+17. Вивід:
+
+   ```text
+   HEAD@{0}: reset: moving to HEAD~1
+   HEAD@{1}: commit: c2
+   HEAD@{2}: commit (initial): c1
+   ```
+
+18. `2`
+19. Вивід:
+
+   ```text
+     feature
+   * hotfix
+     main
+   ```
+
+20. Вивід:
+
+   ```text
+   Updating 982de88..c0e5596
+   Fast-forward
+   2
+   ```
+
+21. Вивід:
+
+   ```text
+   CONFLICT (content): Merge conflict in f
+   Automatic merge failed; fix conflicts and then commit the result.
+   <<<<<<< HEAD
+   from-main
+   =======
+   from-a
+   >>>>>>> a
+   UU f
+   ```
+
+22. Вивід:
+
+   ```text
+   4
+   resolved
+   ```
+
+23. `M`
+24. Вивід:
+
+   ```text
+   B
+   C
+   A
+   ```
+
+25. Вивід:
+
+   ```text
+   B
+   A
+   f
+   g
+   ```
+
+26. Вивід:
+
+   ```text
+   a
+   WIP on main: 982de88 A
+   a
+   dirty
+   ```
+
+27. Вивід:
+
+   ```text
+   v1
+   v2
+   commit
+   tag
+   ```
+
+28. Вивід:
+
+   ```text
+   first commit
+   
+    f | 1 +
+   ```
+
+29. Вивід:
+
+   ```text
+   ?? .gitignore
+   ?? b.txt
+   ```
+
+30. `.gitignore:1:*.log a.log`
+31. Вивід:
+
+   ```text
+   D  f
+   ?? f
+   f
+   ```
+
+32. `R  old.txt -> new.txt`
+33. `2`
+34. `add y`
+35. `c3`
+36. `3	Dev`
+37. Вивід:
+
+   ```text
+   main [origin/main] A
+   2
+   ```
+
+38. `! [rejected]        main -> main (fetch first)`
+39. Вивід:
+
+   ```text
+   Local User
+   1
+   ```
+
+40. Вивід:
+
+   ```text
+   2
+   f
+   ```
+
+41. Вивід:
+
+   ```text
+   Would remove junk1
+   Would remove junk2
+   ```
+
+42. Вивід:
+
+   ```text
+   f
+   g
+   ```
+
+43. Вивід:
+
+   ```text
+   Dev|second
+   Dev|first
+   ```
+
+44. Робоча директорія, індекс (staging area) і репозиторій (історія комітів); `add` переносить зміни в індекс, `commit` — в історію
+45. `merge` об'єднує гілки, зберігаючи історію та створюючи merge-коміт; `rebase` переписує коміти поверх нової бази, даючи лінійну історію (не застосовують до опублікованих гілок)
+46. Відкидає незафіксовані зміни у робочій копії й індексі без можливості відновлення (на відміну від комітів, які можна знайти через `reflog`)
+47. Вказівник на поточний коміт (зазвичай через поточну гілку); detached HEAD — коли він указує прямо на коміт

@@ -78,3 +78,101 @@ export const themeKey = Symbol() as InjectionKey<Ref<string>>;
 3. Нащадок: `inject(key, default)`.
 4. Глобально для всього застосунку → `app.provide`.
 5. Дуже динамічний глобальний стан → Pinia.
+
+## Задачі для закріплення
+
+13 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Кожен фрагмент — тіло асинхронної функції, відповідь — значення, яке воно повертає. У прикладах `mount(Component)` монтує компонент у тестове дерево без DOM, `html(r)` серіалізує його, `click(node)` викликає `onClick`, `tick()` — це `nextTick`, `sleep(ms)` — пауза; API Vue (`ref`, `watch`, `h` та інші) імпортуються з `vue`.
+
+### Рівень 1. Основи
+
+**1.** Базовий `provide` / `inject`.
+
+```js
+const Kid = defineComponent({ setup() { const v = inject('k'); return () => h('i', v); } }); const P = defineComponent({ setup() { provide('k', 'from-parent'); return () => h(Kid); } }); return html(mount(P));
+```
+
+**2.** Значення за замовчуванням, якщо провайдера немає.
+
+```js
+const Kid = defineComponent({ setup() { const v = inject('missing', 'fallback'); return () => h('i', v); } }); return html(mount(Kid));
+```
+
+**3.** Реактивність: передача `ref`.
+
+```js
+const n = ref(1); const Kid = defineComponent({ setup() { const v = inject('n'); return () => h('i', v.value); } }); const P = defineComponent({ setup() { provide('n', n); return () => h(Kid); } }); const r = mount(P); n.value = 5; await tick(); return html(r);
+```
+
+**4.** Передача примітиву (не реактивно).
+
+```js
+const n = ref(1); const Kid = defineComponent({ setup() { const v = inject('n'); return () => h('i', v); } }); const P = defineComponent({ setup() { provide('n', n.value); return () => h(Kid); } }); const r = mount(P); n.value = 5; await tick(); return html(r);
+```
+
+### Рівень 2. Деталі й поведінка
+
+**5.** Найближчий провайдер перемагає.
+
+```js
+const Kid = defineComponent({ setup() { const v = inject('k'); return () => h('i', v); } }); const Mid = defineComponent({ setup() { provide('k', 'mid'); return () => h(Kid); } }); const Top = defineComponent({ setup() { provide('k', 'top'); return () => h('div', [h(Kid), h(Mid)]); } }); return html(mount(Top));
+```
+
+**6.** Символ як ключ.
+
+```js
+const K = Symbol('k'); const Kid = defineComponent({ setup() { const v = inject(K); return () => h('i', v); } }); const P = defineComponent({ setup() { provide(K, 'sym'); return () => h(Kid); } }); return html(mount(P));
+```
+
+**7.** Патерн «значення + дія».
+
+```js
+const Kid = defineComponent({ setup() { const { count, inc } = inject('store'); return () => h('button', { onClick: inc }, count.value); } }); const P = defineComponent({ setup() { const count = ref(0); provide('store', { count, inc: () => count.value++ }); return () => h(Kid); } }); const r = mount(P); click(find(r, 'button')); await tick(); return html(r);
+```
+
+**8.** Фабрика за замовчуванням (`inject(key, () => value, true)`).
+
+```js
+let created = 0; const Kid = defineComponent({ setup() { const v = inject('m', () => { created++; return 'made'; }, true); return () => h('i', v); } }); return [html(mount(Kid)), created];
+```
+
+### Рівень 3. Нюанси та пастки
+
+**9.** `inject` без провайдера й без значення за замовчуванням.
+
+```js
+const Kid = defineComponent({ setup() { const v = inject('nothing'); return () => h('i', String(v)); } }); return html(mount(Kid));
+```
+
+**10.** Провайдер читає власне надане значення?
+
+```js
+const P = defineComponent({ setup() { provide('self', 1); const v = inject('self', 'no'); return () => h('i', v); } }); return html(mount(P));
+```
+
+**11.** `readonly` для захисту наданого стану.
+
+```js
+const state = reactive({ n: 1 }); const Kid = defineComponent({ setup() { const s = inject('s'); s.n = 99; return () => h('i', s.n); } }); const P = defineComponent({ setup() { provide('s', readonly(state)); return () => h(Kid); } }); return [html(mount(P)), state.n];
+```
+
+**12.** Яку проблему вирішує `provide/inject`?
+
+### Рівень 4. Практика
+
+**13.** Коли краще не використовувати `provide/inject`?
+
+### Відповіді
+
+1. `'<i>from-parent</i>'`
+2. `'<i>fallback</i>'`
+3. `'<i>5</i>'`
+4. `'<i>1</i>'`
+5. `'<div><i>top</i><i>mid</i></div>'`
+6. `'<i>sym</i>'`
+7. `'<button>1</button>'`
+8. `['<i>made</i>', 1]`
+9. `'<i>undefined</i>'`
+10. `'<i>no</i>'`
+11. `['<i>1</i>', 1]`
+12. Передає дані вглиб дерева без prop drilling через проміжні компоненти
+13. Для простих зв'язків «батько—дитина» (props/emit) і глобального стану, який зручніше тримати в окремому сторі

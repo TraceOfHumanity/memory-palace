@@ -211,3 +211,269 @@ const server = require("http").createServer((req, res) => {
 - `slice()`/`subarray()` дають «вікно» в ту саму пам'ять (як і в звичайного `TypedArray`) — `Buffer.from(buffer)` робить справжню копію.
 - `Buffer.concat()` об'єднує кілька буферів в один за одну алокацію; `.equals()`/`Buffer.compare()` порівнюють вміст, а не посилання.
 - Головне практичне застосування — файлова система, мережа, потоки: будь-які бінарні дані (картинки, TCP-пакети, тіло HTTP-запиту) у Node.js представлені саме через `Buffer`.
+
+## Задачі для закріплення
+
+37 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Що поверне `Buffer.from('abc')` та як вона виводиться?
+
+```js
+(() => { const b = Buffer.from('abc'); return [b.length, [...b], b.toString('hex'), b.toString('base64')]; })()
+```
+
+**2.** Скільки байтів займає кирилиця й емодзі в UTF-8?
+
+```js
+['a', 'я', '€', '😀', 'Привіт'].map(s => Buffer.byteLength(s))
+```
+
+**3.** Що поверне `Buffer.alloc(4)` і `Buffer.alloc(4, 1)`?
+
+```js
+[[...Buffer.alloc(4)], [...Buffer.alloc(4, 1)], [...Buffer.alloc(3, 'ab')]]
+```
+
+**4.** Чим відрізняються `alloc` та `allocUnsafe` щодо вмісту?
+
+```js
+[Buffer.alloc(8).every(x => x === 0), Buffer.allocUnsafe(8).length]
+```
+
+**5.** Що станеться при записі байта поза межами та значення > 255?
+
+```js
+(() => { const b = Buffer.alloc(3); b[5] = 1; b[0] = 256; b[1] = -1; b[2] = 257.9; return [[...b], b[5]]; })()
+```
+
+**6.** Що поверне `buf.write` і скільки байтів записано при нестачі місця?
+
+```js
+(() => { const b = Buffer.alloc(4); const n = b.write('привіт'); return [n, b.toString('utf8').length, [...b]]; })()
+```
+
+**7.** Що поверне `readUInt16BE` та `readUInt16LE` для `[0x01, 0x02]`?
+
+```js
+(() => { const b = Buffer.from([1, 2]); return [b.readUInt16BE(0), b.readUInt16LE(0)]; })()
+```
+
+**8.** Що поверне `readInt8` для 255 та `readUInt8`?
+
+```js
+(() => { const b = Buffer.from([255]); return [b.readInt8(0), b.readUInt8(0)]; })()
+```
+
+**9.** Запис 32-бітного числа і читання назад у різному порядку байтів?
+
+```js
+(() => { const b = Buffer.alloc(4); b.writeUInt32BE(0x12345678); return [b.toString('hex'), b.readUInt32LE(0).toString(16)]; })()
+```
+
+**10.** Що станеться при читанні за межами буфера?
+
+```js
+(() => { try { Buffer.alloc(2).readUInt32BE(0); } catch (e) { return [e.name, e.code]; } })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**11.** Що станеться при записі числа поза діапазоном?
+
+```js
+(() => { try { Buffer.alloc(1).writeUInt8(300); } catch (e) { return e.code; } })()
+```
+
+**12.** Що поверне запис і читання `double`?
+
+```js
+(() => { const b = Buffer.alloc(8); b.writeDoubleBE(1.5); return [b.toString('hex'), b.readDoubleBE()]; })()
+```
+
+**13.** Що поверне запис і читання `BigInt64`?
+
+```js
+(() => { const b = Buffer.alloc(8); b.writeBigInt64BE(-1n); return [b.toString('hex'), b.readBigUInt64BE()]; })()
+```
+
+**14.** Як різні кодування представляють «Hi»?
+
+```js
+(() => { const b = Buffer.from('Hi'); return [b.toString('hex'), b.toString('base64'), b.toString('base64url'), b.toString('binary'), b.toString('latin1')]; })()
+```
+
+**15.** Що поверне `Buffer.from(hex, 'hex')` для непарної довжини та некоректних символів?
+
+```js
+[[...Buffer.from('abc', 'hex')], [...Buffer.from('zz', 'hex')], [...Buffer.from('0aff', 'hex')]]
+```
+
+**16.** Що поверне `Buffer.from(base64, 'base64')`?
+
+```js
+[Buffer.from('SGVsbG8=', 'base64').toString(), Buffer.from('SGVsbG8', 'base64').toString(), Buffer.from('SGVsbG8=', 'base64').length]
+```
+
+**17.** Що станеться з некоректним UTF-8 при `toString`?
+
+```js
+(() => { const b = Buffer.from([0xff, 0x61, 0xc3]); return [b.toString(), b.toString().length, b.toString().charCodeAt(0)]; })()
+```
+
+**18.** Що поверне розріз символа посередині UTF-8 через `toString`?
+
+```js
+(() => { const b = Buffer.from('я'); return [b.length, b.subarray(0, 1).toString() === '\ufffd', b.toString()]; })()
+```
+
+**19.** `slice`/`subarray` — копія чи вікно?
+
+```js
+(() => { const a = Buffer.from([1, 2, 3, 4]); const v = a.subarray(1, 3); v[0] = 99; return [[...a], [...v]]; })()
+```
+
+**20.** А `Buffer.from(buf)` — копія?
+
+```js
+(() => { const a = Buffer.from([1, 2, 3]); const c = Buffer.from(a); c[0] = 99; return [[...a], [...c]]; })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**21.** Що поверне `Buffer.concat` і `compare`?
+
+```js
+(() => { const a = Buffer.from('ab'), b = Buffer.from('cd'); return [Buffer.concat([a, b]).toString(), Buffer.compare(a, b), Buffer.compare(b, a), Buffer.compare(a, Buffer.from('ab')), a.equals(Buffer.from('ab'))]; })()
+```
+
+**22.** Що поверне `indexOf`, `includes`, `lastIndexOf` у буфері?
+
+```js
+(() => { const b = Buffer.from('hello world hello'); return [b.indexOf('hello'), b.lastIndexOf('hello'), b.includes('world'), b.indexOf(Buffer.from('xyz'))]; })()
+```
+
+**23.** Що поверне `fill`, `reverse`, `swap16`?
+
+```js
+(() => { const b = Buffer.from([1, 2, 3, 4]); return [[...Buffer.from(b).reverse()], [...Buffer.from(b).swap16()], [...Buffer.alloc(5).fill('ab')]]; })()
+```
+
+**24.** Що поверне `toJSON` та `JSON.stringify`?
+
+```js
+[Buffer.from('hi').toJSON(), JSON.stringify(Buffer.from('hi'))]
+```
+
+**25.** Чи є `Buffer` нащадком `Uint8Array`?
+
+```js
+(() => { const b = Buffer.from('a'); return [b instanceof Uint8Array, Buffer.isBuffer(b), Buffer.isBuffer(new Uint8Array(1)), Object.getPrototypeOf(Buffer.prototype) === Uint8Array.prototype]; })()
+```
+
+**26.** Як `Buffer` ітерується та які значення повертає `entries`?
+
+```js
+(() => { const b = Buffer.from('ab'); return [[...b], [...b.entries()], [...b.keys()]]; })()
+```
+
+**27.** Що поверне `Buffer.isEncoding`?
+
+```js
+['utf8', 'UTF-8', 'hex', 'base64', 'ascii', 'foo'].map(e => Buffer.isEncoding(e))
+```
+
+**28.** Як перетворити число на 4 байти (big-endian) та назад вручну?
+
+```js
+(() => { const n = 0x0a0b0c0d; const b = Buffer.from([n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255]); return [b.toString('hex'), ((b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3]) >>> 0]; })()
+```
+
+**29.** Напишіть `toHex(buf)` з пробілами між байтами та `fromHex(str)`.
+
+```js
+const toHex = (b) => [...b].map(x => x.toString(16).padStart(2, '0')).join(' '); const fromHex = (s) => Buffer.from(s.replace(/\s+/g, ''), 'hex')
+```
+
+**30.** Напишіть `xorBuf(a, b)` для двох буферів рівної довжини.
+
+```js
+const xorBuf = (a, b) => Buffer.from(a.map((x, i) => x ^ b[i]))
+```
+
+### Рівень 4. Практика
+
+**31.** Напишіть простий бінарний кодек: запис `{id: u16, score: f32, name}` та читання.
+
+```js
+const enc = (o) => { const n = Buffer.from(o.name); const b = Buffer.alloc(2 + 4 + 1 + n.length); b.writeUInt16BE(o.id, 0); b.writeFloatBE(o.score, 2); b.writeUInt8(n.length, 6); n.copy(b, 7); return b; }; const dec = (b) => ({ id: b.readUInt16BE(0), score: b.readFloatBE(2), name: b.toString('utf8', 7, 7 + b.readUInt8(6)) })
+```
+
+**32.** Напишіть `chunk(buf, n)` — розбити на шматки по n байтів.
+
+```js
+const chunk = (b, n) => { const r = []; for (let i = 0; i < b.length; i += n) r.push(b.subarray(i, i + n)); return r; }
+```
+
+**33.** Напишіть `base64urlEncode(str)` без `=` та спеціальних символів вручну.
+
+```js
+const b64u = (s) => Buffer.from(s).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+```
+
+**34.** Напишіть `readLines(buf)`, що ділить буфер за `\n` без створення проміжного рядка всього буфера.
+
+```js
+const lines = (b) => { const r = []; let s = 0; for (let i = b.indexOf(10); i !== -1; i = b.indexOf(10, s)) { r.push(b.toString('utf8', s, i)); s = i + 1; } if (s < b.length) r.push(b.toString('utf8', s)); return r; }
+```
+
+**35.** Напишіть пошук магічної сигнатури PNG `89 50 4E 47`.
+
+```js
+const isPng = (b) => b.length >= 4 && b.readUInt32BE(0) === 0x89504e47
+```
+
+**36.** Для чого `Buffer.allocUnsafe` і чому його слід заповнювати?
+
+**37.** Чим `Buffer` відрізняється від рядка?
+
+### Відповіді
+
+1. `[3, [97, 98, 99], '616263', 'YWJj']`
+2. `[1, 2, 3, 4, 12]`
+3. `[[0, 0, 0, 0], [1, 1, 1, 1], [97, 98, 97]]`
+4. `[true, 8]`
+5. `[[0, 255, 1], undefined]`
+6. `[4, 2, [208, 191, 209, 128]]`
+7. `[258, 513]`
+8. `[-1, 255]`
+9. `['12345678', '78563412']`
+10. `['RangeError', 'ERR_BUFFER_OUT_OF_BOUNDS']`
+11. `'ERR_OUT_OF_RANGE'`
+12. `['3ff8000000000000', 1.5]`
+13. `['ffffffffffffffff', 18446744073709551615n]`
+14. `['4869', 'SGk=', 'SGk', 'Hi', 'Hi']`
+15. `[[171], [], [10, 255]]`
+16. `['Hello', 'Hello', 5]`
+17. `['�a�', 3, 65533]`
+18. `[2, true, 'я']`
+19. `[[1, 99, 3, 4], [99, 3]]`
+20. `[[1, 2, 3], [99, 2, 3]]`
+21. `['abcd', -1, 1, 0, true]`
+22. `[0, 12, true, -1]`
+23. `[[4, 3, 2, 1], [2, 1, 4, 3], [97, 98, 97, 98, 97]]`
+24. `[{ type: 'Buffer', data: [104, 105] }, '{"type":"Buffer","data":[104,105]}']`
+25. `[true, true, false, true]`
+26. `[[97, 98], [[0, 97], [1, 98]], [0, 1]]`
+27. `[true, true, true, true, true, false]`
+28. `['0a0b0c0d', 168496141]`
+29. Виклик `[toHex(Buffer.from('Hi!')), fromHex('48 69 21').toString()]` → `['48 69 21', 'Hi!']`
+30. Виклик `[xorBuf(Buffer.from([1, 2, 3]), Buffer.from([3, 2, 1])), xorBuf(Buffer.from('ab'), Buffer.from('ab'))].map(b => b.toString('hex'))` → `['020002', '0000']`
+31. Виклик `(() => { const b = enc({ id: 513, score: 2.5, name: 'Оля' }); return [b.length, b.toString('hex'), dec(b)]; })()` → `[13, '02014020000006d09ed0bbd18f', { id: 513, score: 2.5, name: 'Оля' }]`
+32. Виклик `chunk(Buffer.from('abcdefg'), 3).map(b => b.toString())` → `['abc', 'def', 'g']`
+33. Виклик `[b64u('subjects?_d'), b64u('>>>???'), Buffer.from('>>>???').toString('base64url')]` → `['c3ViamVjdHM_X2Q', 'Pj4-Pz8_', 'Pj4-Pz8_']`
+34. Виклик `lines(Buffer.from('a\nбв\nlast'))` → `['a', 'бв', 'last']`
+35. Виклик `[isPng(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0])), isPng(Buffer.from('GIF8')), isPng(Buffer.alloc(2))]` → `[true, false, false]`
+36. Не обнуляє пам'ять, тому швидший, але може містити залишки чужих даних; перед використанням його потрібно повністю перезаписати (`fill`)
+37. Це масив байтів фіксованої довжини без кодування; рядок — послідовність символів Unicode; кодування застосовується лише при перетворенні

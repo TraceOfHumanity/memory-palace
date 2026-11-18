@@ -144,3 +144,133 @@ main().catch((err) => console.error("Demo failed:", err));
 - `pipeline()` (краще — з `"stream/promises"`) — рекомендована альтернатива: один `await` на весь ланцюжок, автоматичне знищення всіх потоків при помилці, будь-яка кількість кроків.
 - Між кроками `pipeline()` можна ставити async-генератори — інлайн-трансформації без окремого класу.
 - Після невдалого `pipeline()` у файл частково записаний або порожній файл-приймач лишається на диску — прибирай його сам.
+
+## Задачі для закріплення
+
+17 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в Node.js 24; `fs` — `node:fs`, `fsp` — `node:fs/promises`, `dir` — порожня тимчасова директорія, `path`, `os`, `stream`, `events` — відповідні `node:`-модулі.
+
+### Рівень 1. Основи
+
+**1.** Що робить `readable.pipe(writable)` і чи закриває приймач?
+
+```node
+(async () => { const out = []; const w = new Writable({ write(c, e, cb) { out.push(c.toString()); cb(); } }); Readable.from(['a', 'b']).pipe(w); await events.once(w, 'finish'); return [out, w.writableEnded]; })()
+```
+
+**2.** Що повертає `pipe`?
+
+```node
+(() => { const w = new PassThrough(); const r = Readable.from(['x']); const ret = r.pipe(w); return ret === w; })()
+```
+
+**3.** Ланцюжок pipe: Readable → Transform → Writable.
+
+```node
+(async () => { const out = []; const up = new Transform({ transform(c, e, cb) { cb(null, c.toString().toUpperCase()); } }); const w = new Writable({ write(c, e, cb) { out.push(c.toString()); cb(); } }); Readable.from(['a', 'b']).pipe(up).pipe(w); await events.once(w, 'finish'); return out; })()
+```
+
+**4.** Головний недолік `pipe`: чи закривається приймач, якщо джерело впало?
+
+```node
+(async () => { const r = new Readable({ read() { this.destroy(new Error('src fail')); } }); const w = new Writable({ write(c, e, cb) { cb(); } }); r.on('error', () => {}); r.pipe(w); await new Promise(res => setTimeout(res, 20)); return [w.destroyed, w.writableEnded]; })()
+```
+
+**5.** А `pipeline` при тій самій помилці?
+
+```node
+(async () => { const r = new Readable({ read() { this.destroy(new Error('src fail')); } }); const w = new Writable({ write(c, e, cb) { cb(); } }); try { await sp.pipeline(r, w); } catch (e) { return [e.message, w.destroyed]; } })()
+```
+
+### Рівень 2. Деталі й поведінка
+
+**6.** Версія з колбеком: що отримає `pipeline(..., cb)`?
+
+```node
+(async () => new Promise(res => { const w = new Writable({ write(c, e, cb) { cb(); } }); pipeline(Readable.from(['a']), w, (err) => res([err ?? null])); }))()
+```
+
+**7.** Що поверне `stream/promises.pipeline` при успіху?
+
+```node
+(async () => { const w = new Writable({ write(c, e, cb) { cb(); } }); return await sp.pipeline(Readable.from(['a']), w); })()
+```
+
+**8.** Копіювання файлу через `pipeline`.
+
+```node
+(async () => { const a = path.join(dir, 'a.txt'), b = path.join(dir, 'b.txt'); fs.writeFileSync(a, 'content'.repeat(100)); await sp.pipeline(fs.createReadStream(a), fs.createWriteStream(b)); return [fs.readFileSync(b, 'utf8').length, fs.statSync(b).size]; })()
+```
+
+**9.** Стиснення gzip через `pipeline` та розмір результату.
+
+```node
+(async () => { const zlib = process.getBuiltinModule('node:zlib'); const a = path.join(dir, 'a.txt'), b = path.join(dir, 'a.gz'); fs.writeFileSync(a, 'abc'.repeat(1000)); await sp.pipeline(fs.createReadStream(a), zlib.createGzip(), fs.createWriteStream(b)); const back = zlib.gunzipSync(fs.readFileSync(b)).length; return [fs.statSync(b).size < 100, back]; })()
+```
+
+**10.** Інлайн-трансформація асинхронним генератором у `pipeline`.
+
+```node
+(async () => { const out = []; await sp.pipeline(Readable.from(['a', 'b', 'c']), async function* (src) { for await (const c of src) yield c.toUpperCase() + '!'; }, new Writable({ objectMode: true, write(c, e, cb) { out.push(c); cb(); } })); return out; })()
+```
+
+### Рівень 3. Нюанси та пастки
+
+**11.** Що відбувається з усіма потоками при помилці посередині `pipeline`?
+
+```node
+(async () => { const states = []; const a = Readable.from(['1', '2', '3']); const t = new Transform({ transform(c, e, cb) { cb(new Error('bad chunk')); } }); const w = new Writable({ write(c, e, cb) { cb(); } }); try { await sp.pipeline(a, t, w); } catch (e) { return [e.message, a.destroyed, t.destroyed, w.destroyed]; } })()
+```
+
+**12.** Backpressure у `pipe`: скільки чанків лежить у проміжному буфері при повільному приймачі?
+
+```node
+(async () => { let produced = 0; const r = new Readable({ highWaterMark: 4, read() { produced++; this.push(produced <= 1000 ? 'x'.repeat(4) : null); } }); const w = new Writable({ highWaterMark: 4, write(c, e, cb) { setTimeout(cb, 2); } }); r.pipe(w); await new Promise(res => setTimeout(res, 40)); const p = produced; r.destroy(); w.destroy(); return p < 100; })()
+```
+
+**13.** `unpipe`: що відбувається з потоком після від'єднання?
+
+```node
+(async () => { const r = Readable.from(['a', 'b']); const w = new PassThrough(); r.pipe(w); r.unpipe(w); return [r.readableFlowing, r.listenerCount('data')]; })()
+```
+
+**14.** Що повертає `pipeline` без приймача (`Readable.from(...).pipe`) і як зібрати результат у масив?
+
+```node
+(async () => { const out = await Readable.from([1, 2, 3]).map(x => x * 2).toArray(); return out; })()
+```
+
+**15.** Методи ітераторів потоків: `filter`, `map`, `take`.
+
+```node
+(async () => (await Readable.from([1, 2, 3, 4, 5, 6]).filter(x => x % 2 === 0).map(x => x * 10).take(2).toArray()))()
+```
+
+### Рівень 4. Практика
+
+**16.** `stream.compose` — що повертає?
+
+```node
+(async () => { const c = stream.compose(new Transform({ transform(ch, e, cb) { cb(null, ch.toString() + '1'); } }), new Transform({ transform(ch, e, cb) { cb(null, ch.toString() + '2'); } })); const out = []; for await (const x of Readable.from(['a']).pipe(c)) out.push(x.toString()); return out; })()
+```
+
+**17.** Чому `pipeline` рекомендовано замість `pipe`?
+
+### Відповіді
+
+1. `[['a', 'b'], true]`
+2. `true`
+3. `['A', 'B']`
+4. `[false, false]`
+5. `['src fail', true]`
+6. `[null]`
+7. `undefined`
+8. `[700, 700]`
+9. `[true, 3000]`
+10. `['A!', 'B!', 'C!']`
+11. `['bad chunk', true, true, true]`
+12. `true`
+13. `[false, 0]`
+14. `[2, 4, 6]`
+15. `[20, 40]`
+16. `['a12']`
+17. `pipeline` автоматично знищує всі потоки при помилці, не залишаючи витоків дескрипторів, і повертає єдиний колбек/promise із помилкою; `pipe` потребує окремих обробників `error` для кожного потоку

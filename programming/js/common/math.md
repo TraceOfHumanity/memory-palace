@@ -479,3 +479,305 @@ Object.getPrototypeOf(Math) === Object.prototype;   // true
 10. Очікувати `Math.sin(Math.PI)` = `0` або `tan(π/2)` = `Infinity`.
 11. `-2 ** 2` — SyntaxError; `Math.pow(-2, 2)` = `4`.
 12. Перезаписувати `Math.abs` тощо — методи writable.
+
+## Задачі для закріплення
+
+41 задач від простих до складних. Спробуйте відповісти самостійно, потім звіряйтесь із відповідями в кінці розділу. Код виконуйте в консолі браузера чи в Node.js 24.
+
+### Рівень 1. Основи
+
+**1.** Що повертають `Math.round` для .5-значень?
+
+```js
+[Math.round(2.5), Math.round(-2.5), Math.round(0.5), Math.round(-0.5), Math.round(1.4999)]
+```
+
+**2.** Чим відрізняються `floor`, `ceil`, `trunc` для від'ємних?
+
+```js
+[Math.floor(-2.5), Math.ceil(-2.5), Math.trunc(-2.5), Math.floor(2.5), Math.ceil(2.5), Math.trunc(2.5)]
+```
+
+**3.** Що поверне `Math.round(-0.4)` і `Object.is`?
+
+```js
+[Math.round(-0.4), Object.is(Math.round(-0.4), -0)]
+```
+
+**4.** Що поверне `Math.max()` та `Math.min()` без аргументів?
+
+```js
+[Math.max(), Math.min()]
+```
+
+**5.** Що поверне `Math.max` з масивом і spread?
+
+```js
+[Math.max(...[1, 5, 3]), Math.max([1, 5, 3]), Math.max.apply(null, [2, 9])]
+```
+
+**6.** Що поверне `Math.max(NaN, 1)` і `Math.max('3', 2)`?
+
+```js
+[Math.max(NaN, 1), Math.max('3', 2), Math.max(undefined, 1), Math.max(null, -1)]
+```
+
+**7.** Що поверне `Math.sign` для різних значень?
+
+```js
+[Math.sign(-5), Math.sign(0), Math.sign(-0), Math.sign(7), Math.sign(NaN), Math.sign('3')]
+```
+
+**8.** Що поверне `Math.abs`?
+
+```js
+[Math.abs(-5), Math.abs('-3'), Math.abs(null), Math.abs([]), Math.abs([2]), Math.abs({}), Math.abs(-0)]
+```
+
+**9.** Що поверне `Math.pow` та `**`?
+
+```js
+[Math.pow(2, 10), 2 ** 10, Math.pow(2, -1), Math.pow(-8, 1 / 3), 2 ** 3 ** 2, Math.pow(0, 0)]
+```
+
+**10.** Що поверне `Math.sqrt` та `Math.cbrt`?
+
+```js
+[Math.sqrt(16), Math.sqrt(-1), Math.cbrt(27), Math.cbrt(-8), Math.sqrt(2)]
+```
+
+**11.** Що поверне `Math.hypot`?
+
+```js
+[Math.hypot(3, 4), Math.hypot(), Math.hypot(1, 1, 1), Math.hypot(NaN, Infinity)]
+```
+
+### Рівень 2. Деталі й поведінка
+
+**12.** Що поверне логарифми?
+
+```js
+[Math.log(Math.E), Math.log10(1000), Math.log2(8), Math.log(0), Math.log(-1), Math.log1p(0)]
+```
+
+**13.** Що поверне `Math.exp` та `Math.expm1`?
+
+```js
+[Math.exp(0), Math.exp(1) === Math.E, Math.expm1(0), Math.exp(-Infinity)]
+```
+
+**14.** Що поверне тригонометрія у радіанах?
+
+```js
+[Math.sin(0), Math.cos(0), Math.sin(Math.PI), Math.cos(Math.PI), Math.tan(0)]
+```
+
+**15.** Чому `Math.sin(Math.PI)` не нуль?
+
+```js
+[Math.sin(Math.PI), Math.sin(Math.PI) < Number.EPSILON]
+```
+
+**16.** Як перевести градуси в радіани та назад?
+
+```js
+(() => { const rad = (d) => d * Math.PI / 180, deg = (r) => r * 180 / Math.PI; return [rad(180), deg(Math.PI / 2), Math.round(Math.sin(rad(30)) * 1e10) / 1e10]; })()
+```
+
+**17.** Що поверне `Math.atan2`?
+
+```js
+[Math.atan2(1, 1), Math.atan2(0, -1), Math.atan2(-1, 0), Math.atan2(0, 0)]
+```
+
+**18.** Що поверне `Math.asin(2)` та `Math.acos(1)`?
+
+```js
+[Math.asin(2), Math.acos(1), Math.asin(1)]
+```
+
+**19.** Що поверне гіперболічні?
+
+```js
+[Math.sinh(0), Math.cosh(0), Math.tanh(Infinity), Math.asinh(0), Math.acosh(1), Math.atanh(0)]
+```
+
+**20.** Що поверне `Math.fround` та `Math.clz32`?
+
+```js
+[Math.fround(5.5), Math.fround(5.05), Math.clz32(1), Math.clz32(0), Math.clz32(-1)]
+```
+
+**21.** Що поверне `Math.imul`?
+
+```js
+[Math.imul(3, 4), Math.imul(0xffffffff, 5), Math.imul(2 ** 31, 2)]
+```
+
+**22.** Які константи є в `Math`?
+
+```js
+[Math.PI, Math.E, Math.LN2, Math.LN10, Math.LOG2E, Math.LOG10E, Math.SQRT2, Math.SQRT1_2]
+```
+
+### Рівень 3. Нюанси та пастки
+
+**23.** Скільки властивостей у `Math` (власних імен)?
+
+```js
+[Object.getOwnPropertyNames(Math).length, typeof Math, Object.prototype.toString.call(Math)]
+```
+
+**24.** Чи можна викликати `new Math()` та `Math()`?
+
+```js
+[(() => { try { new Math(); } catch (e) { return e.name; } })(), (() => { try { Math(); } catch (e) { return e.name; } })()]
+```
+
+**25.** Що поверне `0.1 + 0.2` і як округлити до 2 знаків?
+
+```js
+[0.1 + 0.2, +(0.1 + 0.2).toFixed(2), Math.round((0.1 + 0.2) * 100) / 100]
+```
+
+**26.** Чому `1.005.toFixed(2)` дає 1.00?
+
+```js
+[(1.005).toFixed(2), Math.round(1.005 * 100) / 100, Math.round((1.005 + Number.EPSILON) * 100) / 100]
+```
+
+**27.** Що поверне `Number.EPSILON`, `MAX_SAFE_INTEGER`, `MIN_VALUE`?
+
+```js
+[Number.EPSILON, Number.MAX_SAFE_INTEGER, Number.MIN_VALUE, Number.MAX_VALUE]
+```
+
+**28.** Що поверне ціле ділення і залишок для від'ємних?
+
+```js
+[-7 % 3, 7 % -3, Math.floor(-7 / 3), -7 / 3 | 0, ((-7 % 3) + 3) % 3]
+```
+
+**29.** Що поверне `Math.floor` для дуже великих і спеціальних?
+
+```js
+[Math.floor(Infinity), Math.floor(-0), Math.floor('7.9'), Math.floor(null), Math.floor(undefined), Math.floor(1e21)]
+```
+
+**30.** Діапазон `Math.random()`: чи може бути 1?
+
+```js
+(() => { const r = Array.from({ length: 1000 }, Math.random); return [Math.min(...r) >= 0, Math.max(...r) < 1]; })()
+```
+
+**31.** Напишіть `randInt(min, max)` включно з обома кінцями. Перевірте межі на 5000 викликах.
+
+```js
+const randInt = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a
+```
+
+**32.** Напишіть `clamp(x, lo, hi)`.
+
+```js
+const clamp = (x, lo, hi) => Math.min(Math.max(x, lo), hi)
+```
+
+**33.** Напишіть `lerp(a, b, t)` і `map(x, a, b, c, d)`.
+
+```js
+const lerp = (a, b, t) => a + (b - a) * t; const mapR = (x, a, b, c, d) => c + (x - a) * (d - c) / (b - a)
+```
+
+### Рівень 4. Практика
+
+**34.** Напишіть `roundTo(x, n)` без похибок.
+
+```js
+const roundTo = (x, n) => Number(Math.round(Number(x + 'e' + n)) + 'e-' + n)
+```
+
+**35.** Напишіть `mean`, `median` і `stddev`.
+
+```js
+const mean = (a) => a.reduce((s, x) => s + x, 0) / a.length; const median = (a) => { const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }; const sd = (a) => { const m = mean(a); return Math.sqrt(mean(a.map(x => (x - m) ** 2))); }
+```
+
+**36.** Напишіть `dist(p, q)` між точками і `angle(p, q)` у градусах.
+
+```js
+const dist = (p, q) => Math.hypot(q[0] - p[0], q[1] - p[1]); const angle = (p, q) => Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI
+```
+
+**37.** Напишіть `gcd` та `lcm`.
+
+```js
+const gcd = (a, b) => b ? gcd(b, a % b) : a; const lcm = (a, b) => a / gcd(a, b) * b
+```
+
+**38.** Напишіть `isPrime(n)` та перелік простих до 30.
+
+```js
+const isPrime = (n) => { if (n < 2) return false; for (let i = 2; i * i <= n; i++) if (n % i === 0) return false; return true; }
+```
+
+**39.** Напишіть `fib(n)` швидко через формулу Біне (округлення) для n ≤ 70.
+
+```js
+const fib = (n) => Math.round(((1 + Math.sqrt(5)) / 2) ** n / Math.sqrt(5))
+```
+
+**40.** Напишіть `digits(n)` — кількість десяткових цифр через `log10`.
+
+```js
+const digits = (n) => n === 0 ? 1 : Math.floor(Math.log10(Math.abs(n))) + 1
+```
+
+**41.** Напишіть `shuffle(arr)` (Фішер—Єйтс) і перевірте, що це перестановка.
+
+```js
+const shuffle = (a) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+```
+
+### Відповіді
+
+1. `[3, -2, 1, 0, 1]`
+2. `[-3, -2, -2, 2, 3, 2]`
+3. `[0, true]`
+4. `[-Infinity, Infinity]`
+5. `[5, NaN, 9]`
+6. `[NaN, 3, NaN, 0]`
+7. `[-1, 0, 0, 1, NaN, 1]`
+8. `[5, 3, 0, 0, 2, NaN, 0]`
+9. `[1024, 1024, 0.5, NaN, 512, 1]`
+10. `[4, NaN, 3, -2, 1.4142135623730951]`
+11. `[5, 0, 1.7320508075688772, Infinity]`
+12. `[1, 3, 3, -Infinity, NaN, 0]`
+13. `[1, true, 0, 0]`
+14. `[0, 1, 1.2246467991473532e-16, -1, 0]`
+15. `[1.2246467991473532e-16, true]`
+16. `[3.141592653589793, 90, 0.5]`
+17. `[0.7853981633974483, 3.141592653589793, -1.5707963267948966, 0]`
+18. `[NaN, 0, 1.5707963267948966]`
+19. `[0, 1, 1, 0, 0, 0]`
+20. `[5.5, 5.050000190734863, 31, 32, 0]`
+21. `[12, -5, 0]`
+22. `[3.141592653589793, 2.718281828459045, 0.6931471805599453, 2.302585092994046, 1.4426950408889634, 0.4342944819032518, 1.4142135623730951, 0.7071067811865476]`
+23. `[44, 'object', '[object Math]']`
+24. `['TypeError', 'TypeError']`
+25. `[0.30000000000000004, 0.3, 0.3]`
+26. `['1.00', 1, 1.01]`
+27. `[2.220446049250313e-16, 9007199254740991, 5e-324, 1.7976931348623157e+308]`
+28. `[-1, 1, -3, -2, 2]`
+29. `[Infinity, 0, 7, 0, NaN, 1e+21]`
+30. `[true, true]`
+31. Виклик `(() => { const s = new Set(Array.from({ length: 5000 }, () => randInt(3, 6))); return [...s].sort(); })()` → `[3, 4, 5, 6]`
+32. Виклик `[clamp(5, 0, 10), clamp(-3, 0, 10), clamp(99, 0, 10)]` → `[5, 0, 10]`
+33. Виклик `[lerp(0, 10, 0.25), mapR(5, 0, 10, 100, 200), mapR(0, -1, 1, 0, 255)]` → `[2.5, 150, 127.5]`
+34. Виклик `[roundTo(1.005, 2), roundTo(2.345, 2)]` → `[1.01, 2.35]`
+35. Виклик `(() => { const d = [2, 4, 4, 4, 5, 5, 7, 9]; return [mean(d), median(d), sd(d)]; })()` → `[5, 4.5, 2]`
+36. Виклик `[dist([0, 0], [3, 4]), angle([0, 0], [1, 1]), angle([0, 0], [-1, 0])]` → `[5, 45, 180]`
+37. Виклик `[gcd(48, 18), gcd(17, 5), lcm(4, 6), lcm(21, 6)]` → `[6, 1, 12, 42]`
+38. Виклик `Array.from({ length: 30 }, (_, i) => i).filter(isPrime)` → `[2, 3, 5, 7, 11, 13, 17, 19, 23, 29]`
+39. Виклик `[0, 1, 2, 10, 30, 50].map(fib)` → `[0, 1, 1, 55, 832040, 12586269025]`
+40. Виклик `[0, 9, 10, 999, 1000, 123456].map(digits)` → `[1, 1, 2, 3, 4, 6]`
+41. Виклик `(() => { const o = [1, 2, 3, 4, 5]; const s = shuffle(o); return [s.length, [...s].sort().join('') === '12345']; })()` → `[5, true]`
