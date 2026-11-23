@@ -189,17 +189,169 @@ I have been here since morning. (be = перебувати)
 
 ---
 
-## 9. Вправи
+## 9. Задачі для закріплення
 
-1. Утворіть V3: go, write, study, stop, buy, break, swim.
-2. Виберіть: I (lose) my phone yesterday. / I (lose) my phone, can you call it?
-3. for чи since: I've lived here ___ 2020. / ___ three years. / ___ I was a child.
-4. Знайдіть помилку: She have finished. / Did you ever been to Spain? / I have seen him last week.
-5. Перекладіть: «Я ніколи не бував у Японії». «Вона щойно пішла». «Ми знайомі десять років».
+Спершу виконайте самостійно, потім звіряйтеся з відповідями в кінці розділу.
 
-**Відповіді:**
-1. gone, written, studied, stopped, bought, broken, swum
-2. lost (yesterday → Past Simple); have lost (результат зараз)
-3. since; for; since
-4. She has finished. / Have you ever been to Spain? / I saw him last week.
-5. I have never been to Japan. / She has just left. / We have known each other for ten years.
+### Рівень 1. Форма V3
+
+**1.** V3 правильних дієслів: work, live, study, stop, plan, try.
+
+**2.** V3 неправильних: go, write, see, eat, take, give.
+
+**3.** V3 неправильних: break, speak, choose, forget, fly, drive.
+
+**4.** V3 неправильних: buy, bring, think, teach, catch, find.
+
+**5.** V3 неправильних: swim, begin, drink, sing, run, come.
+
+**6.** V3 неправильних: be, do, have, make, know, become.
+
+**7.** have чи has: I ___ finished. She ___ left. They ___ arrived. It ___ stopped.
+
+**8.** Що означає 's: She's finished. / She's tired. / He's got a car.
+
+### Рівень 2. Заперечення і питання
+
+**9.** Утворіть заперечення: He has called.
+
+**10.** Утворіть питання: You have seen this film.
+
+**11.** Утворіть питання з ever: You / be / to Japan.
+
+**12.** Утворіть питання з how long: She has lived here (for ten years).
+
+**13.** Утворіть питання до підмета: (Somebody) has taken my pen.
+
+**14.** Дайте короткі відповіді: Have you eaten? (так) Has she called? (ні)
+
+**15.** Поставте yet на місце: Have you finished? / I haven't finished.
+
+**16.** Поставте already і just на місце: I have eaten. / She has left.
+
+**17.** Поставте still на місце: I haven't received the parcel.
+
+**18.** Утворіть речення з never: I / see / snow.
+
+### Рівень 3. Знайдіть і виправте помилку
+
+**19.** I have seen him yesterday.
+
+**20.** When have you arrived?
+
+**21.** She has finish her work.
+
+**22.** He have gone home.
+
+**23.** Have you ever went to Rome?
+
+**24.** I haven't never been there.
+
+**25.** I have lived here since five years.
+
+**26.** I am here since morning.
+
+**27.** She has gone to Paris twice. (вона вдома)
+
+**28.** I know her for ten years.
+
+### Рівень 4. Present Perfect чи Past Simple
+
+**29.** I (lose) my phone yesterday. / I (lose) my phone, can you call it?
+
+**30.** (you / ever / try) Thai food? — Yes, I (try) it in Bangkok last year.
+
+**31.** She (work) here since 2020.
+
+**32.** Shakespeare (write) many plays.
+
+**33.** My sister (write) three books so far.
+
+**34.** I (see) him this morning. (зараз вечір)
+
+**35.** I (see) him three times today.
+
+**36.** When (you / start) learning English?
+
+**37.** The Prime Minister (just / resign).
+
+**38.** This is the first time I (drive) a car.
+
+**39.** for чи since: ___ Monday; ___ two weeks; ___ I was born; ___ ages; ___ 9 o'clock.
+
+**40.** gone чи been: Where's Tom? — He has ___ to the shop. / Have you ever ___ to London?
+
+### Рівень 5. Переклад
+
+**41.** Я ніколи не бував у Японії.
+
+**42.** Вона щойно пішла.
+
+**43.** Ми знайомі десять років.
+
+**44.** Ти вже закінчив? — Ні, ще ні.
+
+**45.** Скільки часу ти тут живеш?
+
+**46.** Я загубив ключі, не можу зайти.
+
+**47.** Твоя англійська дуже покращилася.
+
+**48.** Це найкращий фільм, який я колись бачив.
+
+**49.** Я досі не отримав відповіді.
+
+**50.** Напишіть 5–6 речень про свій досвід: що ви робили й чого не робили в житті, що змінилося за останній рік.
+
+### Відповіді
+
+1. worked, lived, studied, stopped, planned, tried.
+2. gone, written, seen, eaten, taken, given.
+3. broken, spoken, chosen, forgotten, flown, driven.
+4. bought, brought, thought, taught, caught, found.
+5. swum, begun, drunk, sung, run, come.
+6. been, done, had, made, known, become.
+7. have, has, have, has.
+8. has (бо далі V3); is (далі прикметник); has (have got).
+9. He hasn't called.
+10. Have you seen this film?
+11. Have you ever been to Japan?
+12. How long has she lived here?
+13. Who has taken my pen?
+14. Yes, I have. / No, she hasn't.
+15. Have you finished yet? / I haven't finished yet.
+16. I have already eaten (або I have eaten already). / She has just left.
+17. I still haven't received the parcel.
+18. I have never seen snow.
+19. I saw him yesterday.
+20. When did you arrive?
+21. She has finished her work.
+22. He has gone home.
+23. Have you ever been to Rome?
+24. I have never been there.
+25. I have lived here for five years.
+26. I have been here since morning.
+27. She has been to Paris twice.
+28. I have known her for ten years.
+29. lost; have lost.
+30. Have you ever tried; tried.
+31. has worked (або has been working).
+32. wrote (автора вже немає, період закінчено).
+33. has written.
+34. saw.
+35. have seen.
+36. did you start.
+37. has just resigned.
+38. have driven.
+39. since; for; since; for; since.
+40. gone; been.
+41. I have never been to Japan.
+42. She has just left.
+43. We have known each other for ten years.
+44. Have you finished yet? — No, not yet.
+45. How long have you lived here?
+46. I have lost my keys, I can't get in.
+47. Your English has improved a lot.
+48. This is the best film I have ever seen.
+49. I still haven't got an answer.
+50. Відповідь власна; перевірте have/has + V3, відсутність точного минулого часу з Present Perfect і правильне вживання for/since.

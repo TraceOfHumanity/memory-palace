@@ -116,15 +116,152 @@ While і when:
 
 ---
 
-## 7. Вправи
+## 7. Задачі для закріплення
 
-1. Вставте was/were + V-ing: At 9 I (have) breakfast. / They (play) football.
-2. Past Simple чи Continuous: I (walk) home when it (start) to rain.
-3. Знайдіть помилку: She were sleeping. / Did you working? / I was knowing it.
-4. Перекладіть: «О восьмій вечора я готував». «Поки я читав, він грав». «Що ти робив, коли я зателефонував?»
+Спершу виконайте самостійно, потім звіряйтеся з відповідями в кінці розділу.
 
-**Відповіді:**
-1. was having; were playing
-2. was walking; started
-3. She was sleeping. / Were you working? / I knew it.
-4. At 8 p.m. I was cooking. / While I was reading, he was playing. / What were you doing when I called?
+### Рівень 1. Форма
+
+**1.** was чи were: I ___ reading. They ___ sleeping. She ___ cooking. You ___ waiting.
+
+**2.** Утворіть: At 9 I (have) breakfast.
+
+**3.** Утворіть: They (play) football at 5 p.m. yesterday.
+
+**4.** Утворіть: It (rain) all day yesterday.
+
+**5.** Утворіть заперечення: She was listening.
+
+**6.** Утворіть питання: You were working at midnight.
+
+**7.** Утворіть питання з what: He was doing (something) at 8.
+
+**8.** Утворіть питання з who (до підмета): (Someone) was shouting.
+
+**9.** Дайте короткі відповіді: Were you sleeping? (ні) Was it snowing? (так)
+
+**10.** Утворіть V-ing: lie, sit, write, travel (UK), swim, die.
+
+### Рівень 2. Знайдіть і виправте помилку
+
+**11.** She were sleeping.
+
+**12.** Did you working at 10?
+
+**13.** I was knowing the answer.
+
+**14.** They was watching TV.
+
+**15.** When I was arriving, they had dinner. (вечеря була в процесі)
+
+**16.** While I cooked, the phone was ringing. (дзвінок перервав приготування)
+
+**17.** What did you do at 8 last night? (питання про процес)
+
+**18.** He was wanting to leave.
+
+### Рівень 3. Past Simple чи Past Continuous
+
+**19.** I (walk) home when it (start) to rain.
+
+**20.** While she (read), he (play) the piano.
+
+**21.** When the phone (ring), I (have) a shower.
+
+**22.** I (see) an accident while I (wait) for the bus.
+
+**23.** He (fall) asleep while he (watch) the film.
+
+**24.** When I (arrive), they (have) dinner. (вечеря вже йшла)
+
+**25.** When I (arrive), they (have) dinner. (спочатку я прийшов, потім вони повечеряли)
+
+**26.** It was a beautiful day. The sun (shine) and the birds (sing).
+
+**27.** He (always / complain) about his job.
+
+**28.** I (wonder) if you could help me.
+
+**29.** She (live) in Paris for two years. (закінчений період, факт)
+
+**30.** At this time yesterday I (fly) to London.
+
+**31.** What (you / do) when I (call) you?
+
+**32.** As I (cross) the road, I (drop) my phone.
+
+**33.** We (not / sleep) when you (come) in — we were just lying in bed.
+
+**34.** The lights (go) out while we (watch) TV.
+
+**35.** I (know) him when he (be) a child.
+
+### Рівень 4. Переклад
+
+**36.** О восьмій вечора я готував вечерю.
+
+**37.** Поки я читав, він грав на гітарі.
+
+**38.** Що ти робив, коли я зателефонував?
+
+**39.** Коли я прокинувся, йшов сніг.
+
+**40.** Учора весь вечір ми дивилися фільми.
+
+**41.** Я йшов вулицею і побачив старого друга.
+
+**42.** Він постійно запізнювався!
+
+**43.** Я хотів спитати, чи можна взяти твою машину.
+
+**44.** О цій порі минулого тижня я лежав на пляжі.
+
+**45.** Напишіть початок історії з 4–5 речень: спочатку фон (Past Continuous), потім подія, що його перервала (Past Simple).
+
+### Відповіді
+
+1. was, were, was, were.
+2. At 9 I was having breakfast.
+3. They were playing football at 5 p.m. yesterday.
+4. It was raining all day yesterday.
+5. She wasn't listening.
+6. Were you working at midnight?
+7. What was he doing at 8?
+8. Who was shouting?
+9. No, I wasn't. / Yes, it was.
+10. lying, sitting, writing, travelling, swimming, dying.
+11. She was sleeping.
+12. Were you working at 10?
+13. I knew the answer.
+14. They were watching TV.
+15. When I arrived, they were having dinner.
+16. While I was cooking, the phone rang.
+17. What were you doing at 8 last night?
+18. He wanted to leave.
+19. was walking; started.
+20. was reading; was playing.
+21. rang; was having.
+22. saw; was waiting.
+23. fell; was watching.
+24. arrived; were having.
+25. arrived; had.
+26. was shining; were singing.
+27. was always complaining.
+28. was wondering.
+29. lived.
+30. was flying.
+31. were you doing; called.
+32. was crossing; dropped.
+33. weren't sleeping; came.
+34. went; were watching.
+35. knew; was.
+36. At 8 p.m. I was cooking dinner.
+37. While I was reading, he was playing the guitar.
+38. What were you doing when I called?
+39. When I woke up, it was snowing.
+40. We were watching films all evening yesterday.
+41. I was walking down the street and saw an old friend.
+42. He was always being late! (або He was always coming late!)
+43. I was wondering if I could borrow your car.
+44. This time last week I was lying on the beach.
+45. Відповідь власна; перевірте was/were + V-ing для фону й Past Simple для короткої події.

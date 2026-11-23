@@ -93,15 +93,107 @@ I'm getting used to living alone. (звикаю)
 
 ---
 
-## 7. Вправи
+## 7. Задачі для закріплення
 
-1. used to чи would: I (be) shy. / We (go) to the sea every summer.
-2. Утворіть заперечення та питання: She used to live here.
-3. Знайдіть помилку: I didn't used to smoke. / I am used to get up early. / She would have a car.
-4. Перекладіть: «Раніше я жив у Києві». «Я звик вставати рано».
+Спершу виконайте самостійно, потім звіряйтеся з відповідями в кінці розділу.
 
-**Відповіді:**
-1. used to be; would go (або used to go)
-2. She didn't use to live here. Did she use to live here?
-3. I didn't use to smoke. / I am used to getting up early. / She used to have a car.
-4. I used to live in Kyiv. / I am used to getting up early.
+### Рівень 1. Форма
+
+**1.** Утворіть: I / play / football every day (колись).
+
+**2.** Утворіть заперечення: She used to live here.
+
+**3.** Утворіть питання: She used to live here.
+
+**4.** Утворіть питання з where: You used to work (in a bank).
+
+**5.** Дайте коротку відповідь: Did you use to smoke? (так)
+
+**6.** Утворіть з would: Every summer we / go / to the sea.
+
+### Рівень 2. Знайдіть і виправте помилку
+
+**7.** I didn't used to smoke.
+
+**8.** Did you used to live here?
+
+**9.** I use to live in Kyiv.
+
+**10.** I used to going to the gym.
+
+**11.** I am used to get up early.
+
+**12.** I would be shy as a child.
+
+**13.** She used to visit Paris in 2010.
+
+**14.** I used to work here three times.
+
+**15.** I usually used to walk to school. (зараз теж ходжу)
+
+### Рівень 3. used to, would, Past Simple, be/get used to
+
+**16.** I (be) shy when I was little.
+
+**17.** When we were kids, we (go) fishing every Sunday.
+
+**18.** She (have) long hair, but now it's short.
+
+**19.** I (break) my arm in 2015.
+
+**20.** He (not / like) vegetables, but now he loves them.
+
+**21.** I've lived in London for years, so I (be) used to the rain.
+
+**22.** I'm slowly (get) used to my new job.
+
+**23.** At first I couldn't (get) used to driving on the left.
+
+**24.** My grandmother (tell) us stories every evening.
+
+**25.** There (be) a cinema here, but they closed it.
+
+### Рівень 4. Переклад
+
+**26.** Раніше я жив у Києві.
+
+**27.** Я звик вставати рано.
+
+**28.** Ти раніше займався спортом?
+
+**29.** Я звикаю до нового міста.
+
+**30.** Напишіть 5 речень про те, яким було ваше життя 10 років тому порівняно з теперішнім.
+
+### Відповіді
+
+1. I used to play football every day.
+2. She didn't use to live here.
+3. Did she use to live here?
+4. Where did you use to work?
+5. Yes, I did.
+6. Every summer we would go to the sea.
+7. I didn't use to smoke.
+8. Did you use to live here?
+9. I used to live in Kyiv.
+10. I used to go to the gym.
+11. I am used to getting up early.
+12. I used to be shy as a child.
+13. She visited Paris in 2010.
+14. I worked here three times.
+15. I usually walk to school.
+16. used to be.
+17. used to go або would go.
+18. used to have.
+19. broke.
+20. didn't use to like.
+21. am.
+22. getting.
+23. get.
+24. used to tell або would tell.
+25. used to be.
+26. I used to live in Kyiv.
+27. I'm used to getting up early.
+28. Did you use to do sport?
+29. I'm getting used to the new city.
+30. Відповідь власна; перевірте used to + V1, didn't use to і would лише для повторюваних дій.

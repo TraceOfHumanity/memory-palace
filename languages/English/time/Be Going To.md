@@ -64,6 +64,11 @@ I think I'm going to be sick.
 I was going to call you, but I forgot.
 We were going to go out, but it rained.
 
+### be about to + V1 — «ось-ось», дуже близьке майбутнє
+The film **is about to** start. — Фільм ось-ось почнеться.
+I **was about to** call you. — Я якраз збирався тобі подзвонити.
+З about to не вживають слова часу на кшталт tomorrow: ❌ I'm about to leave tomorrow.
+
 ---
 
 ## 5. Слова-маркери
@@ -97,15 +102,107 @@ tomorrow, tonight, next week, soon, in a minute, this weekend, one day, someday 
 
 ---
 
-## 8. Вправи
+## 8. Задачі для закріплення
 
-1. Утворіть: I (call) her tonight. / It (rain) soon (хмари).
-2. will чи going to: (Phone rings) I ___ answer it. / I've decided: I ___ learn French.
-3. Знайдіть помилку: I going to call. / Are you gonna to work? / She is going to goes.
-4. Перекладіть: «Я збираюсь вивчити іспанську». «Дивись на хмари! Піде дощ».
+Спершу виконайте самостійно, потім звіряйтеся з відповідями в кінці розділу.
 
-**Відповіді:**
-1. am going to call; is going to rain
-2. will; am going to
-3. I am going to call. / Are you going to work? / She is going to go.
-4. I'm going to learn Spanish. / Look at the clouds! It's going to rain.
+### Рівень 1. Форма
+
+**1.** Утворіть: I / call / her tonight.
+
+**2.** Утворіть: It / rain / soon. (хмари)
+
+**3.** Утворіть заперечення: She is going to buy a car.
+
+**4.** Утворіть питання: You are going to tell him.
+
+**5.** Утворіть питання з what: They are going to do (something) this weekend.
+
+**6.** Дайте короткі відповіді: Are you going to come? (ні) Is she going to stay? (так)
+
+**7.** Утворіть у минулому (намір, що не здійснився): I / call / you, but I forgot.
+
+**8.** Утворіть з be about to: The film / start. (за хвилину)
+
+### Рівень 2. Знайдіть і виправте помилку
+
+**9.** I going to call you.
+
+**10.** Are you gonna to work?
+
+**11.** She is going to goes home.
+
+**12.** It is going to raining.
+
+**13.** They are going to be play tennis.
+
+**14.** I was going to calling you.
+
+### Рівень 3. will, going to чи Present Continuous
+
+**15.** (Phone rings) I ___ answer it.
+
+**16.** I've decided: I ___ learn French.
+
+**17.** Look at that car! It ___ crash!
+
+**18.** We ___ (fly) to Rome on Friday — the tickets are booked.
+
+**19.** I think she ___ like the present.
+
+**20.** She's pregnant. She ___ have a baby in May.
+
+**21.** — We've run out of milk. — Oh, I ___ get some.
+
+**22.** — Why are you buying paint? — I ___ paint my room.
+
+**23.** Hurry up! The train ___ leave. (ось-ось)
+
+**24.** I ___ tell you, but you were busy.
+
+**25.** — What are your plans? — I ___ study medicine.
+
+### Рівень 4. Переклад
+
+**26.** Я збираюся вивчити іспанську.
+
+**27.** Дивись на хмари! Піде дощ.
+
+**28.** Що ти збираєшся робити на вихідних?
+
+**29.** Я якраз збирався тобі подзвонити.
+
+**30.** Напишіть 4–5 речень про свої плани на наступний місяць, розрізняючи наміри (going to) і домовленості (Present Continuous).
+
+### Відповіді
+
+1. I am going to call her tonight.
+2. It is going to rain soon.
+3. She isn't going to buy a car.
+4. Are you going to tell him?
+5. What are they going to do this weekend?
+6. No, I'm not. / Yes, she is.
+7. I was going to call you, but I forgot.
+8. The film is about to start.
+9. I am going to call you.
+10. Are you gonna work? (gonna = going to)
+11. She is going to go home.
+12. It is going to rain.
+13. They are going to play tennis.
+14. I was going to call you.
+15. will.
+16. am going to.
+17. is going to.
+18. are flying.
+19. will.
+20. is going to.
+21. will ('ll).
+22. am going to.
+23. is about to.
+24. was going to.
+25. am going to.
+26. I'm going to learn Spanish.
+27. Look at the clouds! It's going to rain.
+28. What are you going to do at the weekend?
+29. I was just about to call you. (або I was just going to call you.)
+30. Відповідь власна; перевірте am/is/are + going to + V1 для намірів і am/is/are + V-ing для домовленостей з часом і місцем.

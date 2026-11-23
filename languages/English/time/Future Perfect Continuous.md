@@ -89,13 +89,92 @@ When you get home, I will be tired because I will have been working all day.
 
 ---
 
-## 8. Вправи
+## 8. Задачі для закріплення
 
-1. In June I (work) here for ten years. / By 6 she (study) for six hours.
-2. Знайдіть помилку: I will have been work. / I will been working. / By the time you will arrive…
-3. Перекладіть: «До червня я вже десять років працюватиму тут». «Коли ти прилетиш, я вже дві години чекатиму».
+Спершу виконайте самостійно, потім звіряйтеся з відповідями в кінці розділу.
 
-**Відповіді:**
-1. will have been working; will have been studying
-2. I will have been working. / I will have been working. / By the time you arrive…
-3. By June I will have been working here for ten years. / When you land, I will have been waiting for two hours.
+### Рівень 1. Форма
+
+**1.** Утворіть: In June I / work / here for ten years.
+
+**2.** Утворіть: By 6 she / study / for six hours.
+
+**3.** Утворіть заперечення: He will have been waiting long.
+
+**4.** Утворіть питання з how long: You will have been living here (for five years) by next May.
+
+**5.** Дайте короткі відповіді: Will you have been working there for a year? (так)
+
+**6.** Утворіть скорочену форму: I will have been driving.
+
+### Рівень 2. Знайдіть і виправте помилку
+
+**7.** I will have been work.
+
+**8.** I will been working.
+
+**9.** By the time you will arrive, I will have been waiting for an hour.
+
+**10.** She will has been studying.
+
+**11.** By June I will have been knowing him for ten years.
+
+### Рівень 3. Вибір часу
+
+**12.** By 2030 I (live) here for 20 years. (дієслово стану або дії)
+
+**13.** By the end of the day I (write) for eight hours. / I (write) ten pages.
+
+**14.** At 5 tomorrow I (work). / By 5 tomorrow I (work) for eight hours.
+
+**15.** When she finishes the marathon, she (run) for four hours.
+
+**16.** She will be exhausted because she (drive) all night.
+
+**17.** Next month we (go out) together for a year.
+
+**18.** By the time the plane lands, we (fly) for 12 hours.
+
+**19.** By Friday I (finish) the project. / By Friday I (work) on the project for a month.
+
+**20.** In September she (teach) at this school for 25 years.
+
+### Рівень 4. Переклад
+
+**21.** До червня я вже десять років працюватиму тут.
+
+**22.** Коли ти прилетиш, я вже дві години чекатиму.
+
+**23.** У грудні буде п'ять років, як ми вчимо англійську.
+
+**24.** До вечора вони вже шість годин їхатимуть.
+
+**25.** Напишіть 3 речення про те, скільки часу ви займатиметеся чимось на певну дату в майбутньому.
+
+### Відповіді
+
+1. In June I will have been working here for ten years.
+2. By 6 she will have been studying for six hours.
+3. He won't have been waiting long.
+4. How long will you have been living here by next May?
+5. Yes, I will.
+6. I'll have been driving.
+7. I will have been working.
+8. I will have been working.
+9. By the time you arrive, I will have been waiting for an hour.
+10. She will have been studying.
+11. By June I will have known him for ten years.
+12. will have lived (або will have been living).
+13. will have been writing; will have written.
+14. will be working; will have been working.
+15. will have been running.
+16. will have been driving.
+17. will have been going out.
+18. will have been flying.
+19. will have finished; will have been working.
+20. will have been teaching.
+21. By June I will have been working here for ten years.
+22. When you land, I will have been waiting for two hours.
+23. In December we will have been learning English for five years.
+24. By the evening they will have been driving for six hours.
+25. Відповідь власна; перевірте will have been + V-ing, for + тривалість і by + момент.

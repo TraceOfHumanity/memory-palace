@@ -92,15 +92,107 @@ Future Perfect = «вже зроблено до дедлайну»; Future Simpl
 
 ---
 
-## 7. Вправи
+## 7. Задачі для закріплення
 
-1. (I / finish) by Friday. / By 2030 she (graduate).
-2. Знайдіть помилку: I will has finished. / By the time you will come… / I will finished.
-3. by чи until: I'll work ___ 5. / I'll have finished ___ 5.
-4. Перекладіть: «До п'ятниці я вже закінчу». «Коли ти приїдеш, ми вже поїмо».
+Спершу виконайте самостійно, потім звіряйтеся з відповідями в кінці розділу.
 
-**Відповіді:**
-1. I will have finished; will have graduated
-2. I will have finished. / By the time you come… / I will have finished.
-3. until; by
-4. By Friday I will have finished. / By the time you arrive, we will have eaten.
+### Рівень 1. Форма
+
+**1.** Утворіть: I / finish / by Friday.
+
+**2.** Утворіть: By 2030 she / graduate.
+
+**3.** Утворіть заперечення: They will have arrived by 6.
+
+**4.** Утворіть питання: You will have finished the report by Monday.
+
+**5.** Утворіть питання з how many: You will have read (20) books by December.
+
+**6.** Дайте короткі відповіді: Will you have finished? (ні) Will she have left? (так)
+
+**7.** Утворіть скорочені форми: I will have done; she will not have finished.
+
+**8.** Утворіть припущення про минуле: They left at 8. They / arrive / by now.
+
+### Рівень 2. Знайдіть і виправте помилку
+
+**9.** I will has finished.
+
+**10.** By the time you will come, we will have eaten.
+
+**11.** I will finished by 5.
+
+**12.** She will have finish the work.
+
+**13.** I will have finished until Friday.
+
+### Рівень 3. Вибір часу
+
+**14.** by чи until: I'll work ___ 5. / I'll have finished ___ 5.
+
+**15.** By the end of the year I (save) $2000.
+
+**16.** When you arrive, we (have) dinner already.
+
+**17.** When you arrive, we (have) dinner. (будемо в процесі)
+
+**18.** When you arrive, we (have) dinner. (почнемо після твого приходу)
+
+**19.** By next June they (be) married for 25 years.
+
+**20.** Don't worry, the film (not / start) by the time we get there.
+
+**21.** In two hours I (write) this essay.
+
+**22.** By the time she is 30, she (visit) 40 countries.
+
+**23.** I (finish) this book by tomorrow, so you can borrow it then.
+
+**24.** Call me at 10 — I (get) home by then.
+
+**25.** He (forget) about it by next week.
+
+### Рівень 4. Переклад
+
+**26.** До п'ятниці я вже закінчу.
+
+**27.** Коли ти приїдеш, ми вже поїмо.
+
+**28.** До кінця року я прочитаю 30 книжок.
+
+**29.** Вони вже, мабуть, приїхали.
+
+**30.** Напишіть 4–5 речень про те, чого ви вже досягнете до свого наступного дня народження.
+
+### Відповіді
+
+1. I will have finished by Friday.
+2. By 2030 she will have graduated.
+3. They won't have arrived by 6.
+4. Will you have finished the report by Monday?
+5. How many books will you have read by December?
+6. No, I won't. / Yes, she will.
+7. I'll have done; she won't have finished.
+8. They will have arrived by now.
+9. I will have finished.
+10. By the time you come, we will have eaten.
+11. I will have finished by 5.
+12. She will have finished the work.
+13. I will have finished by Friday.
+14. until; by.
+15. will have saved.
+16. will have had.
+17. will be having.
+18. will have.
+19. will have been.
+20. won't have started.
+21. will have written.
+22. will have visited.
+23. will have finished.
+24. will have got.
+25. will have forgotten.
+26. I will have finished by Friday.
+27. When you arrive, we will have eaten.
+28. By the end of the year I will have read 30 books.
+29. They will have arrived by now.
+30. Відповідь власна; перевірте will have + V3 і by + момент у майбутньому.

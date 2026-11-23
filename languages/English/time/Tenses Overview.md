@@ -10,6 +10,8 @@
 
 Додатково: **be going to** (наміри/докази), **used to / would** (минулі звички).
 
+Нотатки за часами: [[Present Simple]], [[Present Continuous]], [[Present Perfect]], [[Present Perfect Continuous]], [[Past Simple]], [[Past Continuous]], [[Past Perfect]], [[Past Perfect Continuous]], [[Future Simple]], [[Future Continuous]], [[Future Perfect]], [[Future Perfect Continuous]], [[Be Going To]], [[Used To and Would]].
+
 ---
 
 ## 1. Три моменти часу
@@ -107,7 +109,7 @@
 
 ---
 
-## 7. Способи говорити про майбутнє (п'ять варіантів)
+## 7. Способи говорити про майбутнє (шість варіантів)
 
 | Форма | Значення | Приклад |
 | --- | --- | --- |
@@ -116,6 +118,7 @@
 | Present Continuous | домовленість | I'm meeting Anna at 6. |
 | Present Simple | розклад | The train leaves at 8. |
 | will be + V-ing | процес у майбутньому моменті | I'll be sleeping at 11. |
+| be about to + V1 | ось-ось, найближче майбутнє | The film is about to start. |
 
 ---
 
@@ -135,15 +138,169 @@ know, understand, believe, remember, forget, like, love, hate, want, need, prefe
 
 ---
 
-## 10. Вправи
+## 10. Задачі для закріплення
 
-1. Назвіть час: She has been working. / They will have left. / He was reading. / We had finished.
-2. Утворіть для «he / write a letter»: Present Perfect, Past Continuous, Future Simple.
-3. Виберіть: I (see) him yesterday. / I (see) him already. / I (see) him at 5 tomorrow.
-4. Знайдіть помилку: I am knowing him. / When I will arrive, call me. / I have seen him yesterday.
+Спершу виконайте самостійно, потім звіряйтеся з відповідями в кінці розділу.
 
-**Відповіді:**
-1. Present Perfect Continuous; Future Perfect; Past Continuous; Past Perfect
-2. He has written a letter. / He was writing a letter. / He will write a letter.
-3. saw; have seen; will be seeing (або am seeing)
-4. I know him. / When I arrive, call me. / I saw him yesterday.
+### Рівень 1. Система
+
+**1.** Назвіть 12 часів дійсного способу і їхні структури.
+
+**2.** Яке допоміжне дієслово має кожен аспект?
+
+**3.** Утворіть усі 12 форм для дієслова write з підметом he.
+
+**4.** Утворіть заперечення за правилом «not після першого допоміжного»: She will have finished. / They had been waiting. / He has gone.
+
+**5.** Утворіть питання: She is working. / They have left. / He will be sleeping. / You had seen it.
+
+**6.** Утворіть заперечення і питання там, де потрібне do/does/did: She works. / They went.
+
+### Рівень 2. Визначте час і значення
+
+**7.** I have been waiting for an hour.
+
+**8.** She had already left when I called.
+
+**9.** This time tomorrow I'll be flying to Rome.
+
+**10.** By 2030 he will have retired.
+
+**11.** I was having dinner when the phone rang.
+
+**12.** The train leaves at 6.
+
+**13.** We're meeting Tom tonight.
+
+**14.** I've known her since school.
+
+### Рівень 3. Розкрийте дужки
+
+**15.** Water (boil) at 100 °C.
+
+**16.** Look! It (snow).
+
+**17.** I (live) in Lviv since 2018.
+
+**18.** I (live) in Lviv in 2018.
+
+**19.** She (work) all day — she's exhausted.
+
+**20.** When I (arrive), the meeting (already / start).
+
+**21.** While we (walk), it (start) to rain.
+
+**22.** I (call) you as soon as I (land).
+
+**23.** Look at those clouds! It (rain).
+
+**24.** (Phone rings) I (get) it!
+
+**25.** By the time you (read) this, I (leave).
+
+**26.** At 9 tomorrow I (sit) an exam.
+
+**27.** She (wait) for two hours when he finally (come).
+
+**28.** In May I (work) here for ten years.
+
+**29.** He (lose) his keys, so he can't get in.
+
+**30.** How long (you / know) each other?
+
+**31.** I (not / see) him since last summer.
+
+**32.** I (not / see) him last summer.
+
+**33.** When I was a child, I (be) afraid of dogs.
+
+**34.** What (you / do) at 8 last night?
+
+**35.** (you / ever / be) to the USA?
+
+### Рівень 4. Знайдіть і виправте помилку
+
+**36.** I am knowing the answer.
+
+**37.** She has gone to London last year.
+
+**38.** When will you come, call me.
+
+**39.** I didn't went there.
+
+**40.** He has been knowing her for years.
+
+**41.** I am living here since 2015.
+
+**42.** Did you saw him?
+
+**43.** She will has finished by 5.
+
+### Рівень 5. Переклад і непряма мова
+
+**44.** Я працюю тут п'ять років.
+
+**45.** Коли я прийшов, вона вже пішла.
+
+**46.** Завтра о цій порі я буду в літаку.
+
+**47.** Непряма мова: "I am tired," she said.
+
+**48.** Непряма мова: "I will help you," he said.
+
+**49.** Непряма мова: "We have finished," they said.
+
+**50.** Напишіть розповідь з 8–10 речень про важливу подію у вашому житті, використавши щонайменше шість різних часів. Підпишіть кожен час.
+
+### Відповіді
+
+1. Present Simple (V1/V-s), Present Continuous (am/is/are + V-ing), Present Perfect (have/has + V3), Present Perfect Continuous (have/has been + V-ing), Past Simple (V2), Past Continuous (was/were + V-ing), Past Perfect (had + V3), Past Perfect Continuous (had been + V-ing), Future Simple (will + V1), Future Continuous (will be + V-ing), Future Perfect (will have + V3), Future Perfect Continuous (will have been + V-ing).
+2. Simple — do/does/did/will; Continuous — be; Perfect — have; Perfect Continuous — have + been.
+3. writes, is writing, has written, has been writing, wrote, was writing, had written, had been writing, will write, will be writing, will have written, will have been writing.
+4. She will not have finished. / They had not been waiting. / He has not gone.
+5. Is she working? / Have they left? / Will he be sleeping? / Had you seen it?
+6. She doesn't work. Does she work? / They didn't go. Did they go?
+7. Present Perfect Continuous — тривалість до зараз.
+8. Past Perfect — дія раніше за іншу в минулому.
+9. Future Continuous — процес у момент майбутнього.
+10. Future Perfect — завершиться до моменту в майбутньому.
+11. Past Continuous + Past Simple — фон і перервана дія.
+12. Present Simple — розклад.
+13. Present Continuous — домовленість.
+14. Present Perfect — стан від минулого до зараз.
+15. boils.
+16. is snowing.
+17. have lived (have been living).
+18. lived.
+19. has been working.
+20. arrived; had already started.
+21. were walking; started.
+22. will call; land.
+23. is going to rain.
+24. will get ('ll get).
+25. read; will have left.
+26. will be sitting.
+27. had been waiting; came.
+28. will have been working.
+29. has lost.
+30. have you known.
+31. haven't seen.
+32. didn't see.
+33. was (або used to be).
+34. were you doing.
+35. Have you ever been.
+36. I know the answer.
+37. She went to London last year.
+38. When you come, call me.
+39. I didn't go there.
+40. He has known her for years.
+41. I have lived (have been living) here since 2015.
+42. Did you see him?
+43. She will have finished by 5.
+44. I have been working (have worked) here for five years.
+45. When I arrived, she had already left.
+46. This time tomorrow I will be flying (I will be on the plane).
+47. She said (that) she was tired.
+48. He said (that) he would help me.
+49. They said (that) they had finished.
+50. Відповідь власна; звіртеся з розділом «Як обрати час».

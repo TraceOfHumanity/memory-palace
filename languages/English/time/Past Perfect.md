@@ -118,15 +118,154 @@ Past Perfect — це Present Perfect, «зсунутий» в минуле.
 
 ---
 
-## 8. Вправи
+## 8. Задачі для закріплення
 
-1. Past Perfect: When I got home, she (leave). / He said he (see) the film.
-2. Past Simple чи Past Perfect: I (be) late because I (miss) the bus.
-3. Знайдіть помилку: She had went. / When I came, she has gone. / Had you saw it?
-4. Перекладіть: «Коли я прийшов, фільм уже почався». «Вона сказала, що ніколи не була в Парижі».
+Спершу виконайте самостійно, потім звіряйтеся з відповідями в кінці розділу.
 
-**Відповіді:**
-1. had left; had seen
-2. was; had missed
-3. She had gone. / When I came, she had gone. / Had you seen it?
-4. When I arrived, the film had already started. / She said that she had never been to Paris.
+### Рівень 1. Форма
+
+**1.** Утворіть: When I got home, she (leave).
+
+**2.** Утворіть: He said he (see) the film.
+
+**3.** Утворіть: By 2010 they (move) to Canada.
+
+**4.** Утворіть заперечення: I had eaten.
+
+**5.** Утворіть питання: She had finished before you came.
+
+**6.** Утворіть питання з why: He had left early.
+
+**7.** Дайте короткі відповіді: Had you met him before? (ні) Had they arrived? (так)
+
+**8.** Що означає 'd: I'd finished. / I'd like tea. / I'd go if I could.
+
+### Рівень 2. Знайдіть і виправте помилку
+
+**9.** She had went home.
+
+**10.** When I came, she has gone.
+
+**11.** Had you saw it?
+
+**12.** I had finish my work before lunch.
+
+**13.** After he left, we had cleaned the room. (спочатку пішов, потім прибрали)
+
+**14.** I didn't know that she was married before. (раніше вже була заміжня)
+
+### Рівень 3. Past Perfect чи Past Simple
+
+**15.** I (be) late because I (miss) the bus.
+
+**16.** When we (get) to the cinema, the film (already / start).
+
+**17.** When we (get) to the cinema, the film (start). (ми встигли до початку)
+
+**18.** She (never / see) the sea before she (go) to Odesa.
+
+**19.** By the time the ambulance (arrive), the man (die).
+
+**20.** I (recognise) him because I (meet) him before.
+
+**21.** After she (finish) the report, she (go) home.
+
+**22.** He (lose) weight because he (be) ill.
+
+**23.** It was the best meal I (ever / eat).
+
+**24.** It was the first time she (fly).
+
+**25.** I (not / know) the answer because I (not / read) the text.
+
+**26.** They (live) there for ten years before they (sell) the house.
+
+**27.** If you (tell) me earlier, I would have helped.
+
+**28.** I wish I (not / say) that yesterday.
+
+**29.** Непряма мова: "I lost my keys," she said. → She said she…
+
+**30.** Непряма мова: "Have you finished?" he asked. → He asked if I…
+
+**31.** No sooner (I / sit) down than the phone rang.
+
+**32.** Hardly (we / leave) the house when it started to rain.
+
+### Рівень 4. Past Perfect чи Present Perfect
+
+**33.** I (just / finish) my work. Let's go! / When you called, I (just / finish) my work.
+
+**34.** She (never / be) to Rome. (досі) / She (never / be) to Rome before her trip in 2019.
+
+**35.** By last summer I (learn) 500 words. / So far I (learn) 500 words.
+
+### Рівень 5. Переклад
+
+**36.** Коли я прийшов, фільм уже почався.
+
+**37.** Вона сказала, що ніколи не була в Парижі.
+
+**38.** Перш ніж ми приїхали, всі вже пішли.
+
+**39.** Я не впізнав його — він дуже змінився.
+
+**40.** До 2015 року він уже двічі виграв чемпіонат.
+
+**41.** Вона зрозуміла, що забула паспорт удома.
+
+**42.** Якби я знав, я б прийшов.
+
+**43.** Шкода, що я не послухав тебе.
+
+**44.** Я ніколи раніше не бачив такого великого міста.
+
+**45.** Опишіть 4–5 реченнями день, коли все пішло не так. Використайте Past Simple для подій і Past Perfect для того, що сталося ще раніше.
+
+### Відповіді
+
+1. had left.
+2. had seen.
+3. had moved.
+4. I hadn't eaten.
+5. Had she finished before you came?
+6. Why had he left early?
+7. No, I hadn't. / Yes, they had.
+8. had; would; would.
+9. She had gone home.
+10. When I came, she had gone.
+11. Had you seen it?
+12. I had finished my work before lunch.
+13. After he had left, we cleaned the room (або After he left, we cleaned the room).
+14. I didn't know that she had been married before.
+15. was; had missed.
+16. got; had already started.
+17. got; started.
+18. had never seen; went.
+19. arrived; had died.
+20. recognised; had met.
+21. had finished (або finished); went.
+22. had lost; had been.
+23. had ever eaten.
+24. had flown.
+25. didn't know; hadn't read.
+26. had lived; sold.
+27. had told.
+28. hadn't said.
+29. She said she had lost her keys.
+30. He asked if I had finished.
+31. No sooner had I sat down than the phone rang.
+32. Hardly had we left the house when it started to rain.
+33. have just finished; had just finished.
+34. has never been; had never been.
+35. had learnt (learned); have learnt (learned).
+36. When I arrived, the film had already started.
+37. She said that she had never been to Paris.
+38. Before we arrived, everyone had left.
+39. I didn't recognise him — he had changed a lot.
+40. By 2015 he had won the championship twice.
+41. She realised that she had left her passport at home.
+42. If I had known, I would have come.
+43. I wish I had listened to you.
+44. I had never seen such a big city before.
+45. Відповідь власна; перевірте had + V3 для раніших подій і Past Simple для основної послідовності.

@@ -170,3 +170,197 @@ Do you have a car? / Does she have a car?
 
 **Present Simple** — що відбувається **зазвичай**, регулярно, взагалі: I work. She plays tennis on Sundays.
 **Present Continuous** — що відбувається **прямо зараз**: I am working. She is playing tennis now.
+
+Докладно: [[Present Continuous]].
+
+### Майбутнє після when, if, as soon as, until, before, after
+
+У підрядних реченнях часу й умови майбутнє виражається **Present Simple**, а не will:
+
+When he **comes**, we'll start. ❌ When he will come…
+If it **rains**, I'll stay at home.
+I'll wait until you **finish**.
+
+### Дієслова стану
+
+Дієслова стану (know, like, love, hate, want, need, believe, understand, belong, seem, own) зазвичай уживаються в Present Simple навіть «прямо зараз»: I **know** the answer now. ❌ I am knowing. Список і дієслова з двома значеннями: [[Present Continuous]].
+
+### Have got (британський варіант)
+
+I have got (I've got) a car. / She has got a car. / I haven't got a car. / Have you got a car? — Yes, I have.
+Have got означає лише володіння й стосунки, не дії: ❌ I've got breakfast at 8. ✅ I have breakfast at 8.
+
+### Інші вживання
+
+- Інструкції й рецепти: You **take** two eggs and **mix** them.
+- Заголовки новин і коментарі: President **visits** Kyiv. / He **passes**, he **shoots**… goal!
+- Розповідь у теперішньому часі для живості: So I **go** to the shop and **see**…
+
+---
+
+## Задачі для закріплення
+
+Спершу виконайте самостійно, потім звіряйтеся з відповідями в кінці розділу.
+
+### Рівень 1. Форма he/she/it
+
+**1.** Утворіть форму he/she/it: work, watch, go, study, play, fix, have, do.
+
+**2.** Утворіть форму he/she/it: try, enjoy, wash, miss, carry, say, buzz, finish.
+
+**3.** Вимова закінчення: works, plays, watches, stops, loves, changes, runs, misses.
+
+**4.** am, is чи are: I ___ a student. She ___ at home. They ___ friends. It ___ cold.
+
+**5.** Утворіть: (she / like) coffee. (they / live) in Lviv. (he / have) two cats.
+
+**6.** Поставте прислівник на місце: I am late (never). She drinks tea (usually). We go out (often).
+
+**7.** Як часто? Перекладіть: раз на тиждень, двічі на місяць, тричі на рік.
+
+**8.** Чому кажуть says /sez/ і does /dʌz/? Що в них особливого?
+
+### Рівень 2. Заперечення і питання
+
+**9.** Утворіть заперечення: She works on Sundays.
+
+**10.** Утворіть заперечення: They have a car.
+
+**11.** Утворіть питання: He speaks French.
+
+**12.** Утворіть питання з where: You work (in a bank).
+
+**13.** Утворіть питання з how often: She visits her parents (twice a month).
+
+**14.** Утворіть питання до підмета: (My brother) plays the guitar.
+
+**15.** Утворіть питання до додатка: My brother plays (the guitar).
+
+**16.** Дайте короткі відповіді: Does she smoke? (ні) Are you tired? (так) Do they know? (так)
+
+**17.** Утворіть заперечення і питання: She is a doctor.
+
+**18.** Утворіть заперечення і питання з have got: He has got a sister.
+
+**19.** Утворіть питання: What / this word / mean?
+
+**20.** Утворіть питання: Who / you / live with?
+
+### Рівень 3. Знайдіть і виправте помилку
+
+**21.** She work in a hospital.
+
+**22.** Does he likes pizza?
+
+**23.** He don't know the answer.
+
+**24.** I don't never eat meat.
+
+**25.** Do you are hungry?
+
+**26.** Who does live here?
+
+**27.** My sister studys medicine.
+
+**28.** She doesn't has a car.
+
+**29.** When he will arrive, I'll call you.
+
+**30.** I am knowing him for years. (значення: я знаю його)
+
+### Рівень 4. Present Simple чи Present Continuous
+
+**31.** Water (boil) at 100 °C.
+
+**32.** Look! The water (boil).
+
+**33.** I usually (walk) to work, but today I (take) a taxi.
+
+**34.** She (not understand) what you (say).
+
+**35.** The film (start) at 8 p.m. tonight.
+
+**36.** We (meet) Anna tomorrow — we arranged it yesterday.
+
+**37.** I (think) it's a good idea. / I (think) about changing jobs.
+
+**38.** If you (heat) ice, it (melt).
+
+**39.** I'll call you as soon as I (get) home.
+
+**40.** He (have) a shower at the moment. / He (have) two brothers.
+
+### Рівень 5. Переклад
+
+**41.** Я працюю з дому по понеділках.
+
+**42.** Вона не п'є каву.
+
+**43.** Де живуть твої батьки?
+
+**44.** Як часто ти ходиш у спортзал?
+
+**45.** Хто тут працює?
+
+**46.** Що означає це слово?
+
+**47.** Потяг відправляється о 7:15.
+
+**48.** Коли він прийде, ми почнемо.
+
+**49.** Я ніколи не запізнююся.
+
+**50.** Опишіть 5–6 реченнями свій звичайний день, використавши щонайменше чотири прислівники частоти.
+
+### Відповіді
+
+1. works, watches, goes, studies, plays, fixes, has, does.
+2. tries, enjoys, washes, misses, carries, says, buzzes, finishes.
+3. /s/, /z/, /ɪz/, /s/, /z/, /ɪz/, /z/, /ɪz/.
+4. am, is, are, is.
+5. She likes coffee. They live in Lviv. He has two cats.
+6. I am never late. She usually drinks tea. We often go out.
+7. once a week, twice a month, three times a year.
+8. Пишуться за правилом (say + s, do + es), але голосна змінюється у вимові: say /seɪ/ → says /sez/, do /duː/ → does /dʌz/.
+9. She doesn't work on Sundays.
+10. They don't have a car.
+11. Does he speak French?
+12. Where do you work?
+13. How often does she visit her parents?
+14. Who plays the guitar?
+15. What does your brother play?
+16. No, she doesn't. / Yes, I am. / Yes, they do.
+17. She isn't a doctor. / Is she a doctor?
+18. He hasn't got a sister. / Has he got a sister?
+19. What does this word mean?
+20. Who do you live with?
+21. She works in a hospital.
+22. Does he like pizza?
+23. He doesn't know the answer.
+24. I never eat meat.
+25. Are you hungry?
+26. Who lives here?
+27. My sister studies medicine.
+28. She doesn't have a car.
+29. When he arrives, I'll call you.
+30. I have known him for years.
+31. boils.
+32. is boiling.
+33. walk; am taking.
+34. doesn't understand; are saying.
+35. starts (розклад).
+36. are meeting (домовленість).
+37. think (думка); am thinking (процес обмірковування).
+38. heat; melts.
+39. get.
+40. is having (дія); has (володіння).
+41. I work from home on Mondays.
+42. She doesn't drink coffee.
+43. Where do your parents live?
+44. How often do you go to the gym?
+45. Who works here?
+46. What does this word mean?
+47. The train leaves at 7:15.
+48. When he comes, we'll start.
+49. I am never late.
+50. Відповідь власна; перевірте закінчення -s у he/she/it, положення прислівників частоти (перед основним дієсловом, після to be) і відсутність do/does з to be.

@@ -111,15 +111,137 @@ Someone has been using my laptop.
 
 ---
 
-## 7. Вправи
+## 7. Задачі для закріплення
 
-1. Утворіть: (I / wait) for an hour. / She (work) here since 2019. / (you / learn) English long?
-2. Виберіть форму: I (read) this book for two weeks. / I (read) five books this month.
-3. Знайдіть помилку: I have been knowing her for years. / He have been running. / She has waiting.
-4. Перекладіть: «Я вже годину чекаю». «Вона плакала — очі червоні». «Скільки ти вже вчиш англійську?»
+Спершу виконайте самостійно, потім звіряйтеся з відповідями в кінці розділу.
 
-**Відповіді:**
-1. I have been waiting; She has been working; Have you been learning
-2. have been reading; have read
-3. I have known her for years. / He has been running. / She has been waiting.
-4. I have been waiting for an hour. / She has been crying. / How long have you been learning English?
+### Рівень 1. Форма
+
+**1.** Утворіть: I / wait / for an hour.
+
+**2.** Утворіть: She / work / here / since 2019.
+
+**3.** Утворіть: They / play / for two hours.
+
+**4.** Утворіть заперечення: He has been sleeping well.
+
+**5.** Утворіть питання: You have been learning English for a long time.
+
+**6.** Утворіть питання з how long: She has been studying (for three years).
+
+**7.** Утворіть питання з what: You have been doing (something).
+
+**8.** Дайте короткі відповіді: Have you been waiting long? (так) Has it been raining? (ні)
+
+**9.** Утворіть скорочені форми: I have been, she has been, they have not been.
+
+**10.** for чи since: ___ ten minutes; ___ lunch; ___ 2015; ___ a long time; ___ she arrived.
+
+### Рівень 2. Знайдіть і виправте помилку
+
+**11.** I have been knowing her for years.
+
+**12.** He have been running.
+
+**13.** She has waiting for an hour.
+
+**14.** I am waiting for you since 5 o'clock.
+
+**15.** How long are you learning English?
+
+**16.** They have been play tennis all morning.
+
+**17.** I have been owning this car for two years.
+
+**18.** We have been lived here for ages.
+
+### Рівень 3. Present Perfect чи Present Perfect Continuous
+
+**19.** I (read) this book for two weeks. / I (read) five books this month.
+
+**20.** She (cry) — her eyes are red.
+
+**21.** I (paint) the kitchen. It looks great now! / I (paint) the kitchen all day, I'm tired.
+
+**22.** How long (you / know) Tom?
+
+**23.** He (write) emails all morning. He (write) twenty so far.
+
+**24.** It (rain) since morning.
+
+**25.** Who (eat) my chocolate? There's none left!
+
+**26.** Who (eat) my chocolate? There's only half left!
+
+**27.** I (live) here all my life.
+
+**28.** You look hot. (you / run)?
+
+**29.** She (always / want) to visit Japan.
+
+**30.** We (try) to call you for an hour!
+
+### Рівень 4. Переклад і творче завдання
+
+**31.** Я вже годину чекаю.
+
+**32.** Вона плакала — очі червоні.
+
+**33.** Скільки ти вже вчиш англійську?
+
+**34.** Ми живемо тут з 2010 року.
+
+**35.** Останнім часом я погано сплю.
+
+**36.** Чим ти займався? Ти весь брудний.
+
+**37.** Він працює тут уже п'ять років.
+
+**38.** Я тебе знаю все життя.
+
+**39.** Сніг іде з ранку.
+
+**40.** Напишіть 4–5 речень про те, чим ви займаєтеся останнім часом і скільки це триває.
+
+### Відповіді
+
+1. I have been waiting for an hour.
+2. She has been working here since 2019.
+3. They have been playing for two hours.
+4. He hasn't been sleeping well.
+5. Have you been learning English for a long time?
+6. How long has she been studying?
+7. What have you been doing?
+8. Yes, I have. / No, it hasn't.
+9. I've been, she's been, they haven't been.
+10. for; since; since; for; since.
+11. I have known her for years.
+12. He has been running.
+13. She has been waiting for an hour.
+14. I have been waiting for you since 5 o'clock.
+15. How long have you been learning English?
+16. They have been playing tennis all morning.
+17. I have owned this car for two years.
+18. We have lived (або have been living) here for ages.
+19. have been reading; have read.
+20. has been crying.
+21. have painted (результат); have been painting (процес, втома).
+22. have you known (know — стан).
+23. has been writing; has written.
+24. has been raining.
+25. has eaten (усе з'їдено, результат).
+26. has been eating (процес, частину з'їдено).
+27. have lived (або have been living).
+28. Have you been running?
+29. has always wanted (want — стан).
+30. have been trying.
+31. I have been waiting for an hour.
+32. She has been crying.
+33. How long have you been learning English?
+34. We have lived (have been living) here since 2010.
+35. I haven't been sleeping well lately.
+36. What have you been doing? You're all dirty.
+37. He has been working here for five years.
+38. I have known you all my life.
+39. It has been snowing since morning.
+40. Відповідь власна; перевірте have/has + been + V-ing, for/since і відсутність дієслів стану в Continuous.

@@ -108,15 +108,169 @@ tomorrow, tonight, next week/month/year, in 2030, in a week, soon, later, one da
 
 ---
 
-## 7. Вправи
+## 7. Задачі для закріплення
 
-1. Скоротіть: I will, she will not, they will.
-2. Виберіть: (Phone rings) I (answer) it! / I (visit) my aunt on Friday (квитки куплені).
-3. Знайдіть помилку: She will goes. / If it will rain, we stay. / I will to help.
-4. Перекладіть: «Я зателефоную тобі завтра». «Мабуть, буде дощ». «Я допоможу тобі з сумкою».
+Спершу виконайте самостійно, потім звіряйтеся з відповідями в кінці розділу.
 
-**Відповіді:**
-1. I'll, she won't, they'll
-2. I'll answer; I'm visiting
-3. She will go. / If it rains, we will stay. / I will help.
-4. I will call you tomorrow. / It will probably rain. / I'll help you with your bag.
+### Рівень 1. Форма
+
+**1.** Скоротіть: I will, she will not, they will, it will not.
+
+**2.** Утворіть: I / call / you / tomorrow.
+
+**3.** Утворіть: She / be / 30 / next year.
+
+**4.** Утворіть заперечення: They will come.
+
+**5.** Утворіть питання: You will help me.
+
+**6.** Утворіть питання з when: They will arrive (on Monday).
+
+**7.** Утворіть питання до підмета: (Somebody) will pay.
+
+**8.** Дайте короткі відповіді: Will you come? (так) Will it rain? (ні)
+
+**9.** Утворіть пропозицію з shall: I / open the window?
+
+**10.** Утворіть пропозицію з shall: we / go to the cinema?
+
+### Рівень 2. Знайдіть і виправте помилку
+
+**11.** She will goes to London.
+
+**12.** I will to help you.
+
+**13.** If it will rain, we will stay at home.
+
+**14.** When he will arrive, I'll call you.
+
+**15.** Yes, I'll. (коротка відповідь)
+
+**16.** I willn't tell anyone.
+
+**17.** She will is late.
+
+**18.** I think it won't rain. (природніше)
+
+### Рівень 3. Значення
+
+**19.** Яке значення: I'll answer it! (дзвонить телефон)
+
+**20.** Яке значення: I'll always love you.
+
+**21.** Яке значення: Will you open the door, please?
+
+**22.** Яке значення: I think Ukraine will win.
+
+**23.** Яке значення: Don't touch that — you'll burn yourself!
+
+**24.** Яке значення: The sun will rise at 6:12 tomorrow.
+
+**25.** Яке значення: Shall I carry your bag?
+
+### Рівень 4. Will чи інший спосіб вираження майбутнього
+
+**26.** (Phone rings) I (answer) it!
+
+**27.** I (visit) my aunt on Friday — I've already bought the tickets.
+
+**28.** Look at those clouds! It (rain).
+
+**29.** The train (leave) at 7:30 tomorrow.
+
+**30.** I've decided: I (learn) French next year.
+
+**31.** I'm sure you (pass) the exam.
+
+**32.** If you (study), you (pass).
+
+**33.** I'll wait here until you (come) back.
+
+**34.** Perhaps she (call) later.
+
+**35.** I promise I (not / tell) anyone.
+
+**36.** It's cold. — I (close) the window.
+
+**37.** We (meet) at the café at 6 — we arranged it yesterday.
+
+**38.** As soon as I (finish), I (send) you the file.
+
+**39.** I hope it (not / snow) tomorrow.
+
+**40.** Probably they (not / come).
+
+### Рівень 5. Переклад
+
+**41.** Я зателефоную тобі завтра.
+
+**42.** Мабуть, буде дощ.
+
+**43.** Я допоможу тобі з сумкою.
+
+**44.** Може, мені відчинити вікно?
+
+**45.** Якщо ти поспішиш, ти встигнеш на потяг.
+
+**46.** Коли я приїду, я тобі напишу.
+
+**47.** Не хвилюйся, я нікому не скажу.
+
+**48.** Думаю, вона не прийде.
+
+**49.** Через рік мені буде 25.
+
+**50.** Напишіть 5 речень-прогнозів про своє життя через 10 років із I think, probably, I'm sure, I hope.
+
+### Відповіді
+
+1. I'll, she won't, they'll, it won't.
+2. I will (I'll) call you tomorrow.
+3. She will be 30 next year.
+4. They won't come.
+5. Will you help me?
+6. When will they arrive?
+7. Who will pay?
+8. Yes, I will. / No, it won't.
+9. Shall I open the window?
+10. Shall we go to the cinema?
+11. She will go to London.
+12. I will help you.
+13. If it rains, we will stay at home.
+14. When he arrives, I'll call you.
+15. Yes, I will.
+16. I won't tell anyone.
+17. She will be late.
+18. I don't think it will rain.
+19. Спонтанне рішення.
+20. Обіцянка.
+21. Прохання.
+22. Думка, прогноз без доказів.
+23. Застереження.
+24. Факт про майбутнє.
+25. Пропозиція допомоги.
+26. will answer ('ll answer).
+27. am visiting (домовленість) або am going to visit.
+28. is going to rain.
+29. leaves.
+30. am going to learn.
+31. will pass.
+32. study; will pass.
+33. come.
+34. will call.
+35. won't tell.
+36. will close ('ll close).
+37. are meeting.
+38. finish; will send.
+39. won't snow (або doesn't snow).
+40. They probably won't come.
+41. I'll call you tomorrow.
+42. It will probably rain.
+43. I'll help you with your bag.
+44. Shall I open the window?
+45. If you hurry, you will catch the train.
+46. When I arrive, I'll text you.
+47. Don't worry, I won't tell anyone.
+48. I don't think she will come.
+49. I will be 25 in a year.
+50. Відповідь власна; перевірте will + V1 без to і -s, положення probably (після will, перед won't) і конструкцію I don't think … will.

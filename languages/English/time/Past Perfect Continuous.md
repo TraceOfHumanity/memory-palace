@@ -97,15 +97,107 @@ She told me she had been waiting since morning.
 
 ---
 
-## 8. Вправи
+## 8. Задачі для закріплення
 
-1. (She / wait) for two hours when the bus came.
-2. Past Perfect чи Continuous: I (read) for hours, so my eyes hurt. / I (read) five chapters.
-3. Знайдіть помилку: He had been knowing her. / I had waiting for an hour. / She has been working when I called.
-4. Перекладіть: «Я вже годину чекав, коли вона прийшла». «Земля була мокра, бо йшов дощ».
+Спершу виконайте самостійно, потім звіряйтеся з відповідями в кінці розділу.
 
-**Відповіді:**
-1. She had been waiting.
-2. had been reading; had read
-3. He had known her. / I had been waiting for an hour. / She had been working when I called.
-4. I had been waiting for an hour when she came. / The ground was wet because it had been raining.
+### Рівень 1. Форма
+
+**1.** Утворіть: She / wait / for two hours when the bus came.
+
+**2.** Утворіть: By 6 o'clock they / work / for ten hours.
+
+**3.** Утворіть заперечення: He had been sleeping well.
+
+**4.** Утворіть питання: You had been waiting long.
+
+**5.** Утворіть питання з how long: She had been living there (for five years) when she met him.
+
+**6.** Утворіть питання з what: They had been doing (something) before I came.
+
+**7.** Дайте короткі відповіді: Had you been crying? (так) Had it been raining? (ні)
+
+**8.** Утворіть скорочені форми: I had been working; she had not been listening.
+
+### Рівень 2. Знайдіть і виправте помилку
+
+**9.** He had been knowing her for years.
+
+**10.** I had waiting for an hour.
+
+**11.** She has been working when I called.
+
+**12.** They had been play for hours.
+
+**13.** We had been owning the house for ten years before we sold it.
+
+### Рівень 3. Вибір часу
+
+**14.** I (read) for hours, so my eyes hurt. / I (read) five chapters.
+
+**15.** The ground was wet because it (rain).
+
+**16.** She was tired because she (work) all day.
+
+**17.** When I arrived, he (wait) for an hour.
+
+**18.** When I arrived, he (wait) for me. (процес у той момент, без тривалості)
+
+**19.** How long (you / study) English before you moved to London?
+
+**20.** He (smoke) for 20 years before he gave up.
+
+**21.** I (know) her for ten years when we got married.
+
+**22.** They (argue) — I could see it on their faces.
+
+**23.** I (try) to call you all morning, but you didn't answer.
+
+**24.** By the time the guests came, we (cook) for five hours and (cook) six dishes.
+
+**25.** Непряма мова: "I have been waiting for ages," she said. → She said she…
+
+### Рівень 4. Переклад
+
+**26.** Я вже годину чекав, коли вона прийшла.
+
+**27.** Земля була мокра, бо йшов дощ.
+
+**28.** Він був утомлений, бо цілий день бігав.
+
+**29.** Скільки часу ти працював там, перш ніж звільнився?
+
+**30.** Напишіть 3–4 речення, де пояснюєте стан людини в минулому (втома, мокрий одяг, червоні очі) тим, що вона робила до того.
+
+### Відповіді
+
+1. She had been waiting for two hours when the bus came.
+2. By 6 o'clock they had been working for ten hours.
+3. He hadn't been sleeping well.
+4. Had you been waiting long?
+5. How long had she been living there when she met him?
+6. What had they been doing before I came?
+7. Yes, I had. / No, it hadn't.
+8. I'd been working; she hadn't been listening.
+9. He had known her for years.
+10. I had been waiting for an hour.
+11. She was working when I called.
+12. They had been playing for hours.
+13. We had owned the house for ten years before we sold it.
+14. had been reading; had read.
+15. had been raining.
+16. had been working.
+17. had been waiting.
+18. was waiting.
+19. had you been studying.
+20. had been smoking (або had smoked).
+21. had known.
+22. had been arguing.
+23. had been trying.
+24. had been cooking; had cooked.
+25. She said she had been waiting for ages.
+26. I had been waiting for an hour when she came.
+27. The ground was wet because it had been raining.
+28. He was tired because he had been running all day.
+29. How long had you been working there before you quit?
+30. Відповідь власна; перевірте had + been + V-ing і відсутність дієслів стану.
